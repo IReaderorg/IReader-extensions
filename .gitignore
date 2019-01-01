@@ -1,0 +1,12 @@
+*.iml
+.gradle
+/local.properties
+/.idea/*
+!/.idea/codeStyleSettings.xml
+!/.idea/inspectionProfiles/
+!/.idea/fileTemplates/
+.DS_Store
+build
+/captures
+.externalNativeBuild
+

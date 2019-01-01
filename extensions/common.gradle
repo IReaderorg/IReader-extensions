@@ -1,0 +1,71 @@
+apply plugin: "com.android.application"
+apply plugin: "kotlin-android"
+
+android {
+  compileSdkVersion Config.compileSdk
+
+  defaultConfig {
+    minSdkVersion Config.minSdk
+    targetSdkVersion Config.targetSdk
+    multiDexEnabled = false
+  }
+
+  flavorDimensions "default"
+  productFlavors {
+    extensionList.each { extension ->
+      "${extension.flavor}" {
+        dimension "default"
+        versionCode extension.versionCode
+        versionName "${extension.libVersion}.${extension.versionCode}"
+        manifestPlaceholders = [
+          appName: "Tachiyomi: ${extension.name} (${extension.lang})",
+          sourceId: ":${extension.id}"
+        ]
+        ext.extension = extension
+      }
+    }
+  }
+
+  sourceSets {
+    main {
+      manifest.srcFile "$rootDir/extensions/AndroidManifest.xml"
+      java.srcDirs = ["main/src"]
+      res.srcDirs = ["main/res"]
+      resources.srcDirs = []
+    }
+    extensionList.each { extension ->
+      def sourceDir = extension.sourceDir
+      "${extension.flavor}" {
+        java.srcDirs = ["${sourceDir}/src"]
+        res.srcDirs = ["${sourceDir}/res"]
+      }
+    }
+  }
+
+  applicationVariants.all { variant ->
+    def extension = variant.productFlavors[0].ext.extension
+    variant.outputs.all {
+      def nameLower = extension.name.toLowerCase()
+      outputFileName = "tachiyomi-${extension.lang}-${nameLower}-v${versionName}.apk"
+    }
+    variant.generateBuildConfigProvider?.configure {
+      enabled = false
+    }
+  }
+}
+
+dependencies {
+  implementation project(Proj.defaultRes)
+  compileOnly Deps.tachiyomiCore
+  compileOnly Deps.sourceApi
+  compileOnly Deps.okhttp
+  compileOnly Deps.jsoup
+  compileOnly Deps.gson
+  compileOnly Deps.kotson
+
+  extensionList.each { extension ->
+    if (!extension.deepLinks.empty) {
+      add("${extension.flavor}Implementation", project(Proj.deeplink))
+    }
+  }
+}

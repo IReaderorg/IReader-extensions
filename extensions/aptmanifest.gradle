@@ -1,0 +1,45 @@
+apply plugin: "kotlin-kapt"
+
+kapt {
+  arguments {
+    def extension = variant.productFlavors[0].ext.extension
+    arg("SOURCE_NAME", extension.name)
+    arg("SOURCE_LANG", extension.lang)
+    arg("SOURCE_ID", extension.id)
+    arg("MANIFEST_HAS_DEEPLINKS", !extension.deepLinks.empty)
+  }
+}
+
+afterEvaluate {
+  android.applicationVariants.all {
+    def variantCapital = name.capitalize()
+    // We need to run kapt before the manifest processor
+    tasks.forEach {
+      if (it.name.contains("kaptGenerateStubs")) {
+        it.setDependsOn([])
+      }
+    }
+
+    outputs.forEach { output ->
+      output.processManifestProvider.configure {
+        dependsOn("kaptGenerateStubs${variantCapital}Kotlin")
+
+        doLast {
+          def outputDirectory = manifestOutputDirectory.get().asFile
+          def flavorDir = outputDirectory.name
+          def kaptDir = project.buildDir.absolutePath + "/generated/source/kaptKotlin/" + flavorDir
+          def manifestFile = new File(outputDirectory, "AndroidManifest.xml").absolutePath
+          def extIndexFile = new File(kaptDir, "index.txt").absolutePath
+
+          def extension = productFlavors[0].ext.extension
+          ManifestGenerator.process(extIndexFile, manifestFile, extension)
+        }
+      }
+    }
+  }
+}
+
+dependencies {
+  compileOnly project(Proj.annotation)
+  kapt project(Proj.compiler)
+}

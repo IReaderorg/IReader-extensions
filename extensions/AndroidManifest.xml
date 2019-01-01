@@ -1,0 +1,17 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="tachiyomix">
+
+  <uses-feature android:name="tachiyomix" />
+
+  <application
+    android:icon="@mipmap/ic_launcher"
+    android:allowBackup="false"
+    android:label="${appName}">
+
+    <meta-data
+      android:name="source.id"
+      android:value="${sourceId}" />
+
+  </application>
+
+</manifest>
