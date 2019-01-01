@@ -10,7 +10,6 @@ import com.squareup.kotlinpoet.TypeSpec
 import tachiyomix.annotations.Extension
 import java.io.File
 import javax.annotation.processing.AbstractProcessor
-import javax.annotation.processing.Filer
 import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
@@ -24,12 +23,10 @@ import javax.tools.Diagnostic
 @AutoService(Processor::class)
 class ExtensionProcessor : AbstractProcessor() {
 
-  private lateinit var filer: Filer
   private lateinit var messager: Messager
 
   override fun init(env: ProcessingEnvironment) {
     super.init(env)
-    filer = env.filer
     messager = env.messager
   }
 
@@ -121,7 +118,6 @@ class ExtensionProcessor : AbstractProcessor() {
     file.writeTo(File(kaptKotlinGeneratedDir))
 
     File(kaptKotlinGeneratedDir, "index.txt").writeText("$pkgName.$fileName\n")
-    println("Index generated on $kaptKotlinGeneratedDir")
   }
 
   private fun checkImplementsDeepLink(sourceClass: Element): Boolean {
