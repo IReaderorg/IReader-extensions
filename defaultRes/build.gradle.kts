@@ -5,6 +5,10 @@ plugins {
 android {
   compileSdkVersion(Config.compileSdk)
 
+  defaultConfig {
+    minSdkVersion(Config.minSdk)
+  }
+
   sourceSets {
     named("main") {
       manifest.srcFile("AndroidManifest.xml")
