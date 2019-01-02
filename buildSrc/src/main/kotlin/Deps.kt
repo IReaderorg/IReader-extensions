@@ -10,15 +10,7 @@ object Deps {
     const val stdlib = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$version"
   }
 
-  object coroutines {
-    private const val version = "1.0.1"
-    const val core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:$version"
-    const val android = "org.jetbrains.kotlinx:kotlinx-coroutines-android:$version"
-    const val rx2 = "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:$version"
-  }
-
   const val autoservice = "com.google.auto.service:auto-service:1.0-rc4"
-
   const val kotlinpoet = "com.squareup:kotlinpoet:1.0.0"
 
   const val tachiyomiCore = "tachiyomi.sourceapi:core:1.0"

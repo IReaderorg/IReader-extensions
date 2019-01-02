@@ -23,8 +23,8 @@ data class DeepLink(
 fun Project.register(extensions: List<Extension>) {
   extra["extensionList"] = extensions
   apply {
-    from("$rootDir/extensions/common.gradle")
-    from("$rootDir/extensions/aptmanifest.gradle")
+    from("$rootDir/buildSrc/common.gradle")
+    from("$rootDir/buildSrc/aptmanifest.gradle")
   }
 }
 

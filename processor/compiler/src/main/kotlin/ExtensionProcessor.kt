@@ -7,27 +7,36 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asTypeName
 import tachiyomix.annotations.Extension
 import java.io.File
+import java.nio.file.Paths
 import javax.annotation.processing.AbstractProcessor
-import javax.annotation.processing.Messager
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
-import javax.tools.Diagnostic
+import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
+import javax.tools.StandardLocation
 
 @Suppress("unused")
 @AutoService(Processor::class)
 class ExtensionProcessor : AbstractProcessor() {
 
-  private lateinit var messager: Messager
+  private lateinit var logger: Logger
+  private lateinit var types: Types
+  private lateinit var elements: Elements
+  private lateinit var sourceTypes: SourceTypes
 
   override fun init(env: ProcessingEnvironment) {
     super.init(env)
-    messager = env.messager
+    logger = Logger(env.messager)
+    types = env.typeUtils
+    elements = env.elementUtils
+    sourceTypes = SourceTypes(elements)
   }
 
   override fun getSupportedAnnotationTypes(): Set<String> {
@@ -48,38 +57,93 @@ class ExtensionProcessor : AbstractProcessor() {
   }
 
   override fun process(set: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
-    val extAnnotations = roundEnv.getElementsAnnotatedWith(Extension::class.java)
-    if (extAnnotations.size > 1) {
-      logError("Only one class can be annotated with @Extension")
+    val sourceClass = getClassToGenerate(roundEnv) ?: return true
+
+    if (!checkMatchesPkgName(sourceClass)) {
       return true
     }
-
-    val sourceClass = extAnnotations.firstOrNull() ?: return true
-
-    val className = sourceClass.simpleName.toString()
-    val pkgName = processingEnv.elementUtils.getPackageOf(sourceClass).toString()
-
-    if (!pkgName.startsWith("tachiyomix.")) {
-      logError("The package name of an extension must start with \"tachiyomix.\"")
-      return true
-    }
-
     if (!checkImplementsDeepLink(sourceClass)) {
-      logError("The manifest defines deep links but $pkgName.${sourceClass.simpleName} doesn't " +
-        "implement DeepLinkSource")
       return true
     }
 
     try {
-      generateClass(className, pkgName)
+      generateClass(sourceClass)
     } catch (e: Exception) {
-      messager.printMessage(Diagnostic.Kind.ERROR, e.message)
+      logger.e(e.message)
     }
 
     return true
   }
 
-  private fun generateClass(className: String, pkgName: String) {
+  /**
+   * Returns the source class to generate, or null if more than one was detected and they don't
+   * inherit each other.
+   */
+  private fun getClassToGenerate(roundEnv: RoundEnvironment): Element? {
+    val candidates = roundEnv.getElementsAnnotatedWith(Extension::class.java)
+    val classToGenerate = when (candidates.size) {
+      0 -> null
+      1 -> candidates.first()
+      else -> {
+        val candidate = candidates.find { candidate ->
+          val candidateType = candidate.asType()
+          candidates.all { it === candidate || types.isSubtype(candidateType, it.asType()) }
+        }
+        if (candidate == null) {
+          logger.e("Found [${candidates.joinToString()}] annotated with @Extension but they don't" +
+            " inherit each other and only one class can be generated")
+        }
+        candidate
+      }
+    } ?: return null
+
+    if (!types.isAssignable(classToGenerate.asType(), sourceTypes.source)) {
+      logger.e("$classToGenerate doesn't implement ${sourceTypes.source}")
+      return null
+    }
+    return classToGenerate
+  }
+
+  /**
+   * Returns true if the package name of the given source class is valid.
+   */
+  private fun checkMatchesPkgName(sourceClass: Element): Boolean {
+    val buildDir = getBuildDir()
+    if ("/samples/" in buildDir) return true // Disable pkgname checks for the samples
+
+    val pkgName = elements.getPackageOf(sourceClass).toString()
+
+    val sourceDir = buildDir.substringBeforeLast("/build/").substringAfterLast("/")
+    val expectedPkgName = "tachiyomix.$sourceDir"
+
+    if (!Regex("^$expectedPkgName\\.?.*?").matches(pkgName)) {
+      logger.e("The package name of the extension $sourceClass must start with " +
+        "\"$expectedPkgName\"")
+      return false
+    }
+
+    return true
+  }
+
+  /**
+   * Returns true if the given source class doesn't define deep links or implements DeepLinkSource.
+   */
+  private fun checkImplementsDeepLink(sourceClass: Element): Boolean {
+    val hasDeeplinks = processingEnv.options["MANIFEST_HAS_DEEPLINKS"]?.toBoolean() ?: false
+    if (!hasDeeplinks) return true
+
+    return if (!types.isAssignable(sourceClass.asType(), sourceTypes.deeplinksource)) {
+      logger.e("The manifest of $sourceClass defines deep links but the class doesn't " +
+        "implement ${sourceTypes.deeplinksource}")
+      false
+    } else {
+      true
+    }
+  }
+
+  private fun generateClass(sourceClass: Element) {
+    val className = sourceClass.simpleName.toString()
+    val pkgName = elements.getPackageOf(sourceClass).toString()
     val fileName = "${className}Gen"
     val options = processingEnv.options
     val sourceName = options["SOURCE_NAME"] ?: className
@@ -89,7 +153,7 @@ class ExtensionProcessor : AbstractProcessor() {
     val classBuilder = TypeSpec.classBuilder(fileName)
       .primaryConstructor(
         FunSpec.constructorBuilder()
-          .addParameter("deps", DEPS_CLASS)
+          .addParameter("deps", sourceTypes.dependencies.asTypeName())
           .build()
       )
       .superclass(ClassName.bestGuess(className))
@@ -120,26 +184,16 @@ class ExtensionProcessor : AbstractProcessor() {
     File(kaptKotlinGeneratedDir, "index.txt").writeText("$pkgName.$fileName\n")
   }
 
-  private fun checkImplementsDeepLink(sourceClass: Element): Boolean {
-    val hasDeeplinks = processingEnv.options["MANIFEST_HAS_DEEPLINKS"]?.toBoolean() ?: false
-    if (!hasDeeplinks) return true
-
-    val dlInterface = processingEnv.elementUtils.getTypeElement("tachiyomi.source.DeepLinkSource")
-    return processingEnv.typeUtils.isAssignable(sourceClass.asType(), dlInterface.asType())
-  }
-
-  private fun log(message: String) {
-    messager.printMessage(Diagnostic.Kind.WARNING, message)
-  }
-
-  private fun logError(message: String) {
-    messager.printMessage(Diagnostic.Kind.ERROR, message)
+  private fun getBuildDir(): String {
+    val filer = processingEnv.filer
+    val resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "tmp", null)
+    val outputDir = Paths.get(resource.toUri()).toString()
+    resource.delete()
+    return outputDir
   }
 
   private companion object {
     const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"
-
-    val DEPS_CLASS = ClassName.bestGuess("tachiyomi.source.Dependencies")
   }
 
 }

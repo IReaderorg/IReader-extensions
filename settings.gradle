@@ -8,10 +8,10 @@ include(":deeplink")
 include(":defaultRes")
 
 new File(rootDir, "extensions").eachDir { dir ->
-  dir.eachDir { subdir ->
-    String name = ":${dir.name}-${subdir.name}"
+  if (new File(dir, "build.gradle.kts").exists()) {
+    String name = ":ext-${dir.name}"
     include name
-    project(name).projectDir = new File("extensions/${dir.name}/${subdir.name}")
+    project(name).projectDir = new File("extensions/${dir.name}")
   }
 }
 
