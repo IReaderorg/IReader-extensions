@@ -141,6 +141,9 @@ class ExtensionProcessor : AbstractProcessor() {
     }
   }
 
+  /**
+   * Generates the class for the given source.
+   */
   private fun generateClass(sourceClass: Element) {
     val className = sourceClass.simpleName.toString()
     val pkgName = elements.getPackageOf(sourceClass).toString()
@@ -184,6 +187,9 @@ class ExtensionProcessor : AbstractProcessor() {
     File(kaptKotlinGeneratedDir, "index.txt").writeText("$pkgName.$fileName\n")
   }
 
+  /**
+   * Returns the build directory for this processor instance.
+   */
   private fun getBuildDir(): String {
     val filer = processingEnv.filer
     val resource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "tmp", null)

@@ -19,7 +19,9 @@ android {
         versionName "${extension.libVersion}.${extension.versionCode}"
         manifestPlaceholders = [
           appName: "Tachiyomi: ${extension.name} (${extension.lang})",
-          sourceId: ":${extension.id}"
+          sourceId: ":${extension.id}",
+          sourceDescription: extension.description,
+          sourceNsfw: extension.nsfw ? 1 : 0
         ]
         ext.extension = extension
       }

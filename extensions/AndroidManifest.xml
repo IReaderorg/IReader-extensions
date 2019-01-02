@@ -12,6 +12,14 @@
       android:name="source.id"
       android:value="${sourceId}" />
 
+    <meta-data
+      android:name="source.description"
+      android:value="${sourceDescription}" />
+
+    <meta-data
+      android:name="source.nsfw"
+      android:value="${sourceNsfw}" />
+
   </application>
 
 </manifest>

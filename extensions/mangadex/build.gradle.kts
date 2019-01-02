@@ -4,6 +4,8 @@ listOf("en", "es").map { lang ->
     versionCode = 44,
     libVersion = "1.0",
     lang = lang,
+    description = "Highest quality and scanlator-approved source",
+    nsfw = false,
     deepLinks = listOf(
       DeepLink(
         host = "mangadex.org",

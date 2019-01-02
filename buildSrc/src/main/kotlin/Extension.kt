@@ -7,6 +7,8 @@ data class Extension(
   val versionCode: Int,
   val libVersion: String,
   val lang: String,
+  val description: String = "",
+  val nsfw: Boolean = false,
   val deepLinks: List<DeepLink> = emptyList(),
   val sourceDir: String = "main",
   val id: Long = generateSourceId(name, lang),
