@@ -13,6 +13,14 @@
       android:value="${sourceId}" />
 
     <meta-data
+      android:name="source.name"
+      android:value="${sourceName}" />
+
+    <meta-data
+      android:name="source.lang"
+      android:value="${sourceLang}" />
+
+    <meta-data
       android:name="source.description"
       android:value="${sourceDescription}" />
 

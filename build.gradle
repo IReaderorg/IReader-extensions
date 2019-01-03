@@ -17,3 +17,5 @@ allprojects {
     maven { url "https://dl.bintray.com/inorichi/maven" }
   }
 }
+
+task repo(type: RepoTask)

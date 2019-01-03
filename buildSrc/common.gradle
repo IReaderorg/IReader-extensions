@@ -20,6 +20,8 @@ android {
         manifestPlaceholders = [
           appName: "Tachiyomi: ${extension.name} (${extension.lang})",
           sourceId: ":${extension.id}",
+          sourceName: extension.name,
+          sourceLang: extension.lang,
           sourceDescription: extension.description,
           sourceNsfw: extension.nsfw ? 1 : 0
         ]

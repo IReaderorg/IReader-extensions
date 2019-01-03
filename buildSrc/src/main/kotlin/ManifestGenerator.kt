@@ -16,7 +16,8 @@ object ManifestGenerator {
     val manifestFile = File(manifest)
 
     if (!indexFile.exists() || !manifestFile.exists()) {
-      throw GradleException("Can't find index or manifest file for ${extension.name}")
+      throw GradleException("Can't find index or manifest file for ${extension.name}. Is this " +
+        "module annotated with @Extension?")
     }
 
     val extClass = indexFile.readLines().first()
