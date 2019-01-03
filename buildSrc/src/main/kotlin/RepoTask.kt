@@ -62,11 +62,11 @@ open class RepoTask : DefaultTask() {
     val metadata = lines.filter { it.startsWith("meta-data") }
       .map { METADATA.find(it)!!.groupValues.let { Metadata(it[1], it[2]) } }
 
-    val sourceName = metadata.find { it.name == "source.name" }?.value ?: ""
-    val lang = metadata.find { it.name == "source.lang" }?.value ?: ""
-    val description = metadata.find { it.name == "source.description" }?.value ?: ""
-    val nsfw = metadata.find { it.name == "source.nsfw" }?.value == "1"
-    val id = metadata.find { it.name == "source.id" }?.value?.drop(1)?.toLong() ?: 0
+    val id = metadata.first { it.name == "source.id" }.value.drop(1).toLong()
+    val sourceName = metadata.first { it.name == "source.name" }.value
+    val lang = metadata.first { it.name == "source.lang" }.value
+    val description = metadata.first { it.name == "source.description" }.value
+    val nsfw = metadata.first { it.name == "source.nsfw" }.value == "1"
 
     return Badging(pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
       nsfw)
