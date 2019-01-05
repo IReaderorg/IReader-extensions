@@ -1,8 +1,3 @@
-import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.artifacts.dsl.DependencyHandler
-import org.gradle.kotlin.dsl.DependencyHandlerScope
-import org.gradle.kotlin.dsl.project
-
 object Deps {
 
   object kotlin {

@@ -1,11 +1,9 @@
-
 import groovy.util.Node
 import groovy.util.NodeList
 import groovy.util.XmlNodePrinter
 import groovy.util.XmlParser
 import org.gradle.api.GradleException
 import java.io.File
-import java.io.PrintWriter
 
 @Suppress("unused")
 object ManifestGenerator {

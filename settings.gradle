@@ -1,9 +1,5 @@
 include(":annotations")
-project(":annotations").projectDir = file("processor/annotations")
-
 include(":compiler")
-project(":compiler").projectDir = file("processor/compiler")
-
 include(":deeplink")
 include(":defaultRes")
 

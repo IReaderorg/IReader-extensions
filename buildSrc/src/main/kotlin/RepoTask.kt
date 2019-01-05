@@ -3,10 +3,8 @@ import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.sdklib.BuildToolInfo
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import groovy.lang.Closure
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.Task
 import org.gradle.api.tasks.TaskAction
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -14,40 +12,45 @@ import java.util.zip.ZipFile
 
 open class RepoTask : DefaultTask() {
 
+  private val aapt by lazy { getAaptPath() }
+
+  init {
+    val repoTask = this
+    project.gradle.projectsEvaluated {
+      project.subprojects.forEach {
+        it.tasks.findByName("assembleDebug")?.let { repoTask.mustRunAfter(it) }
+        it.tasks.findByName("assembleRelease")?.let { repoTask.mustRunAfter(it) }
+      }
+    }
+  }
+
   @TaskAction
   fun generate() {
-    val repoDir = "${project.buildDir}/repo"
-    val apkDir = "$repoDir/apk"
-    val repoDirFile = File(repoDir)
-    val apkDirFile = File(apkDir)
-    val iconDirFile = File(repoDir, "icon")
+    val repoDir = File(project.buildDir, "repo")
+    val apkDir = File(repoDir, "apk")
+    val iconDir = File(repoDir, "icon")
 
-    repoDirFile.deleteRecursively()
-    repoDirFile.mkdirs()
+    repoDir.deleteRecursively()
+    repoDir.mkdirs()
 
     extractApks(apkDir)
 
-    if (apkDirFile.listFiles().isEmpty()) {
-      throw GradleException("The repo directory doesn't have any apk. Rerun this task after " +
-        "executing the :assembleDebug or :assembleRelease tasks")
-    }
-
-    val badgings = parseBadgings(apkDirFile, getAaptPath())
+    val badgings = parseBadgings(apkDir)
     ensureValidState(badgings)
-    extractIcons(apkDirFile, iconDirFile, badgings)
+    extractIcons(apkDir, iconDir, badgings)
     generateRepo(repoDir, badgings)
   }
 
-  private fun parseBadgings(apkDir: File, aaptPath: String): List<Badging> {
+  private fun parseBadgings(apkDir: File): List<Badging> {
     return apkDir.listFiles()
       .filter { it.extension == "apk" }
-      .map { apk -> parseBadging(apk, aaptPath) }
+      .map { apk -> parseBadging(apk) }
   }
 
-  private fun parseBadging(apkFile: File, aaptPath: String): Badging {
+  private fun parseBadging(apkFile: File): Badging {
     val lines = ByteArrayOutputStream().use { outStream ->
       project.exec {
-        commandLine(aaptPath,
+        commandLine(aapt,
           "dump",
           "--include-meta-data",
           "badging",
@@ -57,7 +60,7 @@ open class RepoTask : DefaultTask() {
       outStream.toString().lines()
     }
 
-    val (pkgName, vcode, vname) = PATTERN.find(lines.first())!!.destructured
+    val (pkgName, vcode, vname) = PACKAGE.find(lines.first())!!.destructured
 
     val metadata = lines.filter { it.startsWith("meta-data") }
       .map { METADATA.find(it)!!.groupValues.let { Metadata(it[1], it[2]) } }
@@ -91,13 +94,18 @@ open class RepoTask : DefaultTask() {
     }
   }
 
-  private fun extractApks(destDir: String) {
+  private fun extractApks(destDir: File) {
     project.copy {
       from(project.subprojects.map { it.buildDir })
       include("**/*.apk")
       into(destDir)
       eachFile { path = name }
       includeEmptyDirs = false
+    }
+
+    if (destDir.listFiles().orEmpty().isEmpty()) {
+      throw GradleException("The repo directory doesn't have any apk. Rerun this task after " +
+        "executing the :assembleDebug or :assembleRelease tasks")
     }
   }
 
@@ -116,7 +124,7 @@ open class RepoTask : DefaultTask() {
     }
   }
 
-  private fun generateRepo(repoDir: String, badgings: List<Badging>) {
+  private fun generateRepo(repoDir: File, badgings: List<Badging>) {
     File(repoDir, "index.min.json").writer().use {
       Gson().toJson(badgings, it)
     }
@@ -136,7 +144,7 @@ open class RepoTask : DefaultTask() {
   }
 
   private companion object {
-    val PATTERN = Regex("^package: name='([^']+)' versionCode='([0-9]*)' versionName='([^']*)'.*$")
+    val PACKAGE = Regex("^package: name='([^']+)' versionCode='([0-9]*)' versionName='([^']*)'.*$")
     val METADATA = Regex("^meta-data: name='([^']*)' value='([^']*)")
   }
 
