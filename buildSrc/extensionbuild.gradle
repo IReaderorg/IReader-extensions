@@ -56,6 +56,20 @@ android {
       enabled = false
     }
   }
+
+  if (System.getenv("STORE_PATH") != null) {
+    signingConfigs {
+      sign {
+        storeFile file(System.getenv("STORE_PATH"))
+        keyAlias System.getenv("STORE_ALIAS")
+        storePassword System.getenv("STORE_PASS")
+        keyPassword System.getenv("KEY_PASS")
+      }
+    }
+    buildTypes.all {
+      signingConfig signingConfigs.sign
+    }
+  }
 }
 
 dependencies {
