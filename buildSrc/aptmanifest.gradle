@@ -12,17 +12,15 @@ kapt {
 
 afterEvaluate {
   android.applicationVariants.all {
-    def variantCapital = name.capitalize()
+    def variant = name.capitalize()
     // We need to run kapt before the manifest processor
-    tasks.forEach {
-      if (it.name.contains("kaptGenerateStubs")) {
-        it.setDependsOn([])
-      }
+    tasks.named("kaptGenerateStubs${variant}Kotlin").configure {
+      it.setDependsOn([])
     }
 
     outputs.forEach { output ->
       output.processManifestProvider.configure {
-        setDependsOn(["kapt${variantCapital}Kotlin"])
+        setDependsOn(["kapt${variant}Kotlin"])
 
         doLast {
           def outputDirectory = manifestOutputDirectory.get().asFile
