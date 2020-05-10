@@ -22,7 +22,7 @@ afterEvaluate {
 
     outputs.forEach { output ->
       output.processManifestProvider.configure {
-        dependsOn("kaptGenerateStubs${variantCapital}Kotlin")
+        setDependsOn(["kapt${variantCapital}Kotlin"])
 
         doLast {
           def outputDirectory = manifestOutputDirectory.get().asFile

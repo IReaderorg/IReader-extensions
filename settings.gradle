@@ -1,7 +1,7 @@
-include(":annotations")
-include(":compiler")
-include(":deeplink")
-include(":defaultRes")
+include(':annotations')
+include(':compiler')
+include(':deeplink')
+include(':defaultRes')
 
 new File(rootDir, "extensions").eachDir { dir ->
   if (new File(dir, "build.gradle.kts").exists()) {

@@ -65,7 +65,7 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
     return Regex("""(?<=Ch\.) *([0-9]+)(\.[0-9]+)?""")
   }
 
-  override fun fetchMangaList(listing: Listing?, page: Int): MangasPageInfo {
+  override suspend fun fetchMangaList(sort: Listing?, page: Int): MangasPageInfo {
     val request = GET("$baseUrl/titles/0/$page", headers)
     val document = client.newCall(request).execute().asJsoup()
 
@@ -87,15 +87,15 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
     return MangasPageInfo(mangas, hasNextPage)
   }
 
-  override fun fetchMangaList(filters: FilterList, page: Int): MangasPageInfo {
+  override suspend fun fetchMangaList(filters: FilterList, page: Int): MangasPageInfo {
     return fetchMangaList(null, 1)
   }
 
-  override fun fetchMangaDetails(manga: MangaInfo): MangaInfo {
+  override suspend fun fetchMangaDetails(manga: MangaInfo): MangaInfo {
     val request = GET(baseUrl + API_MANGA + getMangaId(manga.key), headers)
     val response = client.newCall(request).execute()
 
-    val jsonData = response.body()!!.string()
+    val jsonData = response.body!!.string()
     val json = JsonParser().parse(jsonData).asJsonObject
     val mangaJson = json.getAsJsonObject("manga")
     val title = mangaJson.get("title").string
@@ -111,7 +111,6 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
 //        genres.add(genre.name)
 //      }
 //    }
-    val genre = genres.joinToString(", ")
 
     return MangaInfo(
       key = "",
@@ -119,19 +118,18 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
       artist = artist,
       author = author,
       description = description,
-      genres = genre,
+      genres = genres,
       status = status,
-      cover = cover,
-      initialized = true
+      cover = cover
     )
   }
 
-  override fun fetchChapterList(manga: MangaInfo): List<ChapterInfo> {
+  override suspend fun fetchChapterList(manga: MangaInfo): List<ChapterInfo> {
     val request = GET(baseUrl + API_MANGA + getMangaId(manga.key), headers)
     val response = client.newCall(request).execute()
 
     val now = Date().time
-    var jsonData = response.body()!!.string()
+    var jsonData = response.body!!.string()
     val json = JsonParser().parse(jsonData).asJsonObject
     val chapterJson = json.getAsJsonObject("chapter")
     val chapters = mutableListOf<ChapterInfo>()
@@ -149,7 +147,7 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
     return chapters
   }
 
-  override fun fetchPageList(chapter: ChapterInfo): List<PageInfo> {
+  override suspend fun fetchPageList(chapter: ChapterInfo): List<PageInfo> {
     TODO()
   }
 
@@ -309,7 +307,7 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
   override fun findMangaKey(chapterKey: String): String? {
     val request = GET(baseUrl + chapterKey, headers)
     val response = client.newCall(request).execute()
-    val body = response.body()?.string() ?: return null
+    val body = response.body?.string() ?: return null
 
     val document = Jsoup.parse(body)
     val mangaId = document.getElementsByTag("meta")
