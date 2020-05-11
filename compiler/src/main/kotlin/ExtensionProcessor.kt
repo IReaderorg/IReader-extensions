@@ -181,7 +181,7 @@ class ExtensionProcessor : AbstractProcessor() {
       .addType(classBuilder.build())
       .build()
 
-    val kaptKotlinGeneratedDir = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]
+    val kaptKotlinGeneratedDir = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]!!
     file.writeTo(File(kaptKotlinGeneratedDir))
 
     File(kaptKotlinGeneratedDir, "index.txt").writeText("$pkgName.$fileName\n")

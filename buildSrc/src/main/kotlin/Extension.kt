@@ -26,7 +26,7 @@ fun Project.register(extensions: List<Extension>) {
   extra["extensionList"] = extensions
   apply {
     from("$rootDir/buildSrc/extensionbuild.gradle")
-    from("$rootDir/buildSrc/aptmanifest.gradle")
+    from("$rootDir/buildSrc/injectmanifest.gradle")
   }
 }
 
