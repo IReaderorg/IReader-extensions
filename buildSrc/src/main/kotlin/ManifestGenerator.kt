@@ -1,24 +1,40 @@
+import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import groovy.util.Node
 import groovy.util.NodeList
 import groovy.util.XmlNodePrinter
 import groovy.util.XmlParser
 import org.gradle.api.GradleException
+import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
+import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
+import org.jetbrains.kotlin.com.intellij.openapi.util.Disposer
+import org.jetbrains.kotlin.com.intellij.psi.PsiManager
+import org.jetbrains.kotlin.com.intellij.testFramework.LightVirtualFile
+import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.idea.KotlinFileType
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtFile
 import java.io.File
 
 @Suppress("unused")
 object ManifestGenerator {
 
+  private val project by lazy {
+    KotlinCoreEnvironment.createForProduction(
+      Disposer.newDisposable(),
+      CompilerConfiguration(),
+      EnvironmentConfigFiles.JVM_CONFIG_FILES
+    ).project
+  }
+
   @JvmStatic
-  fun process(index: String, manifest: String, extension: Extension) {
-    val indexFile = File(index)
+  fun process(manifest: String, extension: Extension, sources: List<DefaultAndroidSourceSet>) {
     val manifestFile = File(manifest)
 
-    if (!indexFile.exists() || !manifestFile.exists()) {
-      throw GradleException("Can't find index or manifest file for ${extension.name}. Is this " +
-        "module annotated with @Extension?")
+    if (!manifestFile.exists()) {
+      throw GradleException("Can't find manifest file for ${extension.name}")
     }
 
-    val extClass = indexFile.readLines().first()
+    val extClass = findExtension(extension, sources) + "Gen" // This is a suffix added by kapt
     val parser = XmlParser().parse(manifestFile)
 
     // Get package name and append the language
@@ -72,4 +88,46 @@ object ManifestGenerator {
     }
   }
 
+  private fun findExtension(extension: Extension, sources: List<DefaultAndroidSourceSet>): String {
+    val srcDirs = sources.reversed()
+      .flatMap { it.javaDirectories }
+      .toSet()
+
+    for (srcDir in srcDirs) {
+      val foundExtensions = findExtensionClasses(srcDir)
+      when (foundExtensions.size) {
+        0 -> {}
+        1 -> return foundExtensions.first()
+        else -> throw GradleException("More than one class annotated with @Extension was " +
+          "found for ${extension.name}")
+      }
+    }
+
+    throw GradleException("Can't find any class annotated with @Extension for ${extension.name}")
+  }
+
+  private fun findExtensionClasses(sourceDir: File): List<String> {
+    if (!sourceDir.exists()) {
+      return emptyList()
+    }
+
+    return sourceDir.walkTopDown()
+      .toList()
+      .filter { it.isFile && it.extension == "kt" }
+      .flatMap { file ->
+        val kt = createKtFile(file.readText(), file.name)
+        kt.children
+          .filterIsInstance<KtClass>()
+          .filter { cls ->
+            cls.annotationEntries.any { it.shortName?.identifier == "Extension" }
+          }
+          .mapNotNull { it.fqName }
+      }
+      .map { it.asString() }
+  }
+
+  private fun createKtFile(codeString: String, fileName: String): KtFile {
+    return PsiManager.getInstance(project)
+      .findFile(LightVirtualFile(fileName, KotlinFileType.INSTANCE, codeString)) as KtFile
+  }
 }

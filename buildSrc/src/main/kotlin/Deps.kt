@@ -2,7 +2,7 @@ object Deps {
 
   object kotlin {
     const val version = "1.4.10"
-    const val stdlib = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$version"
+    const val stdlib = "org.jetbrains.kotlin:kotlin-stdlib:$version"
   }
 
   const val autoservice = "com.google.auto.service:auto-service:1.0-rc4"

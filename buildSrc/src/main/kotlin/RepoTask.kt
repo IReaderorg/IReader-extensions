@@ -140,7 +140,9 @@ open class RepoTask : DefaultTask() {
     val globalScope = BaseExtension::class.java.getDeclaredField("globalScope").apply {
       isAccessible = true
     }.get(androidExtension) as GlobalScope
-    return globalScope.sdkComponents.buildToolInfoProvider.get().getPath(BuildToolInfo.PathId.AAPT)
+    val sdkComponents = globalScope.sdkComponents
+    val buildToolInfo = sdkComponents.buildToolInfoProvider.get()
+    return buildToolInfo.getPath(BuildToolInfo.PathId.AAPT)
   }
 
   private companion object {

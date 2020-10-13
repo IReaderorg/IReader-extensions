@@ -12,25 +12,16 @@ kapt {
 
 afterEvaluate {
   android.applicationVariants.all {
-    def variant = name.capitalize()
-    // We need to run kapt before the manifest processor
-    tasks.named("kaptGenerateStubs${variant}Kotlin").configure {
-      it.setDependsOn([])
-    }
+    def sources = sourceSets
 
     outputs.forEach { output ->
       output.processManifestProvider.configure {
-        setDependsOn(["kapt${variant}Kotlin"])
-
         doLast {
           def outputDirectory = manifestOutputDirectory.get().asFile
-          def flavorDir = outputDirectory.name
-          def kaptDir = project.buildDir.absolutePath + "/generated/source/kaptKotlin/" + flavorDir
           def manifestFile = new File(outputDirectory, "AndroidManifest.xml").absolutePath
-          def extIndexFile = new File(kaptDir, "index.txt").absolutePath
 
           def extension = productFlavors[0].ext.extension
-          ManifestGenerator.process(extIndexFile, manifestFile, extension)
+          ManifestGenerator.process(manifestFile, extension, sources)
         }
       }
     }
