@@ -82,10 +82,12 @@ android {
 
 dependencies {
   implementation project(Proj.defaultRes)
-  compileOnly Deps.tachiyomiCore
-  compileOnly Deps.sourceApi
+  compileOnly Deps.tachiyomiCommon
+  compileOnly Deps.tachiyomiSourceApi
+
   compileOnly Deps.okhttp
   compileOnly Deps.jsoup
+
   compileOnly Deps.gson
   compileOnly Deps.kotson
 
