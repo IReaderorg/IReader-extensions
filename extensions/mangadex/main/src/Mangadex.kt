@@ -20,7 +20,7 @@ import tachiyomi.source.model.FilterList
 import tachiyomi.source.model.Listing
 import tachiyomi.source.model.MangaInfo
 import tachiyomi.source.model.MangasPageInfo
-import tachiyomi.source.model.PageInfo
+import tachiyomi.source.model.Page
 import tachiyomi.source.util.asJsoup
 import tachiyomix.annotations.Extension
 import java.net.URLEncoder
@@ -65,7 +65,7 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
     return Regex("""(?<=Ch\.) *([0-9]+)(\.[0-9]+)?""")
   }
 
-  override suspend fun fetchMangaList(sort: Listing?, page: Int): MangasPageInfo {
+  override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
     val request = GET("$baseUrl/titles/0/$page", headers)
     val document = client.newCall(request).execute().asJsoup()
 
@@ -87,11 +87,11 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
     return MangasPageInfo(mangas, hasNextPage)
   }
 
-  override suspend fun fetchMangaList(filters: FilterList, page: Int): MangasPageInfo {
-    return fetchMangaList(null, 1)
+  override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+    return getMangaList(null, 1)
   }
 
-  override suspend fun fetchMangaDetails(manga: MangaInfo): MangaInfo {
+  override suspend fun getMangaDetails(manga: MangaInfo): MangaInfo {
     val request = GET(baseUrl + API_MANGA + getMangaId(manga.key), headers)
     val response = client.newCall(request).execute()
 
@@ -124,7 +124,7 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
     )
   }
 
-  override suspend fun fetchChapterList(manga: MangaInfo): List<ChapterInfo> {
+  override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
     val request = GET(baseUrl + API_MANGA + getMangaId(manga.key), headers)
     val response = client.newCall(request).execute()
 
@@ -147,7 +147,7 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
     return chapters
   }
 
-  override suspend fun fetchPageList(chapter: ChapterInfo): List<PageInfo> {
+  override suspend fun getPageList(chapter: ChapterInfo): List<Page> {
     TODO()
   }
 

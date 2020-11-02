@@ -7,7 +7,7 @@ import tachiyomi.source.model.FilterList
 import tachiyomi.source.model.Listing
 import tachiyomi.source.model.MangaInfo
 import tachiyomi.source.model.MangasPageInfo
-import tachiyomi.source.model.PageInfo
+import tachiyomi.source.model.Page
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -15,23 +15,23 @@ abstract class SingleSiteMultiLang(deps: Dependencies): HttpSource(deps) {
 
   override val baseUrl = ""
 
-  override fun fetchChapterList(manga: MangaInfo): List<ChapterInfo> {
+  override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
     throw Exception("TODO")
   }
 
-  override fun fetchMangaDetails(manga: MangaInfo): MangaInfo {
+  override suspend fun getMangaDetails(manga: MangaInfo): MangaInfo {
     throw Exception("TODO")
   }
 
-  override fun fetchMangaList(filters: FilterList, page: Int): MangasPageInfo {
+  override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
     throw Exception("TODO")
   }
 
-  override fun fetchMangaList(sort: Listing?, page: Int): MangasPageInfo {
+  override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
     throw Exception("TODO")
   }
 
-  override fun fetchPageList(chapter: ChapterInfo): List<PageInfo> {
+  override suspend fun getPageList(chapter: ChapterInfo): List<Page> {
     throw Exception("TODO")
   }
 
