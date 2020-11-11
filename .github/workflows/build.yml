@@ -46,16 +46,25 @@ jobs:
           mkdir -p ~/.gradle
           cp .github/runner-files/ci-gradle.properties ~/.gradle/gradle.properties
 
-      # TODO: this should be a release build with proper signing
       - name: Build extensions and create repo artifacts
         uses: eskatos/gradle-command-action@v1
         with:
           build-root-directory: master
           wrapper-directory: master
-          arguments: assembleDebug repo
+          arguments: assembleRelease repo
           wrapper-cache-enabled: true
           dependencies-cache-enabled: true
           configuration-cache-enabled: true
+
+      - name: Sign APKs
+        if: github.event_name == 'push' && github.repository == 'tachiyomiorg/extensions'
+        run: |
+          cd master
+          ./.github/runner-files/sign-apks.sh \
+            ${{ secrets.SIGNING_KEY }} \
+            ${{ secrets.ALIAS }} \
+            ${{ secrets.KEY_STORE_PASSWORD }} \
+            ${{ secrets.KEY_PASSWORD }}
 
       - name: Checkout repo branch
         if: github.event_name == 'push' && github.repository == 'tachiyomiorg/extensions'
@@ -68,10 +77,14 @@ jobs:
         if: github.event_name == 'push' && github.repository == 'tachiyomiorg/extensions'
         run: |
           cd repo
-          rsync -a --delete --exclude .git ../master/build/repo/ .
+          rsync -a --delete --exclude .git --exclude .gitignore ../master/build/repo/ .
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
           git status
-          git add .
-          git commit -m "Update extensions repo"
-          git push
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Update extensions repo"
+            git push
+          else
+            echo "No changes to commit"
+          fi
