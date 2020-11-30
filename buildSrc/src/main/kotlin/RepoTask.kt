@@ -140,7 +140,7 @@ open class RepoTask : DefaultTask() {
     val globalScope = BaseExtension::class.java.getDeclaredField("globalScope").apply {
       isAccessible = true
     }.get(androidExtension) as GlobalScope
-    val sdkComponents = globalScope.sdkComponents
+    val sdkComponents = globalScope.sdkComponents.get()
     val buildToolInfo = sdkComponents.buildToolInfoProvider.get()
     return buildToolInfo.getPath(BuildToolInfo.PathId.AAPT)
   }
