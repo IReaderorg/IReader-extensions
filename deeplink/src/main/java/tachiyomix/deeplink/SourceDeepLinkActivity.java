@@ -3,6 +3,7 @@ package tachiyomix.deeplink;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -10,17 +11,16 @@ public class SourceDeepLinkActivity extends Activity {
 
   private static final String TAG = "SourceDeepLinkActivity";
 
-  static final String ACTION = "tachiyomi.action.HANDLE_LINK";
-
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    Intent intent = getIntent();
-
-    Intent forward = new Intent(ACTION);
-    forward.setData(intent.getData());
-    forward.putExtra(Intent.EXTRA_REFERRER, getPackageName());
+    Intent forward = new Intent(Intent.ACTION_VIEW);
+    forward.setData(Uri.parse(String.format(
+            "tachiyomi://deeplink/%s?data=%s",
+            getPackageName(),
+            getIntent().getData().toString()
+    )));
 
     try {
       startActivity(forward);
