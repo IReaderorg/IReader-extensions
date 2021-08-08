@@ -12,7 +12,7 @@ import java.util.zip.ZipFile
 
 open class RepoTask : DefaultTask() {
 
-  private val aapt by lazy { getAaptPath() }
+  private val aapt2 by lazy { getAapt2Path() }
 
   init {
     val repoTask = this
@@ -50,10 +50,10 @@ open class RepoTask : DefaultTask() {
   private fun parseBadging(apkFile: File): Badging {
     val lines = ByteArrayOutputStream().use { outStream ->
       project.exec {
-        commandLine(aapt,
+        commandLine(aapt2,
           "dump",
-          "--include-meta-data",
           "badging",
+          "--include-meta-data",
           apkFile.absolutePath)
         standardOutput = outStream
       }
@@ -62,7 +62,12 @@ open class RepoTask : DefaultTask() {
 
     val (pkgName, vcode, vname) = PACKAGE.find(lines.first())!!.destructured
 
-    val metadata = lines.filter { it.startsWith("meta-data") }
+    val iconPath = lines
+      .last { it.startsWith("application-icon-") }
+      .let { APPLICATION_ICON.find(it)!!.groupValues.let { it[1] } }
+
+    val metadata = lines
+      .filter { it.startsWith("meta-data") }
       .map { METADATA.find(it)!!.groupValues.let { Metadata(it[1], it[2]) } }
 
     val id = metadata.first { it.name == "source.id" }.value.drop(1).toLong()
@@ -71,7 +76,7 @@ open class RepoTask : DefaultTask() {
     val description = metadata.first { it.name == "source.description" }.value
     val nsfw = metadata.first { it.name == "source.nsfw" }.value == "1"
 
-    return Badging(pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
+    return Badging(pkgName, apkFile.name, iconPath, sourceName, id, lang, vcode.toInt(), vname, description,
       nsfw)
   }
 
@@ -115,7 +120,7 @@ open class RepoTask : DefaultTask() {
     badgings.forEach { badging ->
       val apkFile = File(apkDir, badging.apk)
       ZipFile(apkFile).use { zip ->
-        val icon = zip.getEntry("res/mipmap-xhdpi-v4/ic_launcher.png")
+        val icon = zip.getEntry(badging.iconPath)
         val dest = File(destDir, "${apkFile.nameWithoutExtension}.png")
         zip.getInputStream(icon).use { input ->
           dest.outputStream().use { input.copyTo(it) }
@@ -134,33 +139,37 @@ open class RepoTask : DefaultTask() {
     }
   }
 
-  private fun getAaptPath(): String {
+  private fun getAapt2Path(): String {
     val androidProject = project.subprojects.first { it.hasProperty("android") }
     val androidExtension = androidProject.properties["android"] as BaseExtension
     val globalScope = BaseExtension::class.java.getDeclaredField("globalScope").apply {
       isAccessible = true
     }.get(androidExtension) as GlobalScope
-    val sdkComponents = globalScope.sdkComponents.get()
-    val buildToolInfo = sdkComponents.buildToolInfoProvider.get()
-    return buildToolInfo.getPath(BuildToolInfo.PathId.AAPT)
+    val buildToolInfo = globalScope.versionedSdkLoader.get().buildToolInfoProvider.get()
+    return buildToolInfo.getPath(BuildToolInfo.PathId.AAPT2)
   }
 
   private companion object {
     val PACKAGE = Regex("^package: name='([^']+)' versionCode='([0-9]*)' versionName='([^']*)'.*$")
     val METADATA = Regex("^meta-data: name='([^']*)' value='([^']*)")
+    val APPLICATION_ICON = Regex("^application-icon-\\d+:'([^']*)'$")
   }
 
-  private data class Metadata(val name: String, val value: String)
+  private data class Metadata(
+    val name: String,
+    val value: String,
+  )
 
   private data class Badging(
     val pkg: String,
     val apk: String,
+    val iconPath: String,
     val name: String,
     val id: Long,
     val lang: String,
     val code: Int,
     val version: String,
     val description: String,
-    val nsfw: Boolean
+    val nsfw: Boolean,
   )
 }

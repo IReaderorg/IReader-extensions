@@ -1,9 +1,12 @@
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import groovy.util.Node
 import groovy.util.NodeList
-import groovy.util.XmlNodePrinter
-import groovy.util.XmlParser
+import groovy.xml.XmlNodePrinter
+import groovy.xml.XmlParser
 import org.gradle.api.GradleException
+import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
+import org.jetbrains.kotlin.cli.common.messages.MessageRenderer.PLAIN_RELATIVE_PATHS
+import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.com.intellij.openapi.util.Disposer
@@ -21,7 +24,12 @@ object ManifestGenerator {
   private val project by lazy {
     KotlinCoreEnvironment.createForProduction(
       Disposer.newDisposable(),
-      CompilerConfiguration(),
+      CompilerConfiguration().apply {
+        put(
+          CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY,
+          PrintingMessageCollector(System.err, PLAIN_RELATIVE_PATHS, false)
+        )
+      },
       EnvironmentConfigFiles.JVM_CONFIG_FILES
     ).project
   }

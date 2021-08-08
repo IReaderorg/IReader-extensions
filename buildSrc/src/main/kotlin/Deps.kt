@@ -12,7 +12,7 @@ object Deps {
 
   const val okhttp = "com.squareup.okhttp3:okhttp:4.10.0-RC1"
   const val jsoup = "org.jsoup:jsoup:1.13.1"
-  const val gson = "com.google.code.gson:gson:2.8.5"
+  const val gson = "com.google.code.gson:gson:2.8.7"
   const val kotson = "com.github.salomonbrys.kotson:kotson:2.5.0"
 
 }
