@@ -1,8 +1,11 @@
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.sdklib.BuildToolInfo
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.TaskAction
@@ -10,6 +13,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipFile
 
+@OptIn(ExperimentalSerializationApi::class)
 open class RepoTask : DefaultTask() {
 
   private val aapt2 by lazy { getAapt2Path() }
@@ -76,11 +80,11 @@ open class RepoTask : DefaultTask() {
     val description = metadata.first { it.name == "source.description" }.value
     val nsfw = metadata.first { it.name == "source.nsfw" }.value == "1"
 
-    return Badging(pkgName, apkFile.name, iconPath, sourceName, id, lang, vcode.toInt(), vname, description,
-      nsfw)
+    return Badging(pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
+      nsfw, iconPath)
   }
 
-  private fun ensureValidState(badgings: List<RepoTask.Badging>) {
+  private fun ensureValidState(badgings: List<Badging>) {
     val samePkgs = badgings.groupBy { it.pkg }
       .filter { it.value.size > 1 }
       .map { it.key }
@@ -131,11 +135,14 @@ open class RepoTask : DefaultTask() {
 
   private fun generateRepo(repoDir: File, badgings: List<Badging>) {
     File(repoDir, "index.min.json").writer().use {
-      Gson().toJson(badgings, it)
+      it.write(Json.encodeToString(badgings))
     }
 
     File(repoDir, "index.json").writer().use {
-      GsonBuilder().setPrettyPrinting().create().toJson(badgings, it)
+      it.write(Json {
+        prettyPrint = true
+        prettyPrintIndent = "  "
+      }.encodeToString(badgings))
     }
   }
 
@@ -160,10 +167,10 @@ open class RepoTask : DefaultTask() {
     val value: String,
   )
 
+  @Serializable
   private data class Badging(
     val pkg: String,
     val apk: String,
-    val iconPath: String,
     val name: String,
     val id: Long,
     val lang: String,
@@ -171,5 +178,7 @@ open class RepoTask : DefaultTask() {
     val version: String,
     val description: String,
     val nsfw: Boolean,
+    @Transient
+    val iconPath: String = "",
   )
 }
