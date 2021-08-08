@@ -20,6 +20,7 @@ jobs:
     needs: check_wrapper
     runs-on: ubuntu-latest
 
+    steps:
       - name: Checkout PR
         uses: actions/checkout@v2
 
