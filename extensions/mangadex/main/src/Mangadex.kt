@@ -297,9 +297,8 @@ abstract class Mangadex(private val deps: Dependencies): HttpSource(deps), DeepL
   override fun handleLink(url: String): DeepLink? {
     return when {
       "/chapter/" in url ->
-        DeepLink.Chapter("/chapter/" + url.substringAfter("chapter/").substringBefore("/"))
-      "/title/" in url -> DeepLink.Manga(url.substringAfter("mangadex.org")
-        .substringBeforeLast("/") + "/")
+        DeepLink.Chapter(url.substringAfter("/chapter/").substringBefore("/"))
+      "/title/" in url -> DeepLink.Manga(url.substringAfter("/title/").substringBefore("/"))
       else -> null
     }
   }

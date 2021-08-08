@@ -17,7 +17,7 @@ public class SourceDeepLinkActivity extends Activity {
 
     Intent forward = new Intent(Intent.ACTION_VIEW);
     forward.setData(Uri.parse(String.format(
-            "tachiyomi://deeplink/%s?data=%s",
+            "tachiyomi://deeplink/%s?url=%s",
             getPackageName(),
             getIntent().getData().toString()
     )));
