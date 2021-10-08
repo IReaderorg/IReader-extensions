@@ -1,5 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "kotlin-android"
+apply plugin: "kotlinx-serialization"
 
 android {
   compileSdkVersion Config.compileSdk
@@ -82,14 +83,11 @@ android {
 
 dependencies {
   implementation project(Proj.defaultRes)
-  compileOnly Deps.tachiyomiCommon
+  compileOnly Deps.tachiyomiCore
   compileOnly Deps.tachiyomiSourceApi
 
   compileOnly Deps.okhttp
   compileOnly Deps.jsoup
-
-  compileOnly Deps.gson
-  compileOnly Deps.kotson
 
   extensionList.each { extension ->
     if (!extension.deepLinks.empty) {

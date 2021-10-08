@@ -1,13 +1,13 @@
-include(':annotations')
-include(':compiler')
-include(':deeplink')
-include(':defaultRes')
+include(":annotations")
+include(":compiler")
+include(":deeplink")
+include(":defaultRes")
 
-new File(rootDir, "extensions").eachDir { dir ->
-  if (new File(dir, "build.gradle.kts").exists()) {
-    String name = ":ext-${dir.name}"
-    include name
-    project(name).projectDir = new File("extensions/${dir.name}")
+File(rootDir, "extensions").listFiles().forEach { dir ->
+  if (File(dir, "build.gradle.kts").exists()) {
+    val name = ":ext-${dir.name}"
+    include(name)
+    project(name).projectDir = File("extensions/${dir.name}")
   }
 }
 
