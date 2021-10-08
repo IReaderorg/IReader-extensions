@@ -1,7 +1,7 @@
 object Deps {
 
   object kotlin {
-    const val version = "1.5.21"
+    const val version = "1.5.31"
   }
 
   const val autoservice = "com.google.auto.service:auto-service:1.0-rc4"

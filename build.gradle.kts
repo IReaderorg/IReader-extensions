@@ -18,4 +18,4 @@ allprojects {
   }
 }
 
-tasks.register<RepoTask>("repo")
+tasks.create<RepoTask>("repo")
