@@ -1,6 +1,24 @@
 plugins {
   `kotlin-dsl`
-  kotlin("plugin.serialization") version "1.5.31"
+  kotlin("plugin.serialization") version Deps.kotlin.version
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+dependencies {
+  implementation(gradleApi())
+  implementation(Deps.android.gradle)
+  implementation(Deps.android.sdklib)
+  implementation(Deps.kotlin.compilerEmbeddable)
+  implementation(Deps.kotlin.serialization)
+}
+
+kotlin {
+  // Add Deps to compilation, so it will become available in main project
+  sourceSets.getByName("main").kotlin.srcDir("buildSrc/src/main/kotlin")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
@@ -9,17 +27,4 @@ tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
       "-Xopt-in=kotlin.RequiresOptIn",
     )
   }
-}
-
-repositories {
-  mavenCentral()
-  google()
-}
-
-dependencies {
-  implementation(gradleApi())
-  implementation("com.android.tools.build:gradle:7.0.2")
-  implementation("com.android.tools:sdklib:30.0.0")
-  implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.5.31")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0")
 }
