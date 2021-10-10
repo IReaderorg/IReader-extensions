@@ -1,4 +1,4 @@
-import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
+import com.android.builder.model.SourceProvider
 import groovy.util.Node
 import groovy.util.NodeList
 import groovy.xml.XmlNodePrinter
@@ -35,7 +35,7 @@ object ManifestGenerator {
   }
 
   @JvmStatic
-  fun process(manifest: String, extension: Extension, sources: List<DefaultAndroidSourceSet>) {
+  fun process(manifest: String, extension: Extension, sources: List<SourceProvider>) {
     val manifestFile = File(manifest)
 
     if (!manifestFile.exists()) {
@@ -96,7 +96,7 @@ object ManifestGenerator {
     }
   }
 
-  private fun findExtension(extension: Extension, sources: List<DefaultAndroidSourceSet>): String {
+  private fun findExtension(extension: Extension, sources: List<SourceProvider>): String {
     val srcDirs = sources.reversed()
       .flatMap { it.javaDirectories }
       .toSet()

@@ -15,6 +15,8 @@ data class Extension(
   val flavor: String = getFlavorName(sourceDir, lang)
 )
 
+val Extension.versionName get() = "${libVersion}.${versionCode}"
+
 data class DeepLink(
   val host: String,
   val scheme: String = "https",
@@ -25,8 +27,7 @@ data class DeepLink(
 fun Project.register(extensions: List<Extension>) {
   extra["extensionList"] = extensions
   apply {
-    from("$rootDir/buildSrc/extensionbuild.gradle")
-    from("$rootDir/buildSrc/injectmanifest.gradle")
+    plugin("extension-setup")
   }
 }
 

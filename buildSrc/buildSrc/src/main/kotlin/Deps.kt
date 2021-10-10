@@ -1,9 +1,16 @@
+@Suppress("ClassName", "MemberVisibilityCanBePrivate")
 object Deps {
 
   object kotlin {
     const val version = "1.5.31"
-    const val serialization = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0"
     const val compilerEmbeddable = "org.jetbrains.kotlin:kotlin-compiler-embeddable:$version"
+    const val gradle = "org.jetbrains.kotlin:kotlin-gradle-plugin:$version"
+
+    object serialization {
+      private const val version = "1.3.0"
+      const val json = "org.jetbrains.kotlinx:kotlinx-serialization-json:$version"
+      const val gradle = "org.jetbrains.kotlin:kotlin-serialization:${kotlin.version}"
+    }
   }
 
   object android {
