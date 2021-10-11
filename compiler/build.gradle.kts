@@ -1,12 +1,10 @@
 plugins {
   id("kotlin")
-  id("kotlin-kapt")
 }
 
 dependencies {
   implementation(Deps.kotlinpoet)
-  implementation(Deps.autoservice)
-  kapt(Deps.autoservice)
+  implementation(Deps.ksp.api)
 
   implementation(project(Proj.annotation))
 }

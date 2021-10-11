@@ -8,7 +8,7 @@ plugins {
   id("com.android.application")
   id("kotlin-android")
   kotlin("plugin.serialization")
-  id("kotlin-kapt")
+  id("com.google.devtools.ksp")
 }
 
 val extensionList: List<Extension> by extra
@@ -66,14 +66,6 @@ android {
       outputFileName = "tachiyomi-${extension.lang}-${nameLower}-v${extension.versionName}.apk"
     }
   }
-  buildFeatures {
-    // Disable unused AGP features
-    buildConfig = false
-    aidl = false
-    renderScript = false
-    resValues = false
-    shaders = false
-  }
   dependenciesInfo {
     includeInApk = false
   }
@@ -98,11 +90,12 @@ dependencies {
   compileOnly(Deps.tachiyomiCore)
   compileOnly(Deps.tachiyomiSourceApi)
 
+  compileOnly(Deps.kotlin.stdlib)
   compileOnly(Deps.okhttp)
   compileOnly(Deps.jsoup)
 
   compileOnly(project(Proj.annotation))
-  kapt(project(Proj.compiler))
+  ksp(project(Proj.compiler))
 
   extensionList.forEach { extension ->
     if (extension.deepLinks.isNotEmpty()) {
@@ -111,15 +104,13 @@ dependencies {
   }
 }
 
-kapt {
-  arguments {
-    val variant = variant as ApplicationVariantImpl
-    val extension = variant.currentExtension()
-
-    arg("SOURCE_NAME", extension.name)
-    arg("SOURCE_LANG", extension.lang)
-    arg("SOURCE_ID", extension.id)
-    arg("MANIFEST_HAS_DEEPLINKS", extension.deepLinks.isNotEmpty())
+ksp {
+  extensionList.forEach { extension ->
+    val prefix = extension.flavor
+    arg("${prefix}_name", extension.name)
+    arg("${prefix}_lang", extension.lang)
+    arg("${prefix}_id", extension.id.toString())
+    arg("${prefix}_has_deeplinks", extension.deepLinks.isNotEmpty().toString())
   }
 }
 

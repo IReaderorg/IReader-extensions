@@ -42,7 +42,7 @@ object ManifestGenerator {
       throw GradleException("Can't find manifest file for ${extension.name}")
     }
 
-    val extClass = findExtension(extension, sources) + "Gen" // This is a suffix added by kapt
+    val extClass = findExtension(extension, sources) + "Gen" // This is a suffix added by ksp
     val parser = XmlParser().parse(manifestFile)
 
     // Get package name and append the language

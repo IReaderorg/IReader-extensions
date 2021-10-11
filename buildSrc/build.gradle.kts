@@ -16,6 +16,7 @@ dependencies {
   implementation(Deps.kotlin.serialization.json)
   implementation(Deps.android.gradle)
   implementation(Deps.android.sdklib)
+  implementation(Deps.ksp.gradle)
 }
 
 kotlin {
@@ -26,7 +27,7 @@ kotlin {
 tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
   kotlinOptions {
     freeCompilerArgs += listOf(
-      "-Xopt-in=kotlin.RequiresOptIn",
+      "-Xopt-in=kotlin.RequiresOptIn"
     )
   }
 }
