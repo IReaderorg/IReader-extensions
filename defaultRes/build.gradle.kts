@@ -4,10 +4,10 @@ plugins {
 }
 
 android {
-  compileSdkVersion(Config.compileSdk)
+  compileSdk = Config.compileSdk
 
   defaultConfig {
-    minSdkVersion(Config.minSdk)
+    minSdk = Config.minSdk
   }
 
   sourceSets {
@@ -16,10 +16,8 @@ android {
       res.setSrcDirs(listOf("res"))
     }
   }
+}
 
-  libraryVariants.all {
-    generateBuildConfigProvider?.configure {
-      enabled = false
-    }
-  }
+dependencies {
+  compileOnly(Deps.kotlin.stdlib)
 }

@@ -4,15 +4,13 @@ plugins {
 }
 
 android {
-  compileSdkVersion(Config.compileSdk)
+  compileSdk = Config.compileSdk
 
   defaultConfig {
-    minSdkVersion(Config.minSdk)
+    minSdk = Config.minSdk
   }
+}
 
-  libraryVariants.all {
-    generateBuildConfigProvider?.configure {
-      enabled = false
-    }
-  }
+dependencies {
+  compileOnly(Deps.kotlin.stdlib)
 }
