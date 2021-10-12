@@ -7,6 +7,7 @@ import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
+import java.io.File
 
 @KotlinPoetKspPreview
 class ExtensionProcessor(
@@ -28,7 +29,7 @@ class ExtensionProcessor(
     val arguments = parseArguments(variant)
 
     // Check that the extension is open or abstract
-    check(extension.isAbstract() || extension.isOpen()) {
+    check(extension.isOpen()) {
       "[$extension] must be open or abstract"
     }
 
@@ -140,7 +141,8 @@ class ExtensionProcessor(
   private fun getBuildDir(): String {
     val pathOf = codeGenerator::class.java
       .getDeclaredMethod("pathOf", String::class.java, String::class.java, String::class.java)
-    return pathOf.invoke(codeGenerator, "", "a", "kt") as String
+    val stubFile = pathOf.invoke(codeGenerator, "", "a", "kt") as String
+    return File(stubFile).parentFile.parent
   }
 
   // TODO: this is temporary until ksp configurations are applied per variant rather than globally

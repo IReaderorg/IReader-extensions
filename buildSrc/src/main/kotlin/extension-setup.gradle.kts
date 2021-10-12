@@ -127,7 +127,7 @@ afterEvaluate {
           val outputDirectory = multiApkManifestOutputDirectory.get().asFile
           val manifestFile = File(outputDirectory, "AndroidManifest.xml").absolutePath
 
-          ManifestGenerator.process(manifestFile, extension, sources)
+          ManifestProcessor.process(manifestFile, extension, sources)
         }
       }
     }

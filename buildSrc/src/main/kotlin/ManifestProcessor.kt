@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import java.io.File
 
 @Suppress("unused")
-object ManifestGenerator {
+object ManifestProcessor {
 
   private val project by lazy {
     KotlinCoreEnvironment.createForProduction(
