@@ -1,7 +1,6 @@
 import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl
-import com.android.build.gradle.tasks.ProcessMultiApkApplicationManifest
 import com.android.builder.model.ProductFlavor
 
 plugins {
@@ -44,7 +43,7 @@ android {
         versionName = extension.versionName
         manifestPlaceholders.putAll(mapOf(
           "appName" to "Tachiyomi: ${extension.name} (${extension.lang})",
-          "sourceId" to ":${extension.id}",
+          "sourceId" to ":${extension.sourceId}",
           "sourceName" to extension.name,
           "sourceLang" to extension.lang,
           "sourceDescription" to extension.description,
@@ -64,6 +63,8 @@ android {
       this as BaseVariantOutputImpl
       val nameLower = extension.name.toLowerCase()
       outputFileName = "tachiyomi-${extension.lang}-${nameLower}-v${extension.versionName}.apk"
+
+      processManifestForExtension(extension)
     }
   }
   dependenciesInfo {
@@ -109,28 +110,8 @@ ksp {
     val prefix = extension.flavor
     arg("${prefix}_name", extension.name)
     arg("${prefix}_lang", extension.lang)
-    arg("${prefix}_id", extension.id.toString())
+    arg("${prefix}_id", extension.sourceId.toString())
     arg("${prefix}_has_deeplinks", extension.deepLinks.isNotEmpty().toString())
-  }
-}
-
-afterEvaluate {
-  android.applicationVariants.all {
-    this as ApplicationVariantImpl
-    val sources = sourceSets
-    val extension = currentExtension()
-
-    outputs.forEach { output ->
-      output.processManifestProvider.configure {
-        doLast {
-          this as ProcessMultiApkApplicationManifest
-          val outputDirectory = multiApkManifestOutputDirectory.get().asFile
-          val manifestFile = File(outputDirectory, "AndroidManifest.xml").absolutePath
-
-          ManifestProcessor.process(manifestFile, extension, sources)
-        }
-      }
-    }
   }
 }
 

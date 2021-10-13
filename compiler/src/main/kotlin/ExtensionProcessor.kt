@@ -18,10 +18,21 @@ class ExtensionProcessor(
 
   override fun process(resolver: Resolver): List<KSAnnotated> {
     // Get all classes annotated with the Extension annotation
-    val extensions = resolver.getSymbolsWithAnnotation(EXTENSION_ANNOTATION)
+    val extensions = resolver.getSymbolsWithAnnotation(EXTENSION_FQ_ANNOTATION)
 
     // Find the extension that will be instantiated by Tachiyomi
-    val extension = getClassToGenerate(extensions) ?: return emptyList()
+    val extension = getClassToGenerate(extensions)
+
+    // If no extension is found, we either have already processed it or we forgot to annotate our
+    // implementation, so make sure we always have one
+    if (extension == null) {
+      val extensionGenerated = resolver.getClassDeclarationByName(EXTENSION_FQ_CLASS) != null
+      check(extensionGenerated) {
+        "No extension found. Please ensure at least one Source is annotated with @Extension"
+      }
+      return emptyList()
+    }
+
     val extensionType = extension.asStarProjectedType()
 
     val buildDir = getBuildDir()
@@ -34,14 +45,14 @@ class ExtensionProcessor(
     }
 
     // Check that the extension implements the Source interface
-    val sourceClass = resolver.getClassDeclarationByName(SOURCE_CLASS)!!
+    val sourceClass = resolver.getClassDeclarationByName(SOURCE_FQ_CLASS)!!
     check(sourceClass.asStarProjectedType().isAssignableFrom(extensionType)) {
       "$extension doesn't implement $sourceClass"
     }
 
     // Check that the extension implements the DeepLinkSource interface if the manifest has them
     if (arguments.hasDeeplinks) {
-      val deepLinkClass = resolver.getClassDeclarationByName(DEEPLINKSOURCE_CLASS)!!
+      val deepLinkClass = resolver.getClassDeclarationByName(DEEPLINKSOURCE_FQ_CLASS)!!
       check(deepLinkClass.asStarProjectedType().isAssignableFrom(extensionType)) {
         "Deep links of $extension were defined but the extension doesn't implement $deepLinkClass"
       }
@@ -51,7 +62,7 @@ class ExtensionProcessor(
     checkMatchesPkgName(extension, buildDir)
 
     // Generate the source implementation
-    val dependencies = resolver.getClassDeclarationByName(DEPENDENCIES_CLASS)!!
+    val dependencies = resolver.getClassDeclarationByName(DEPENDENCIES_FQ_CLASS)!!
     extension.accept(SourceVisitor(arguments, dependencies), Unit)
 
     return emptyList()
@@ -103,11 +114,7 @@ class ExtensionProcessor(
     val dependencies: KSClassDeclaration
   ) : KSVisitorVoid() {
     override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
-      val packageName = classDeclaration.packageName.asString()
-      val sourceName = classDeclaration.simpleName.asString()
-      val fileName = "${sourceName}Gen"
-
-      val classBuilder = TypeSpec.classBuilder(fileName)
+      val classSpec = TypeSpec.classBuilder(EXTENSION_CLASS)
         .primaryConstructor(
           FunSpec.constructorBuilder()
             .addParameter("deps", dependencies.toClassName())
@@ -130,9 +137,10 @@ class ExtensionProcessor(
             .initializer("%L", arguments.id)
             .build()
         )
+        .build()
 
-      FileSpec.builder(packageName, fileName)
-        .addType(classBuilder.build())
+      FileSpec.builder(EXTENSION_PACKAGE, EXTENSION_CLASS)
+        .addType(classSpec)
         .build()
         .writeTo(codeGenerator, Dependencies(false, classDeclaration.containingFile!!))
     }
@@ -168,10 +176,13 @@ class ExtensionProcessor(
   )
 
   private companion object {
-    const val EXTENSION_ANNOTATION = "tachiyomix.annotations.Extension"
-    const val SOURCE_CLASS = "tachiyomi.source.Source"
-    const val DEEPLINKSOURCE_CLASS = "tachiyomi.source.DeepLinkSource"
-    const val DEPENDENCIES_CLASS = "tachiyomi.source.Dependencies"
+    const val SOURCE_FQ_CLASS = "tachiyomi.source.Source"
+    const val DEEPLINKSOURCE_FQ_CLASS = "tachiyomi.source.DeepLinkSource"
+    const val DEPENDENCIES_FQ_CLASS = "tachiyomi.source.Dependencies"
+    const val EXTENSION_FQ_ANNOTATION = "tachiyomix.annotations.Extension"
+    const val EXTENSION_PACKAGE = "tachiyomix.extension"
+    const val EXTENSION_CLASS = "Extension"
+    const val EXTENSION_FQ_CLASS = "$EXTENSION_PACKAGE.$EXTENSION_CLASS"
   }
 
 }

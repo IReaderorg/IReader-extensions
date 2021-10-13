@@ -11,7 +11,6 @@ repositories {
 dependencies {
   implementation(gradleApi())
   implementation(Deps.kotlin.gradle)
-  implementation(Deps.kotlin.compilerEmbeddable)
   implementation(Deps.kotlin.serialization.gradle)
   implementation(Deps.kotlin.serialization.json)
   implementation(Deps.android.gradle)

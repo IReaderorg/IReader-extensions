@@ -11,10 +11,12 @@ data class Extension(
   val nsfw: Boolean = false,
   val deepLinks: List<DeepLink> = emptyList(),
   val sourceDir: String = "main",
-  val id: Long = generateSourceId(name, lang),
-  val flavor: String = getFlavorName(sourceDir, lang)
+  val sourceId: Long = generateSourceId(name, lang),
+  val flavor: String = getFlavorName(sourceDir, lang),
+  val applicationId: String = generateApplicationId(name, flavor)
 )
 
+private val packageRegex = Regex("[^\\w\\d.]")
 val Extension.versionName get() = "${libVersion}.${versionCode}"
 
 data class DeepLink(
@@ -44,4 +46,8 @@ private fun generateSourceId(name: String, lang: String, versionId: Int = 1): Lo
   val bytes = MessageDigest.getInstance("MD5").digest(key.toByteArray())
   return (0..7).map { bytes[it].toLong() and 0xff shl 8 * (7 - it) }
     .reduce(Long::or) and Long.MAX_VALUE
+}
+
+private fun generateApplicationId(name: String, flavor: String): String {
+  return "tachiyomix.$name.$flavor".toLowerCase().replace(packageRegex, ".")
 }

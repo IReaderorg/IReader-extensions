@@ -18,6 +18,13 @@ open class RepoTask : DefaultTask() {
 
   private val aapt2 by lazy { getAapt2Path() }
 
+  private val prettyJson by lazy {
+    Json {
+      prettyPrint = true
+      prettyPrintIndent = "  "
+    }
+  }
+
   init {
     val repoTask = this
     project.gradle.projectsEvaluated {
@@ -72,12 +79,12 @@ open class RepoTask : DefaultTask() {
 
     val metadata = lines
       .filter { it.startsWith("meta-data") }
-      .map { METADATA.find(it)!!.groupValues.let { Metadata(it[1], it[2]) } }
+      .mapNotNull { METADATA.find(it)?.groupValues?.let { Metadata(it[1], it[2]) } }
 
     val id = metadata.first { it.name == "source.id" }.value.drop(1).toLong()
     val sourceName = metadata.first { it.name == "source.name" }.value
     val lang = metadata.first { it.name == "source.lang" }.value
-    val description = metadata.first { it.name == "source.description" }.value
+    val description = metadata.find { it.name == "source.description" }?.value.orEmpty()
     val nsfw = metadata.first { it.name == "source.nsfw" }.value == "1"
 
     return Badging(pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
@@ -134,15 +141,13 @@ open class RepoTask : DefaultTask() {
   }
 
   private fun generateRepo(repoDir: File, badgings: List<Badging>) {
+    val sortedBadgings = badgings.sortedBy { it.pkg }
     File(repoDir, "index.min.json").writer().use {
-      it.write(Json.encodeToString(badgings))
+      it.write(Json.encodeToString(sortedBadgings))
     }
 
     File(repoDir, "index.json").writer().use {
-      it.write(Json {
-        prettyPrint = true
-        prettyPrintIndent = "  "
-      }.encodeToString(badgings))
+      it.write(prettyJson.encodeToString(sortedBadgings))
     }
   }
 
