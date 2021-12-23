@@ -50,6 +50,7 @@ private fun addDeepLinks(app: Node, deeplinks: List<DeepLink>) {
 
   val activity = Node(app, "activity", mapOf(
     "android:name" to "tachiyomix.deeplink.SourceDeepLinkActivity",
+    "android:exported" to "true",
     "android:theme" to "@android:style/Theme.NoDisplay"
   ))
 
