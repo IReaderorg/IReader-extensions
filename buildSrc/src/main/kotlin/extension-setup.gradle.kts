@@ -88,8 +88,8 @@ android {
 
 dependencies {
   implementation(project(Proj.defaultRes))
-  compileOnly(Deps.tachiyomiCore)
-  compileOnly(Deps.tachiyomiSourceApi)
+  compileOnly(Deps.tachiyomi.core)
+  compileOnly(Deps.tachiyomi.api)
 
   compileOnly(Deps.kotlin.stdlib)
   compileOnly(Deps.okhttp)
