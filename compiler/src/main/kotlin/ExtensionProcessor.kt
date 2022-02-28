@@ -63,7 +63,8 @@ class ExtensionProcessor(
 
     // Generate the source implementation
     val dependencies = resolver.getClassDeclarationByName(DEPENDENCIES_FQ_CLASS)!!
-    extension.accept(SourceVisitor(arguments, dependencies), Unit)
+    val client = resolver.getClassDeclarationByName(CLIENT_FQ_CLASS)!!
+    extension.accept(SourceVisitor(arguments, dependencies,client), Unit)
 
     return emptyList()
   }
@@ -111,17 +112,20 @@ class ExtensionProcessor(
 
   private inner class SourceVisitor(
     val arguments: Arguments,
-    val dependencies: KSClassDeclaration
+    val dependencies: KSClassDeclaration,
+    val client: KSClassDeclaration
   ) : KSVisitorVoid() {
     override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
       val classSpec = TypeSpec.classBuilder(EXTENSION_CLASS)
         .primaryConstructor(
           FunSpec.constructorBuilder()
             .addParameter("deps", dependencies.toClassName())
+            .addParameter("client", client.toClassName())
             .build()
         )
         .superclass(classDeclaration.toClassName())
         .addSuperclassConstructorParameter("%L", "deps")
+        .addSuperclassConstructorParameter("%L", "client")
         .addProperty(
           PropertySpec.builder("name", String::class, KModifier.OVERRIDE)
             .initializer("%S", arguments.name)
@@ -146,11 +150,12 @@ class ExtensionProcessor(
     }
   }
 
+  //TODO if you are not using windows remove ".replace("\\", "/")"
   private fun getBuildDir(): String {
     val pathOf = codeGenerator::class.java
       .getDeclaredMethod("pathOf", String::class.java, String::class.java, String::class.java)
     val stubFile = pathOf.invoke(codeGenerator, "", "a", "kt") as String
-    return File(stubFile).parentFile.parent
+    return File(stubFile).parentFile.parent.replace("\\", "/")
   }
 
   // TODO: this is temporary until ksp configurations are applied per variant rather than globally
@@ -179,6 +184,7 @@ class ExtensionProcessor(
     const val SOURCE_FQ_CLASS = "tachiyomi.source.Source"
     const val DEEPLINKSOURCE_FQ_CLASS = "tachiyomi.source.DeepLinkSource"
     const val DEPENDENCIES_FQ_CLASS = "tachiyomi.source.Dependencies"
+    const val CLIENT_FQ_CLASS = "okhttp3.OkHttpClient"
     const val EXTENSION_FQ_ANNOTATION = "tachiyomix.annotations.Extension"
     const val EXTENSION_PACKAGE = "tachiyomix.extension"
     const val EXTENSION_CLASS = "Extension"

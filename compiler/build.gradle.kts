@@ -1,3 +1,5 @@
+
+
 plugins {
   id("kotlin")
 }
@@ -5,6 +7,6 @@ plugins {
 dependencies {
   implementation(Deps.kotlinpoet)
   implementation(Deps.ksp.api)
-
+  implementation(Deps.okhttp)
   implementation(project(Proj.annotation))
 }
