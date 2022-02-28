@@ -106,7 +106,7 @@ class ExtensionProcessor(
 
     val isValidPackage = Regex("^$expectedPkgName\\.?.*?").matches(pkgName)
     check(isValidPackage) {
-      "The package name of the extension $source must start with \"$expectedPkgName\""
+      "The package name of the extension $source must start with \"$expectedPkgName\" which right now is \"$pkgName\""
     }
   }
 

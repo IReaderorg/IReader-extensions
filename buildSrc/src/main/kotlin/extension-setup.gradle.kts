@@ -42,7 +42,7 @@ android {
         versionCode = extension.versionCode
         versionName = extension.versionName
         manifestPlaceholders.putAll(mapOf(
-          "appName" to "Tachiyomi: ${extension.name} (${extension.lang})",
+          "appName" to "IReader: ${extension.name} (${extension.lang})",
           "sourceId" to ":${extension.sourceId}",
           "sourceName" to extension.name,
           "sourceLang" to extension.lang,
@@ -88,6 +88,7 @@ android {
 
 dependencies {
   implementation(project(Proj.defaultRes))
+  implementation(project(":core"))
   compileOnly(Deps.tachiyomi.core)
   compileOnly(Deps.tachiyomi.api)
 

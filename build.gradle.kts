@@ -7,6 +7,7 @@ buildscript {
     classpath(Deps.android.gradle)
     classpath(Deps.kotlin.gradle)
     classpath(Deps.kotlin.serialization.gradle)
+      classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10")
   }
 }
 
