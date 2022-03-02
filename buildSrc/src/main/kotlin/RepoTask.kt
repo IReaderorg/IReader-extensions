@@ -8,6 +8,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.tasks.TaskAction
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -117,6 +118,7 @@ open class RepoTask : DefaultTask() {
       into(destDir)
       eachFile { path = name }
       includeEmptyDirs = false
+      duplicatesStrategy = DuplicatesStrategy.INCLUDE
     }
 
     if (destDir.listFiles().orEmpty().isEmpty()) {

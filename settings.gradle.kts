@@ -19,6 +19,14 @@ File(rootDir, "src").eachDir { dir ->
   }
 }
 
+File(rootDir, "extensions").eachDir { dir ->
+  dir.eachDir { subdir ->
+    val name = ":extensions:individual:${dir.name}:${subdir.name}"
+    include(name)
+    project(name).projectDir = File("extensions/${dir.name}/${subdir.name}")
+  }
+}
+
 pluginManagement {
   repositories {
     gradlePluginPortal()
