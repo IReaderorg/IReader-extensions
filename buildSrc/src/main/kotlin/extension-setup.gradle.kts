@@ -62,7 +62,7 @@ android {
     outputs.all {
       this as BaseVariantOutputImpl
       val nameLower = extension.name.toLowerCase()
-      outputFileName = "tachiyomi-${extension.lang}-${nameLower}-v${extension.versionName}.apk"
+      outputFileName = "ireader-${extension.lang}-${nameLower}-v${extension.versionName}.apk"
 
       processManifestForExtension(extension)
     }
@@ -120,3 +120,4 @@ fun BaseVariantImpl.currentExtension(): Extension {
   val flavor = (productFlavors as List<ProductFlavor>).first()
   return extensionList.first { it.flavor == flavor.name }
 }
+
