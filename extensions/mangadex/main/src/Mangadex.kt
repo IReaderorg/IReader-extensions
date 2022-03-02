@@ -30,7 +30,7 @@ import tachiyomix.mangadex.dto.asMdMap
 import java.util.concurrent.TimeUnit
 
 @Extension
-abstract class Mangadex(private val deps: Dependencies,private val okHttpClient: OkHttpClient): HttpSource(deps), DeepLinkSource {
+abstract class Mangadex(private val deps: Dependencies,private val httpClient: HttpClient): HttpSource(deps), DeepLinkSource {
 
   override val baseUrl = "https://mangadex.org"
 
@@ -45,7 +45,7 @@ abstract class Mangadex(private val deps: Dependencies,private val okHttpClient:
     }
   }
 
-  private fun clientBuilder(): OkHttpClient = okHttpClient
+  private fun clientBuilder(): OkHttpClient = httpClient.okhttp
     .newBuilder()
     .connectTimeout(10, TimeUnit.SECONDS)
     .readTimeout(30, TimeUnit.SECONDS)

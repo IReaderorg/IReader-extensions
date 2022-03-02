@@ -49,5 +49,5 @@ private fun generateSourceId(name: String, lang: String, versionId: Int = 1): Lo
 }
 
 private fun generateApplicationId(name: String, flavor: String): String {
-  return "tachiyomix.$name.$flavor".toLowerCase().replace(packageRegex, ".")
+  return "ireader.$name.$flavor".toLowerCase().replace(packageRegex, ".")
 }

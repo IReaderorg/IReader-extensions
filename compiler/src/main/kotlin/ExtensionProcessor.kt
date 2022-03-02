@@ -102,7 +102,7 @@ class ExtensionProcessor(
     val pkgName = source.packageName.asString()
 
     val sourceDir = buildDir.substringBeforeLast("/build/").substringAfterLast("/")
-    val expectedPkgName = "tachiyomix.$sourceDir"
+    val expectedPkgName = "ireader.$sourceDir"
 
     val isValidPackage = Regex("^$expectedPkgName\\.?.*?").matches(pkgName)
     check(isValidPackage) {
@@ -120,12 +120,12 @@ class ExtensionProcessor(
         .primaryConstructor(
           FunSpec.constructorBuilder()
             .addParameter("deps", dependencies.toClassName())
-            .addParameter("client", client.toClassName())
+            .addParameter("clients", client.toClassName())
             .build()
         )
         .superclass(classDeclaration.toClassName())
         .addSuperclassConstructorParameter("%L", "deps")
-        .addSuperclassConstructorParameter("%L", "client")
+        .addSuperclassConstructorParameter("%L", "clients")
         .addProperty(
           PropertySpec.builder("name", String::class, KModifier.OVERRIDE)
             .initializer("%S", arguments.name)
