@@ -1,11 +1,12 @@
+package org.ireader.core
+
+import android.util.Log
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
 import okhttp3.Headers
 import okhttp3.OkHttpClient
-import org.ireader.core.LatestListing
-import org.ireader.core.PopularListing
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -22,7 +23,8 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     override val id: Long by lazy {
         val key = "${name.lowercase()}/$lang/$versionId"
         val bytes = MessageDigest.getInstance("MD5").digest(key.toByteArray())
-        (0..7).map { bytes[it].toLong() and 0xff shl 8 * (7 - it) }.reduce(Long::or) and Long.MAX_VALUE
+        (0..7).map { bytes[it].toLong() and 0xff shl 8 * (7 - it) }
+            .reduce(Long::or) and Long.MAX_VALUE
     }
 
 
@@ -42,8 +44,8 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
         val query = filters.filter { it.name == "query" }.first().value
         if (query != null && query is String) {
-            client.get<String>(searchRequest(page = page,query,filters))
-            val request =  client.get<String>(searchRequest(page = page,query,filters)).parseHtml()
+            client.get<String>(searchRequest(page = page, query, filters))
+            val request = client.get<String>(searchRequest(page = page, query, filters)).parseHtml()
             return searchParse(request)
         } else {
             throw Exception("Query must not be empty")
@@ -58,22 +60,22 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
                 preconfigured = clientBuilder()
             }
         }
+
     fun clientBuilder(): OkHttpClient = OkHttpClient()
         .newBuilder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    open val headers : Headers = headersBuilder().build()
-
-    open fun headersBuilder() = Headers.Builder().apply {
+    private fun headersBuilder() = Headers.Builder().apply {
         add(
-            "User-Agent",
-            "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
+            "User-Agent", "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
         )
-        add("Referer", baseUrl)
         add("cache-control", "max-age=0")
     }
+
+    open val headers: Headers = headersBuilder().build()
+
 
     protected open fun requestBuilder(
         url: String,
@@ -107,6 +109,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
             headers { headers }
         }
     }
+
     override suspend fun getPageList(chapter: ChapterInfo): List<Page> {
         return getContents(chapter).map { Text(it) }
     }
@@ -127,7 +130,8 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
             headers { headers }
         }
     }
-    fun String.parseHtml() : Document {
+
+    fun String.parseHtml(): Document {
         return Jsoup.parse(this)
     }
 
@@ -190,7 +194,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
      */
     protected abstract fun popularNextPageSelector(): String?
 
-    fun popularParse(document: Document): MangasPageInfo {
+    open fun popularParse(document: Document): MangasPageInfo {
         val books = document.select(popularSelector()).map { element ->
             popularFromElement(element)
         }
@@ -212,7 +216,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
      * there's no next page.
      */
     protected abstract fun latestNextPageSelector(): String?
-    fun latestParse(document: Document): MangasPageInfo {
+    open fun latestParse(document: Document): MangasPageInfo {
 
         val books = document.select(latestSelector()).map { element ->
             latestFromElement(element)
@@ -231,7 +235,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     protected abstract fun chaptersSelector(): String
 
 
-    fun chaptersParse(document: Document): List<ChapterInfo> {
+    open fun chaptersParse(document: Document): List<ChapterInfo> {
         return document.select(chaptersSelector()).map { chapterFromElement(it) }
     }
 
@@ -248,7 +252,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     protected abstract fun searchNextPageSelector(): String?
 
 
-    fun searchParse(document: Document): MangasPageInfo {
+    open fun searchParse(document: Document): MangasPageInfo {
         /**
          * I Add Filter Because sometimes this value contains null values
          * so the null book shows in search screen
@@ -295,8 +299,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     /****************************************************************************************************/
 
 
-    abstract  fun detailParse(document: Document): MangaInfo
-
+    abstract fun detailParse(document: Document): MangaInfo
 
 
 }
