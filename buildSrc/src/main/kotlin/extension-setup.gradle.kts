@@ -94,7 +94,7 @@ dependencies {
     .named("kotlinLibs")
   val libs = project.extensions.getByType<VersionCatalogsExtension>()
     .named("libs")
-
+  implementation(project(":core"))
   compileOnly(libs.findLibrary("tachiyomi-core").get())
   compileOnly(libs.findLibrary("tachiyomi-api").get())
 

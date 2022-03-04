@@ -19,11 +19,11 @@ File(rootDir, "src").eachDir { dir ->
   }
 }
 
-File(rootDir, "extensions").eachDir { dir ->
+File(rootDir, "sources").eachDir { dir ->
   dir.eachDir { subdir ->
     val name = ":extensions:individual:${dir.name}:${subdir.name}"
     include(name)
-    project(name).projectDir = File("extensions/${dir.name}/${subdir.name}")
+    project(name).projectDir = File("sources/${dir.name}/${subdir.name}")
   }
 }
 
@@ -64,3 +64,5 @@ inline fun File.eachDir(block: (File) -> Unit) {
   listFiles()?.filter { it.isDirectory }?.forEach { block(it) }
 }
 include(":core")
+
+include(":sources")

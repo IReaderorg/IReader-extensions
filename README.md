@@ -4,9 +4,8 @@
 
 Extensions for the rewrite of Tachiyomi.
 
-## Should I try this out?
+if you want to create sources you can take a look at this [samples](https://github.com/kazemcodes/tachiyomi-extensions-1.x/tree/master/src/en)
 
-No. Nothing works. This is a branch made only for development.
 
 ## License
 
