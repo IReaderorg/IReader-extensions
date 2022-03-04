@@ -63,8 +63,7 @@ class ExtensionProcessor(
 
     // Generate the source implementation
     val dependencies = resolver.getClassDeclarationByName(DEPENDENCIES_FQ_CLASS)!!
-    val client = resolver.getClassDeclarationByName(CLIENT_FQ_CLASS)!!
-    extension.accept(SourceVisitor(arguments, dependencies,client), Unit)
+    extension.accept(SourceVisitor(arguments, dependencies), Unit)
 
     return emptyList()
   }
@@ -113,19 +112,16 @@ class ExtensionProcessor(
   private inner class SourceVisitor(
     val arguments: Arguments,
     val dependencies: KSClassDeclaration,
-    val client: KSClassDeclaration
   ) : KSVisitorVoid() {
     override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
       val classSpec = TypeSpec.classBuilder(EXTENSION_CLASS)
         .primaryConstructor(
           FunSpec.constructorBuilder()
             .addParameter("deps", dependencies.toClassName())
-            .addParameter("clients", client.toClassName())
             .build()
         )
         .superclass(classDeclaration.toClassName())
         .addSuperclassConstructorParameter("%L", "deps")
-        .addSuperclassConstructorParameter("%L", "clients")
         .addProperty(
           PropertySpec.builder("name", String::class, KModifier.OVERRIDE)
             .initializer("%S", arguments.name)
@@ -184,7 +180,6 @@ class ExtensionProcessor(
     const val SOURCE_FQ_CLASS = "tachiyomi.source.Source"
     const val DEEPLINKSOURCE_FQ_CLASS = "tachiyomi.source.DeepLinkSource"
     const val DEPENDENCIES_FQ_CLASS = "tachiyomi.source.Dependencies"
-    const val CLIENT_FQ_CLASS = "okhttp3.OkHttpClient"
     const val EXTENSION_FQ_ANNOTATION = "tachiyomix.annotations.Extension"
     const val EXTENSION_PACKAGE = "tachiyomix.extension"
     const val EXTENSION_CLASS = "Extension"

@@ -90,7 +90,7 @@ dependencies {
   implementation(project(Proj.defaultRes))
   implementation(project(":core"))
   compileOnly(Deps.tachiyomi.core)
-  compileOnly(Deps.tachiyomi.api)
+ // compileOnly(Deps.tachiyomi.api)
 
   compileOnly(Deps.kotlin.stdlib)
   compileOnly(Deps.okhttp)

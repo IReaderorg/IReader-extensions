@@ -28,8 +28,9 @@ object Deps {
 
   object tachiyomi {
     private const val version = "1.2-SNAPSHOT"
-    const val core = "org.tachiyomi:core-jvm:$version"
-    const val api = "org.tachiyomi:source-api-jvm:$version"
+    //const val core = "org.tachiyomi:core-jvm:$version"
+    const val core = "io.github.kazemcodes:core-androidRelease:1.0.1-SNAPSHOT"
+   // const val api = "org.tachiyomi:source-api-jvm:$version"
   }
 
   const val okhttp = "com.squareup.okhttp3:okhttp:4.10.0-RC1"

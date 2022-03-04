@@ -16,6 +16,7 @@ allprojects {
     mavenCentral()
     google()
     maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots/") }
+    maven { setUrl("https://s01.oss.sonatype.org/content/repositories/snapshots/") }
   }
 }
 

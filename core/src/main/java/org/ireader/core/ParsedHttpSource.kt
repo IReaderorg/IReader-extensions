@@ -44,28 +44,13 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
         val query = filters.filter { it.name == "query" }.first().value
         if (query != null && query is String) {
-            client.get<String>(searchRequest(page = page, query, filters))
-            val request = client.get<String>(searchRequest(page = page, query, filters)).parseHtml()
-            return searchParse(request)
+            return  getSearch(query, filters, page)
         } else {
             throw Exception("Query must not be empty")
         }
 
     }
 
-    override val client: HttpClient
-        get() = HttpClient(OkHttp) {
-            BrowserUserAgent()
-            engine {
-                preconfigured = clientBuilder()
-            }
-        }
-
-    fun clientBuilder(): OkHttpClient = OkHttpClient()
-        .newBuilder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     private fun headersBuilder() = Headers.Builder().apply {
         add(
@@ -270,36 +255,21 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
             hasNextPage)
     }
 
+    abstract fun detailParse(document: Document): MangaInfo
     /****************************************************************************************************/
     /****************************************************************************************************/
 
-    /**
-     *return the end point for the fetch latest books updates feature,
-     * if there is not endpoint just return null
-     * note: use "{page}" in the endpoint instead of page number
-     */
+
     abstract fun fetchLatestEndpoint(page: Int): String?
 
-    /**
-     *return the end point for the  fetch Popular books feature,
-     * if there is not endpoint just return null
-     * note: use "{page}" in the endpoint instead of page number
-     */
     abstract fun fetchPopularEndpoint(page: Int): String?
 
-    /**
-     *return the end point for the fetch Search feature,
-     * if there is not endpoint just return null
-     * note: use "{page}" in the endpoint instead of page number
-     * note: use "{query}" in the endpoint instead of query
-     */
     abstract fun fetchSearchEndpoint(page: Int, query: String): String?
 
 
     /****************************************************************************************************/
 
 
-    abstract fun detailParse(document: Document): MangaInfo
 
 
 }
