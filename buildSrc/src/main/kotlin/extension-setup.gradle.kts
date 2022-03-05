@@ -95,6 +95,7 @@ dependencies {
   compileOnly(Deps.kotlin.stdlib)
   compileOnly(Deps.okhttp)
   compileOnly(Deps.jsoup)
+  compileOnly(Deps.jsoupKtor)
 
   compileOnly(project(Proj.annotation))
   ksp(project(Proj.compiler))

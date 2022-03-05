@@ -2,12 +2,9 @@ package ireader.koreanonline
 
 import android.util.Log
 import io.ktor.client.request.*
-import kotlinx.coroutines.*
 import okhttp3.Headers
-import okhttp3.OkHttpClient
 import org.ireader.core.LatestListing
 import org.ireader.core.ParsedHttpSource
-import org.ireader.core.PopularListing
 import org.ireader.core.SearchListing
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -136,8 +133,8 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
 
-    override suspend fun getChapterList(book: MangaInfo): List<ChapterInfo> {
-        val request = client.get<String>(chaptersRequest(book)).parseHtml()
+    override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
+        val request = client.get<String>(chaptersRequest(manga)).parseHtml()
         return chaptersParse(request)
     }
 

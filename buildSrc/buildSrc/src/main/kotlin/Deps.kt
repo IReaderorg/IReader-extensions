@@ -35,5 +35,6 @@ object Deps {
 
   const val okhttp = "com.squareup.okhttp3:okhttp:4.10.0-RC1"
   const val jsoup = "org.jsoup:jsoup:1.14.3"
+  const val jsoupKtor = "com.tfowl.ktor:ktor-jsoup:1.6.4"
 
 }
