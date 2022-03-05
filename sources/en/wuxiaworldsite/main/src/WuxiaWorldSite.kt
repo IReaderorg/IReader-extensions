@@ -6,7 +6,6 @@ import io.ktor.client.request.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Headers
-import okhttp3.OkHttpClient
 import org.ireader.core.LatestListing
 import org.ireader.core.ParsedHttpSource
 import org.ireader.core.PopularListing
@@ -221,15 +220,15 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
 
-    override suspend fun getChapterList(book: MangaInfo): List<ChapterInfo> {
+    override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
                 var chapters =
                     chaptersParse(
-                        client.post<String>(requestBuilder(book.key + "ajax/chapters/")).parseHtml()
+                        client.post<String>(requestBuilder(manga.key + "ajax/chapters/")).parseHtml()
                     )
                 if (chapters.isEmpty()) {
-                    chapters = chaptersParse(client.post<Document>(requestBuilder(book.key)))
+                    chapters = chaptersParse(client.post<Document>(requestBuilder(manga.key)))
                 }
                 return@withContext chapters.reversed()
             }

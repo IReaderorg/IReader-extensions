@@ -1,10 +1,8 @@
 package ireader.freewebnovel
 
-import android.util.Log
 import io.ktor.client.request.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
-import okhttp3.OkHttpClient
 import org.ireader.core.LatestListing
 import org.ireader.core.ParsedHttpSource
 import org.ireader.core.PopularListing
@@ -182,18 +180,18 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         }
     }
 
-    override suspend fun getChapterList(book: MangaInfo): List<ChapterInfo> {
+    override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
-                val page = client.get<String>(chaptersRequest(book = book))
-                val maxPage = parseMaxPage(book)
+                val page = client.get<String>(chaptersRequest(book = manga))
+                val maxPage = parseMaxPage(manga)
                 val list = mutableListOf<Deferred<List<ChapterInfo>>>()
                 for (i in 1..maxPage) {
                     val pChapters = async {
                         chaptersParse(
                             client.get<String>(
                                 uniqueChaptersRequest(
-                                    book = book,
+                                    book = manga,
                                     page = i
                                 )
                             ).parseHtml()
