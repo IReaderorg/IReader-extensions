@@ -15,7 +15,7 @@ object Deps {
 
   object android {
     const val sdklib = "com.android.tools:sdklib:30.0.4"
-    const val gradle = "com.android.tools.build:gradle:7.0.4"
+    const val gradle = "com.android.tools.build:gradle:7.1.2"
   }
 
   object ksp {
