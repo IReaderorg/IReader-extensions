@@ -1,6 +1,6 @@
 plugins {
   id("com.android.library")
-  id("kotlin-android")
+  kotlin("android")
 }
 
 android {
@@ -19,5 +19,5 @@ android {
 }
 
 dependencies {
-  compileOnly(Deps.kotlin.stdlib)
+  compileOnly(kotlinLibs.stdlib)
 }

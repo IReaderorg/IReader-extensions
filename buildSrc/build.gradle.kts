@@ -1,21 +1,16 @@
 plugins {
   `kotlin-dsl`
-  kotlin("plugin.serialization") version Deps.kotlin.version
-}
-
-repositories {
-  google()
-  mavenCentral()
+  alias(kotlinLibs.plugins.serialization)
 }
 
 dependencies {
   implementation(gradleApi())
-  implementation(Deps.kotlin.gradle)
-  implementation(Deps.kotlin.serialization.gradle)
-  implementation(Deps.kotlin.serialization.json)
-  implementation(Deps.android.gradle)
-  implementation(Deps.android.sdklib)
-  implementation(Deps.ksp.gradle)
+  implementation(kotlinLibs.gradle)
+  implementation(kotlinLibs.serialization.gradle)
+  implementation(kotlinLibs.serialization.json)
+  implementation(libs.android.gradle)
+  implementation(libs.android.sdklib)
+  implementation(kotlinLibs.ksp.gradle)
 }
 
 kotlin {

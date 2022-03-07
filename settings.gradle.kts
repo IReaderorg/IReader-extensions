@@ -11,6 +11,27 @@ File(rootDir, "extensions").listFiles().forEach { dir ->
   }
 }
 
+pluginManagement {
+  repositories {
+    gradlePluginPortal()
+    google()
+  }
+}
+
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    mavenCentral()
+    google()
+    maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots/") }
+  }
+  versionCatalogs {
+    create("kotlinLibs") {
+      from(files("./gradle/kotlin.versions.toml"))
+    }
+  }
+}
+
 //include(":sample-single")
 //project(":sample-single").projectDir = file("samples/single-site")
 //
