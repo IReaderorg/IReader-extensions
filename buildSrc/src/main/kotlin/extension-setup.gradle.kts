@@ -88,12 +88,19 @@ android {
 
 dependencies {
   implementation(project(Proj.defaultRes))
-  compileOnly(Deps.tachiyomi.core)
-  compileOnly(Deps.tachiyomi.api)
 
-  compileOnly(Deps.kotlin.stdlib)
-  compileOnly(Deps.okhttp)
-  compileOnly(Deps.jsoup)
+  // Version Catalog not available here, and that is why we manually import them here
+  val kotlinLibs = project.extensions.getByType<VersionCatalogsExtension>()
+    .named("kotlinLibs")
+  val libs = project.extensions.getByType<VersionCatalogsExtension>()
+    .named("libs")
+
+  compileOnly(libs.findLibrary("tachiyomi-core").get())
+  compileOnly(libs.findLibrary("tachiyomi-api").get())
+
+  compileOnly(kotlinLibs.findLibrary("stdlib").get())
+  compileOnly(libs.findLibrary("okhttp").get())
+  compileOnly(libs.findLibrary("jsoup").get())
 
   compileOnly(project(Proj.annotation))
   ksp(project(Proj.compiler))

@@ -1,0 +1,15 @@
+[versions]
+tachiyomi = "1.2-SNAPSHOT"
+
+[libraries]
+
+android-sdklib = "com.android.tools:sdklib:30.0.4"
+android-gradle = "com.android.tools.build:gradle:7.1.2"
+
+kotlinpoet = "com.squareup:kotlinpoet-ksp:1.10.2"
+
+tachiyomi-core = { module = "org.tachiyomi:core-jvm", version.ref = "tachiyomi" }
+tachiyomi-api = { module = "org.tachiyomi:source-api-jvm", version.ref = "tachiyomi" }
+
+okhttp = "com.squareup.okhttp3:okhttp:4.10.0-RC1"
+jsoup = "org.jsoup:jsoup:1.14.3"

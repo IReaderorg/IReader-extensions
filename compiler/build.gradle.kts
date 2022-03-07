@@ -1,10 +1,10 @@
 plugins {
-  id("kotlin")
+  kotlin("jvm")
 }
 
 dependencies {
-  implementation(Deps.kotlinpoet)
-  implementation(Deps.ksp.api)
+  implementation(libs.kotlinpoet)
+  implementation(kotlinLibs.ksp.api)
 
   implementation(project(Proj.annotation))
 }
