@@ -34,7 +34,8 @@ android {
 }
 
 dependencies {
-    compileOnly(Deps.tachiyomi.core)
-    compileOnly(Deps.jsoup)
+    compileOnly(libs.tachiyomi.core)
+    compileOnly(libs.tachiyomi.api)
+    compileOnly(libs.jsoup)
    // compileOnly(Deps.tachiyomi.api)
 }

@@ -13,3 +13,5 @@ tachiyomi-api = { module = "org.tachiyomi:source-api-jvm", version.ref = "tachiy
 
 okhttp = "com.squareup.okhttp3:okhttp:4.10.0-RC1"
 jsoup = "org.jsoup:jsoup:1.14.3"
+
+ktor-jsoup = "com.tfowl.ktor:ktor-jsoup:1.6.4"

@@ -101,6 +101,8 @@ dependencies {
   compileOnly(kotlinLibs.findLibrary("stdlib").get())
   compileOnly(libs.findLibrary("okhttp").get())
   compileOnly(libs.findLibrary("jsoup").get())
+  compileOnly(libs.findLibrary("jsoup").get())
+  compileOnly(libs.findLibrary("ktor-jsoup").get())
 
   compileOnly(project(Proj.annotation))
   ksp(project(Proj.compiler))
