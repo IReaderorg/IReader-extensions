@@ -24,18 +24,22 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val lang = "en"
 
-
-    override fun getFilters(): FilterList {
-        return listOf()
-    }
-
-
     override fun getListings(): List<Listing> {
         return listOf(
-            LatestListing(),
-            SearchListing()
+               LatestListing()
         )
     }
+
+    override fun getFilters(): FilterList {
+        return listOf(
+                Filter.Title(),
+                Filter.Sort(
+                        "Sort By:",arrayOf(
+                        "Latest",
+                )),
+        )
+    }
+
 
     override fun fetchLatestEndpoint(page: Int): String? =
         "/p/novels-listing.html"

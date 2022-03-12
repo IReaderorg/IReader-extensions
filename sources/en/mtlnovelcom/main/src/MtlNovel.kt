@@ -49,17 +49,16 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         .build()
 
     override fun getFilters(): FilterList {
-        return listOf()
-    }
-
-    override fun getListings(): List<Listing> {
         return listOf(
-            LatestListing(),
-            PopularListing(),
-            SearchListing()
+                Filter.Title(),
+                Filter.Sort(
+                        "Sort By:",arrayOf(
+                        "Latest",
+                        "Popular"
+                )),
         )
-
     }
+
 
     override fun fetchLatestEndpoint(page: Int): String? =
         "/novel-list/?orderby=date&order=desc&status=all&pg=$page"

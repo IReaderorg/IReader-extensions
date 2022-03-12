@@ -1,5 +1,8 @@
 *.iml
 .gradle
+*.apk
+java_pid11284.hprof
+*.hprof
 /local.properties
 /.idea/*
 !/.idea/codeStyleSettings.xml
@@ -9,6 +12,9 @@
 build
 /captures
 .externalNativeBuild
+.github/
+.git-rewrite/
+build/
 
 /gradle.properties
 gradle.properties

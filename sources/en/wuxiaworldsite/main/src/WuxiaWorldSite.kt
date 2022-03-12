@@ -31,7 +31,14 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     override val lang = "en"
 
     override fun getFilters(): FilterList {
-        return listOf()
+        return listOf(
+                Filter.Title(),
+                Filter.Sort(
+                        "Sort By:",arrayOf(
+                        "Latest",
+                        "Popular"
+                )),
+        )
     }
 
     override fun getListings(): List<Listing> {

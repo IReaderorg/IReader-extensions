@@ -24,29 +24,41 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
         val key = "${name.lowercase()}/$lang/$versionId"
         val bytes = MessageDigest.getInstance("MD5").digest(key.toByteArray())
         (0..7).map { bytes[it].toLong() and 0xff shl 8 * (7 - it) }
-            .reduce(Long::or) and Long.MAX_VALUE
+                .reduce(Long::or) and Long.MAX_VALUE
     }
 
+    override fun getFilters(): FilterList {
+        return listOf(
+                Filter.Title(),
+                Filter.Sort(
+                        "Sort By:", arrayOf(
+                        "Latest",
+                        "Popular"
+                ), value = Filter.Sort.Selection(0, true)),
+        )
+    }
 
-    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
-        if (sort == null) {
-            throw Exception("sort can not be empty.")
-        }
-        return when (sort) {
-            is LatestListing -> getLatest(page)
-            is PopularListing -> getPopular(page)
-            else -> {
-                throw Exception("no sort was found")
-            }
-        }
+    open override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return getLatest(page)
     }
 
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
-        val query = filters.filter { it.name == "query" }.first().value
-        if (query != null && query is String) {
-            return  getSearch(query, filters, page)
+        val query = filters.findInstance<Filter.Title>()?.value
+        val sort = filters.findInstance<Filter.Sort>()?.value?.index
+
+
+        return if (sort == 0) {
+            getLatest(page)
+        } else if (sort == 1) {
+            getPopular(page)
+        } else if (query != null) {
+            if (query.isNotBlank()) {
+                getSearch(query, filters, page)
+            } else {
+                throw Exception("query is empty.")
+            }
         } else {
-            throw Exception("Query must not be empty")
+            getLatest(page)
         }
 
     }
@@ -54,7 +66,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
 
     private fun headersBuilder() = Headers.Builder().apply {
         add(
-            "User-Agent", "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
+                "User-Agent", "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
         )
         add("cache-control", "max-age=0")
     }
@@ -63,8 +75,8 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
 
 
     protected open fun requestBuilder(
-        url: String,
-        mHeaders: Headers = headers,
+            url: String,
+            mHeaders: Headers = headers,
     ): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(url)
@@ -104,9 +116,9 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     }
 
     protected abstract fun searchRequest(
-        page: Int,
-        query: String,
-        filters: List<Filter<*>>,
+            page: Int,
+            query: String,
+            filters: List<Filter<*>>,
     ): HttpRequestBuilder
 
     open fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
@@ -226,7 +238,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
 
 
     abstract fun pageContentParse(
-        document: Document,
+            document: Document,
     ): List<String>
 
     /**
@@ -252,7 +264,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
         } != null
 
         return MangasPageInfo(books,
-            hasNextPage)
+                hasNextPage)
     }
 
     abstract fun detailParse(document: Document): MangaInfo
@@ -268,8 +280,6 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
 
 
     /****************************************************************************************************/
-
-
 
 
 }

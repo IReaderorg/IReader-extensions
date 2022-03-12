@@ -8,6 +8,7 @@ import kotlinx.coroutines.*
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import org.ireader.core.SearchListing
+import org.ireader.core.findInstance
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomi.core.http.okhttp
@@ -33,8 +34,17 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
 
 
     override fun getFilters(): FilterList {
-        return listOf()
+        return listOf(
+                Filter.Title(),
+                sorts,
+        )
     }
+    val sorts =  Filter.Sort(
+            "Sort By:",arrayOf(
+            "Chinese",
+            "Japanese",
+            "Korean",
+    ))
 
     class Chinese : Listing("Chinese")
     class Japanese : Listing("Japanese")
@@ -43,18 +53,17 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     override fun getListings(): List<Listing> {
         return listOf(
             Chinese(),
-            Japanese(),
-            Korean(),
-            SearchListing()
         )
     }
 
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
-        val query = filters.filter { it.name == "query" }.first().value
-        if (query != null && query is String) {
+        val query = filters.findInstance<Filter.Title>()?.value
+        val sort = filters.findInstance<Filter.Sort>()?.value
+
+        if (query != null && query.isNotBlank()) {
              return  getSearch(query, filters, page)
         } else {
-            throw Exception("Query must not be empty")
+            return getNovels(page,sort= sort)
         }
 
     }
@@ -112,20 +121,20 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
-        return getNovels(page,sort= sort)
+        return getNovels(page,sort= sorts.value)
     }
 
-    private suspend fun getNovels(page: Int,sort: Listing?): MangasPageInfo {
-        val req = when(sort) {
-            is  Chinese -> HttpRequestBuilder().apply {
+    private suspend fun getNovels(page: Int,sort: Filter.Sort.Selection?): MangasPageInfo {
+        val req = when(sort?.index) {
+             0 -> HttpRequestBuilder().apply {
                 url("$baseUrl/mtype/chinese/page/$page/")
                 headers { headers }
             }
-            is Japanese -> HttpRequestBuilder().apply {
+            1 -> HttpRequestBuilder().apply {
                 url("$baseUrl/mtype/japanese/page/$page/")
                 headers { headers }
             }
-            is Korean -> HttpRequestBuilder().apply {
+            2 -> HttpRequestBuilder().apply {
                 url("$baseUrl/mtype/korean/page/$page/")
                 headers { headers }
             }

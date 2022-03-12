@@ -1,3 +1,4 @@
+enableFeaturePreview("VERSION_CATALOGS")
 include(":annotations")
 include(":compiler")
 include(":deeplink")

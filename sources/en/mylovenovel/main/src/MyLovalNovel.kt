@@ -32,15 +32,19 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     override fun getFilters(): FilterList {
-        return listOf()
+        return listOf(
+                Filter.Title(),
+                Filter.Sort(
+                        "Sort By:",arrayOf(
+                        "Latest",
+                        "Popular"
+                )),
+        )
     }
-
 
     override fun getListings(): List<Listing> {
         return listOf(
             LatestListing(),
-            PopularListing(),
-            SearchListing()
         )
     }
 

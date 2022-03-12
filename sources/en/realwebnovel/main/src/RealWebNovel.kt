@@ -32,11 +32,18 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
     override val lang = "en"
 
     override fun getFilters(): FilterList {
-        return listOf()
+        return listOf(
+                Filter.Title(),
+                Filter.Sort(
+                        "Sort By:",arrayOf(
+                        "Latest",
+                        "Popular"
+                )),
+        )
     }
 
     override fun getListings(): List<Listing> {
-        return listOf(LatestListing(), PopularListing(), SearchListing())
+        return listOf(LatestListing())
     }
 
     override val client: HttpClient

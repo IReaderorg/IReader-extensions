@@ -1,8 +1,8 @@
 listOf("en").map { lang ->
   Extension(
     name = "WuxiaWorldSite",
-    versionCode = 2,
-    libVersion = "1.1",
+    versionCode = 4,
+    libVersion = "1.4",
     lang = lang,
     description = "Highest quality and scanlator-approved source",
     nsfw = false,

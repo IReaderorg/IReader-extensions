@@ -33,8 +33,17 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
     override fun getListings(): List<Listing> {
         return listOf(
             LatestListing(),
-            PopularListing(),
-            SearchListing()
+        )
+    }
+
+    override fun getFilters(): FilterList {
+        return listOf(
+                Filter.Title(),
+                Filter.Sort(
+                        "Sort By:",arrayOf(
+                        "Latest",
+                        "Popular"
+                )),
         )
     }
 
@@ -94,6 +103,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
     override fun latestFromElement(element: Element) = popularFromElement(element)
 
     override fun latestNextPageSelector() = popularNextPageSelector()
+
 
 
     // search
@@ -224,17 +234,6 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
 
-    // filter
-    override fun getFilters(): FilterList {
-        return listOf(
-            Filter.Title("NOTE: Ignored if using text search!"),
-            StatusFilter(),
-            OrderByFilter(),
-            GenreList(),
-
-            )
-
-    }
 
 
     private class StatusFilter : UriPartFilter(

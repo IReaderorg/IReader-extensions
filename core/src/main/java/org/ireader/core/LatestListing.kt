@@ -1,5 +1,6 @@
 package org.ireader.core
 
+import tachiyomi.source.model.Filter
 import tachiyomi.source.model.Listing
 
 class LatestListing : Listing("Latest")
