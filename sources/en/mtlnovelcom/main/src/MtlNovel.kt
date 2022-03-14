@@ -41,6 +41,13 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
             })
         }
     }
+
+    override fun getListings(): List<Listing> {
+        return listOf(
+                LatestListing()
+        )
+    }
+
     private fun clientBuilder(): OkHttpClient = deps.httpClients.default.okhttp
         .newBuilder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -77,29 +84,26 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel-list/?orderby=date&order=desc&status=all&pg=$page")
-        return bookListParse(client.get<Document>(res),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/monthly-rank/page/$page/")
-        return bookListParse(client.get<Document>(res),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/wp-admin/admin-ajax.php?action=autosuggest&q=$query&__amp_source_origin=https%3A%2F%2Fwww.mtlnovel.com")
-        return bookListParse(client.get<Document>(res),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+        return customJsonSearchParse(client.get<mtlSearchItem>(res))
     }
 
 
 
-    fun headersBuilder() = Headers.Builder().apply {
-        add(
-            HttpHeaders.UserAgent,
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4793.0 Safari/537.36"
-        )
-        add(HttpHeaders.Referrer, baseUrl)
-        add(HttpHeaders.CacheControl, "max-age=0")
+    private fun headersBuilder() = io.ktor.http.Headers.build {
+        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+        append(HttpHeaders.CacheControl, "max-age=0")
+        append(HttpHeaders.Referrer, baseUrl)
     }
 
-    override val headers: Headers = headersBuilder().build()
+    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
 

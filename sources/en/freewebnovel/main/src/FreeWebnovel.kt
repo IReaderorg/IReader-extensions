@@ -1,7 +1,10 @@
 package ireader.freewebnovel
 
+import com.tfowl.ktor.client.features.JsoupFeature
 import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
 import org.ireader.core.*
@@ -16,13 +19,11 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "FreeWebNovel"
 
-
     override val id: Long
         get() = 1420473899634853
+
     override val baseUrl = "https://freewebnovel.com"
-
     override val lang = "en"
-
 
     override fun getFilters(): FilterList {
         return listOf(
@@ -34,7 +35,6 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
                 )),
         )
     }
-
 
     override fun getListings(): List<Listing> {
         return listOf(
@@ -60,48 +60,38 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/latest-release-novel/$page/")
-        return bookListParse(client.get<Document>(res),"div.ul-list1 div.li","div.ul-list1") { latestFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.ul-list1 div.li","div.ul-list1") { latestFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/most-popular-novel/")
-        return bookListParse(client.get<Document>(res),"div.ul-list1 div.li-row",null) { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.ul-list1 div.li-row",null) { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/search/?searchkey=$query")
-        return bookListParse(client.get<Document>(res),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
     }
 
 
 
 
-    fun headersBuilder() = Headers.Builder().apply {
-        add(
-            "User-Agent",
-            "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-        )
-        add("cache-control", "max-age=0")
-        add("Referer", baseUrl)
+    private fun headersBuilder() = io.ktor.http.Headers.build {
+        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+        append(HttpHeaders.CacheControl, "max-age=0")
+        append(HttpHeaders.Referrer, baseUrl)
     }
 
-    override val headers: Headers = headersBuilder().build()
+    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
-    fun popularFromElement(element: Element): MangaInfo {
+    private fun popularFromElement(element: Element): MangaInfo {
         val url = baseUrl + element.select("a").attr("href")
         val title = element.select("a").attr("title")
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
-        return client to HttpRequestBuilder().apply {
-            url(url)
-            headers { headers }
-        }
-    }
 
-
-    fun latestFromElement(element: Element): MangaInfo {
+    private fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
         val url = baseUrl + element.select("div.txt a").attr("href")
         val thumbnailUrl = element.select("div.pic img").attr("src")
@@ -110,7 +100,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
 
-    fun searchFromElement(element: Element): MangaInfo {
+    private fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
         val url = baseUrl + element.select("div.txt a").attr("href")
         val thumbnailUrl = element.select("div.pic img").attr("src")

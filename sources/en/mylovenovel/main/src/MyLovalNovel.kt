@@ -3,6 +3,7 @@ package ireader.mylovenovel
 import android.util.Log
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.merge
 import merge
@@ -33,10 +34,16 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return listOf(
                 Filter.Title(),
                 Filter.Sort(
-                        "Sort By:",arrayOf(
+                        "Sort By:", arrayOf(
                         "Latest",
                         "Popular",
                 )),
+        )
+    }
+
+    override fun getListings(): List<Listing> {
+        return listOf(
+                LatestListing()
         )
     }
 
@@ -48,40 +55,40 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return getSearch(page,query)
+            return getSearch(page, query)
         }
-        return when(sorts) {
+        return when (sorts) {
             0 -> getLatest(page)
             1 -> getPopular(page)
             else -> getLatest(page)
         }
     }
 
-    suspend fun getLatest(page: Int) : MangasPageInfo {
+    suspend fun getLatest(page: Int): MangasPageInfo {
         val res = requestBuilder("$baseUrl/lastupdate-${page}.html")
-        return bookListParse(client.get<Document>(res),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(), latestSelector(), latestNextPageSelector()) { latestFromElement(it) }
     }
-    suspend fun getPopular(page: Int) : MangasPageInfo {
+
+    suspend fun getPopular(page: Int): MangasPageInfo {
         val res = requestBuilder("$baseUrl/monthvisit-${page}.html")
-        return bookListParse(client.get<Document>(res),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(), popularSelector(), popularNextPageSelector()) { popularFromElement(it) }
     }
-    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
+
+    suspend fun getSearch(page: Int, query: String): MangasPageInfo {
         val res = requestBuilder("$baseUrl/index.php?s=so&module=book&keyword=${query}")
-        return bookListParse(client.get<Document>(res),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(), searchSelector(), searchNextPageSelector()) { searchFromElement(it) }
     }
 
 
-    fun headersBuilder() = Headers.Builder().apply {
-        add(
-            "User-Agent",
-            "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-        )
-        add("cache-control", "max-age=0")
+    private fun headersBuilder() = io.ktor.http.Headers.build {
+        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+        append(HttpHeaders.CacheControl, "max-age=0")
+        append(HttpHeaders.Referrer, baseUrl)
     }
 
-    override val headers: Headers = headersBuilder().build()
+    override val headers: io.ktor.http.Headers = headersBuilder()
 
-    fun popularSelector() =  "ul.list li a"
+    fun popularSelector() = "ul.list li a"
 
     fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("p.bookname").text()
@@ -93,12 +100,12 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     fun popularNextPageSelector() = "div.pagelist>a"
 
 
-     fun latestSelector(): String = popularSelector()
+    fun latestSelector(): String = popularSelector()
 
 
-     fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
+    fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
 
-     fun latestNextPageSelector() = popularNextPageSelector()
+    fun latestNextPageSelector() = popularNextPageSelector()
 
     fun searchSelector() = "ul.list li a"
 
@@ -112,37 +119,38 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val title = document.select("div.detail img").attr("alt")
         val cover = document.select("div.detail img").attr("src")
 
-        val authorBookSelector = document.select("#info > div.main > div.detail > p:nth-child(3)").text().replace("Author：","")
+        val authorBookSelector = document.select("#info > div.main > div.detail > p:nth-child(3)").text().replace("Author：", "")
         val description = document.select("div.intro").eachText().joinToString("\n")
         //not sure why its not working.
         val category = document.select("div.detail p.line a")
-            .next()
-            .text()
-            .split(",")
+                .next()
+                .text()
+                .split(",")
 
         val status = document.select("div.detail > p:nth-child(6)")
-            .next()
-            .text()
-            .replace("/[\t\n]/g", "")
-            .handleStatus()
+                .next()
+                .text()
+                .replace("/[\t\n]/g", "")
+                .handleStatus()
 
 
 
 
         return MangaInfo(
-            title = title,
-            cover = cover,
-            description = description,
-            author = authorBookSelector,
-            genres = category,
-            key = "",
-            status = status
+                title = title,
+                cover = cover,
+                description = description,
+                author = authorBookSelector,
+                genres = category,
+                key = "",
+                status = status
         )
     }
-    private fun String.handleStatus() : Int {
-        return when(this){
-            "Active"-> MangaInfo.ONGOING
-            "Complete"-> MangaInfo.COMPLETED
+
+    private fun String.handleStatus(): Int {
+        return when (this) {
+            "Active" -> MangaInfo.ONGOING
+            "Complete" -> MangaInfo.COMPLETED
             else -> MangaInfo.ONGOING
         }
 
@@ -170,6 +178,7 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val content = document.select("div.content").html().split("<br>")
         return listOf(head) + content
     }
+
     fun <T> merge(first: List<T>, second: List<T>): List<T> {
         return object : ArrayList<T>() {
             init {

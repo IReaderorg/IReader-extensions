@@ -1,6 +1,7 @@
 package ireader.webnovelcom
 
 import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.withContext
@@ -64,15 +65,15 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
-        return bookListParse(client.get<Document>(res),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
-        return bookListParse(client.get<Document>(res),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchSearchEndpoint(page,query))
-        return bookListParse(client.get<Document>(res),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
     }
 
      fun fetchLatestEndpoint(page: Int): String? =
@@ -87,15 +88,13 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
 
-    override val headers: Headers
-        get() = headersBuilder().build()
-
-    private fun headersBuilder() = Headers.Builder().apply {
-        add(
-            "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0 "
-        )
-        add("Referer", baseUrl)
+    private fun headersBuilder() = io.ktor.http.Headers.build {
+        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+        append(HttpHeaders.CacheControl, "max-age=0")
+        append(HttpHeaders.Referrer, baseUrl)
     }
+
+    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
     // popular

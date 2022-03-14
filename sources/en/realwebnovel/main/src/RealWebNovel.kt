@@ -3,6 +3,7 @@ package ireader.realwebnovel
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Headers
@@ -43,12 +44,6 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         return listOf(LatestListing())
     }
 
-    override val client: HttpClient
-        get() = HttpClient(OkHttp) {
-            engine {
-                preconfigured = deps.httpClients.default.okhttp
-            }
-        }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
@@ -69,15 +64,15 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
-        return bookListParse(client.get<Document>(res),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
-        return bookListParse(client.get<Document>(res),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchSearchEndpoint(page,query))
-        return bookListParse(client.get<Document>(res),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
     }
 
      fun fetchLatestEndpoint(page: Int): String? =
@@ -90,16 +85,13 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         "/?s=${query}&post_type=wp-manga&op=&author=&artist=&release=&adult="
 
 
-    private fun headersBuilder() = Headers.Builder().apply {
-        add(
-            "User-Agent",
-            "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-        )
-        add("Referer", baseUrl)
-        add("cache-control", "max-age=0")
+    private fun headersBuilder() = io.ktor.http.Headers.build {
+        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+        append(HttpHeaders.CacheControl, "max-age=0")
+        append(HttpHeaders.Referrer, baseUrl)
     }
 
-    override val headers: Headers = headersBuilder().build()
+    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
     // popular
@@ -119,14 +111,6 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
     }
 
      fun popularNextPageSelector() = "div.nav-previous>a"
-
-
-     fun latestRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchLatestEndpoint(page))
-            headers { headers }
-        }
-    }
 
      fun latestSelector(): String = popularSelector()
 

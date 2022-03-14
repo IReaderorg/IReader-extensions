@@ -1,6 +1,7 @@
 package ireader.mtlnation
 
 import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
 import org.ireader.core.*
@@ -62,39 +63,25 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel/page/${page}/?m_orderby=latest")
-        return bookListParse(client.get<Document>(res),"div.page-item-detail","a.last") { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.page-item-detail","a.last") { popularFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel/page/2/?m_orderby=views")
-        return bookListParse(client.get<Document>(res),"div.page-item-detail","a.last") { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.page-item-detail","a.last") { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/search/?searchkey=$query")
-        return bookListParse(client.get<Document>(res),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
     }
 
 
-    fun headersBuilder() = Headers.Builder().apply {
-        add(
-            "User-Agent",
-            "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-        )
-        add("cache-control", "max-age=0")
-        add("upapi", "true")
-        add(
-            "sec-ch-ua",
-            "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"98\", \"Google Chrome\";v=\"98\""
-        )
-        add("sec-ch-ua-mobile", "?0")
-        add("sec-ch-ua", "\"Windows\"")
-        add("Upgrade-Insecure-Requests", "1")
-        add(
-            "Accept",
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
-        )
+    private fun headersBuilder() = io.ktor.http.Headers.build {
+        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+        append(HttpHeaders.CacheControl, "max-age=0")
+        append(HttpHeaders.Referrer, baseUrl)
     }
 
-    override val headers: Headers = headersBuilder().build()
+    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
 

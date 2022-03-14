@@ -1,22 +1,18 @@
 package org.ireader.core
 
-import android.util.Log
-import com.tfowl.ktor.client.features.JsoupFeature
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.*
 import io.ktor.client.request.*
-import okhttp3.Headers
-import okhttp3.OkHttpClient
+import io.ktor.client.utils.*
+import io.ktor.http.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.core.http.okhttp
 import tachiyomi.source.Dependencies
 import tachiyomi.source.HttpSource
 import tachiyomi.source.model.*
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
 
 /** Taken from https://tachiyomi.org/ **/
 abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSource(dependencies) {
@@ -29,28 +25,21 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
                 .reduce(Long::or) and Long.MAX_VALUE
     }
 
-    override val client: HttpClient
-        get() = HttpClient(OkHttp) {
-            install(JsoupFeature)
-        }
-
-    private fun headersBuilder() = Headers.Builder().apply {
-        add(
-                "User-Agent", "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-        )
-        add("cache-control", "max-age=0")
+    private fun headersBuilder() = io.ktor.http.Headers.build {
+        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+        append(HttpHeaders.CacheControl, "max-age=0")
     }
 
-    open val headers: Headers = headersBuilder().build()
+    open val headers: Headers = headersBuilder()
 
 
-    protected open fun requestBuilder(
+    fun requestBuilder(
             url: String,
-            mHeaders: Headers = headers,
+            mHeaders: io.ktor.http.Headers = headers,
     ): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(url)
-            headers { headers }
+            headersBuilder()
         }
     }
 
@@ -96,7 +85,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     abstract fun chapterFromElement(element: Element): ChapterInfo
 
 
-    open fun bookListParse(document: Document,elementSelector:String, nextPageSelector:String?, parser :(element: Element) ->  MangaInfo): MangasPageInfo {
+    fun bookListParse(document: Document, elementSelector: String, nextPageSelector: String?, parser: (element: Element) -> MangaInfo): MangasPageInfo {
         val books = document.select(elementSelector).map { element ->
             parser(element)
         }
@@ -107,7 +96,8 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
 
         return MangasPageInfo(books, hasNextPage)
     }
-    abstract fun chaptersSelector() :String?
+
+    abstract fun chaptersSelector(): String?
 
     open fun chaptersParse(document: Document): List<ChapterInfo> {
         return document.select(chaptersSelector()).map { chapterFromElement(it) }

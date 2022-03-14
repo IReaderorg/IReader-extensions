@@ -3,6 +3,7 @@ package ireader.wuxiaworldsite
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Headers
@@ -68,29 +69,26 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel-list/page/$page/")
-        return bookListParse(client.get<Document>(res),"div.page-item-detail",popularNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(),"div.page-item-detail",popularNextPageSelector()) { latestFromElement(it) }
     }
 
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel-list/page/$page/?m_orderby=views")
-        return bookListParse(client.get<Document>(res), "div.page-item-detail",popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(), "div.page-item-detail",popularNextPageSelector()) { popularFromElement(it) }
     }
     suspend fun getSearch(query: String,page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult=")
-        return bookListParse(client.get<Document>(res), "div.c-tabs-item__content",null) { searchFromElement(it) }
+        return bookListParse(client.get<String>(res).parseHtml(), "div.c-tabs-item__content",null) { searchFromElement(it) }
     }
 
 
-    private fun headersBuilder() = Headers.Builder().apply {
-        add(
-            "User-Agent",
-            "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-        )
-        add("Referer", baseUrl)
-        add("cache-control", "max-age=0")
+    private fun headersBuilder() = io.ktor.http.Headers.build {
+        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+        append(HttpHeaders.CacheControl, "max-age=0")
+        append(HttpHeaders.Referrer, baseUrl)
     }
 
-    override val headers: Headers = headersBuilder().build()
+    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
     fun popularFromElement(element: Element): MangaInfo {
