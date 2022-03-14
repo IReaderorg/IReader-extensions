@@ -6,10 +6,7 @@ import io.ktor.client.request.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Headers
-import org.ireader.core.LatestListing
-import org.ireader.core.ParsedHttpSource
-import org.ireader.core.PopularListing
-import org.ireader.core.SearchListing
+import org.ireader.core.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomi.core.http.okhttp
@@ -42,7 +39,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
     override fun getListings(): List<Listing> {
-        return listOf(LatestListing(), PopularListing(), SearchListing())
+        return listOf(LatestListing())
     }
 
     override val client: HttpClient
@@ -52,15 +49,36 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             }
         }
 
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return getLatest(page)
+    }
 
-    override fun fetchLatestEndpoint(page: Int): String? =
-        "/novel-list/page/$page/"
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val sorts = filters.findInstance<Filter.Sort>()?.value?.index
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return getSearch(query,page)
+        }
+        return when(sorts) {
+            0 -> getLatest(page)
+            1 -> getPopular(page)
+            else -> getLatest(page)
+        }
+    }
 
-    override fun fetchPopularEndpoint(page: Int): String? =
-        "/novel-list/page/$page/?m_orderby=views"
+    suspend fun getLatest(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/novel-list/page/$page/")
+        return bookListParse(client.get<Document>(res),"div.page-item-detail",popularNextPageSelector()) { latestFromElement(it) }
+    }
 
-    override fun fetchSearchEndpoint(page: Int, query: String): String? =
-        "/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult="
+    suspend fun getPopular(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/novel-list/page/$page/?m_orderby=views")
+        return bookListParse(client.get<Document>(res), "div.page-item-detail",popularNextPageSelector()) { popularFromElement(it) }
+    }
+    suspend fun getSearch(query: String,page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult=")
+        return bookListParse(client.get<Document>(res), "div.c-tabs-item__content",null) { searchFromElement(it) }
+    }
 
 
     private fun headersBuilder() = Headers.Builder().apply {
@@ -75,54 +93,31 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     override val headers: Headers = headersBuilder().build()
 
 
-    // popular
-    override fun popularRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchPopularEndpoint(page = page))
-        }
-    }
-
-    override fun popularSelector() = "div.page-item-detail"
-
-    override fun popularFromElement(element: Element): MangaInfo {
+    fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("h3.h5 a").text()
         val url = element.select("h3.h5 a").attr("href")
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    override fun popularNextPageSelector() = "div.nav-previous>a"
+    fun popularNextPageSelector() = "div.nav-previous>a"
 
 
-    override fun latestRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchLatestEndpoint(page))
-            headers { headers }
-        }
-    }
 
-    override fun latestSelector(): String = "div.page-item-detail"
-
-
-    override fun latestFromElement(element: Element): MangaInfo {
+    fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("h3.h5 a").text()
         val url = element.select("h3.h5 a").attr("href")
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    override fun latestNextPageSelector() = popularNextPageSelector()
 
-    override fun searchSelector() = "div.c-tabs-item__content"
-
-    override fun searchFromElement(element: Element): MangaInfo {
+    fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.post-title h3.h4 a").text()
         val url = element.select("div.post-title h3.h4 a").attr("href")
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
-    override fun searchNextPageSelector(): String? = null
 
 
     // manga details
@@ -180,7 +175,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         }
     }
 
-    override fun chaptersSelector() = "li.wp-manga-chapter"
 
     override fun chapterFromElement(element: Element): ChapterInfo {
         val link = baseUrl + element.select("a").attr("href").substringAfter(baseUrl)
@@ -227,12 +221,15 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
 
+    override fun chaptersSelector(): String? {
+        return "li.wp-manga-chapter"
+    }
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
                 var chapters =
                     chaptersParse(
-                        client.post<String>(requestBuilder(manga.key + "ajax/chapters/")).parseHtml()
+                        client.post<String>(requestBuilder(manga.key + "ajax/chapters/")).parseHtml(),
                     )
                 if (chapters.isEmpty()) {
                     chapters = chaptersParse(client.post<Document>(requestBuilder(manga.key)))
@@ -244,7 +241,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
 
     override fun pageContentParse(document: Document): List<String> {
-        return document.select("div.read-container h3,p").eachText()
+        return document.select("div.read-container .reading-content h3,p").eachText()
     }
 
 
@@ -259,19 +256,5 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             headers { headers }
         }
     }
-
-
-    override fun searchRequest(
-        page: Int,
-        query: String,
-        filters: List<Filter<*>>,
-    ): HttpRequestBuilder {
-        return requestBuilder(baseUrl + fetchSearchEndpoint(page = page, query = query))
-    }
-
-    override suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
-        return searchParse(client.get<String>(searchRequest(page, query, filters)).parseHtml())
-    }
-
 
 }

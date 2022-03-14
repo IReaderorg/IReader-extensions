@@ -1,6 +1,7 @@
 package org.ireader.core
 
 import android.util.Log
+import com.tfowl.ktor.client.features.JsoupFeature
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.*
@@ -10,6 +11,7 @@ import okhttp3.OkHttpClient
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
+import tachiyomi.core.http.okhttp
 import tachiyomi.source.Dependencies
 import tachiyomi.source.HttpSource
 import tachiyomi.source.model.*
@@ -27,42 +29,10 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
                 .reduce(Long::or) and Long.MAX_VALUE
     }
 
-    override fun getFilters(): FilterList {
-        return listOf(
-                Filter.Title(),
-                Filter.Sort(
-                        "Sort By:", arrayOf(
-                        "Latest",
-                        "Popular"
-                ), value = Filter.Sort.Selection(0, true)),
-        )
-    }
-
-    open override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
-        return getLatest(page)
-    }
-
-    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
-        val query = filters.findInstance<Filter.Title>()?.value
-        val sort = filters.findInstance<Filter.Sort>()?.value?.index
-
-
-        return if (sort == 0) {
-            getLatest(page)
-        } else if (sort == 1) {
-            getPopular(page)
-        } else if (query != null) {
-            if (query.isNotBlank()) {
-                getSearch(query, filters, page)
-            } else {
-                throw Exception("query is empty.")
-            }
-        } else {
-            getLatest(page)
+    override val client: HttpClient
+        get() = HttpClient(OkHttp) {
+            install(JsoupFeature)
         }
-
-    }
-
 
     private fun headersBuilder() = Headers.Builder().apply {
         add(
@@ -84,10 +54,6 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
         }
     }
 
-
-    protected abstract fun popularRequest(page: Int): HttpRequestBuilder
-
-    protected abstract fun latestRequest(page: Int): HttpRequestBuilder
 
     protected open fun detailRequest(manga: MangaInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -115,12 +81,6 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
         return pageContentParse(client.get<String>(contentRequest(chapter)).parseHtml())
     }
 
-    protected abstract fun searchRequest(
-            page: Int,
-            query: String,
-            filters: List<Filter<*>>,
-    ): HttpRequestBuilder
-
     open fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
@@ -132,105 +92,22 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
         return Jsoup.parse(this)
     }
 
-    open suspend fun getLatest(page: Int): MangasPageInfo {
-        val request = client.get<String>(latestRequest(page)).parseHtml()
-        return latestParse(request)
-    }
 
-    open suspend fun getPopular(page: Int): MangasPageInfo {
-        val request = client.get<String>(popularRequest(page)).parseHtml()
-        return popularParse(request)
-    }
-
-    open suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
-        val request = client.get<String>(searchRequest(page, query, filters)).parseHtml()
-        return searchParse(request)
-    }
-
-    /****************************************************************************************************/
-    /**
-     * Returns a Book from the given [element]. Most sites only show the title and the url, it's
-     * totally fine to fill only those two values.
-     *
-     * @param element an element obtained from [popularSelector].
-     */
-    abstract fun popularFromElement(element: Element): MangaInfo
-
-    /**
-     * Returns a Book from the given [element]. Most sites only show the title and the url, it's
-     * totally fine to fill only those two values.
-     *
-     * @param element an element obtained from [latestSelector].
-     */
-    abstract fun latestFromElement(element: Element): MangaInfo
-
-    /**
-     * Returns a chapter from the given element.
-     *
-     * @param element an element obtained from [chaptersSelector].
-     */
     abstract fun chapterFromElement(element: Element): ChapterInfo
 
-    /**
-     * Returns a Book from the given [element]. Most sites only show the title and the url, it's
-     * totally fine to fill only those two values.
-     *
-     * @param element an element obtained from [searchSelector].
-     */
-    abstract fun searchFromElement(element: Element): MangaInfo
 
-    /****************************************************************************************************/
-    /**
-     * Returns the Jsoup selector that returns a list of [Element] corresponding to each manga.
-     */
-    protected abstract fun popularSelector(): String
-
-    /**
-     * Returns the Jsoup selector that returns the <a> tag linking to the next page, or null if
-     * there's no next page.
-     */
-    protected abstract fun popularNextPageSelector(): String?
-
-    open fun popularParse(document: Document): MangasPageInfo {
-        val books = document.select(popularSelector()).map { element ->
-            popularFromElement(element)
+    open fun bookListParse(document: Document,elementSelector:String, nextPageSelector:String?, parser :(element: Element) ->  MangaInfo): MangasPageInfo {
+        val books = document.select(elementSelector).map { element ->
+            parser(element)
         }
 
-        val hasNextPage = popularNextPageSelector()?.let { selector ->
+        val hasNextPage = nextPageSelector?.let { selector ->
             document.select(selector).first()
         } != null
 
         return MangasPageInfo(books, hasNextPage)
     }
-
-    /**
-     * Returns the Jsoup selector that returns a list of [Element] corresponding to each manga.
-     */
-    protected abstract fun latestSelector(): String
-
-    /**
-     * Returns the Jsoup selector that returns the <a> tag linking to the next page, or null if
-     * there's no next page.
-     */
-    protected abstract fun latestNextPageSelector(): String?
-    open fun latestParse(document: Document): MangasPageInfo {
-
-        val books = document.select(latestSelector()).map { element ->
-            latestFromElement(element)
-        }
-
-        val hasNextPage = latestNextPageSelector()?.let { selector ->
-            document.select(selector).first()
-        } != null
-
-        return MangasPageInfo(books, hasNextPage)
-    }
-
-    /**
-     * Returns the Jsoup selector that returns a list of [Element] corresponding to each manga.
-     */
-    protected abstract fun chaptersSelector(): String
-
+    abstract fun chaptersSelector() :String?
 
     open fun chaptersParse(document: Document): List<ChapterInfo> {
         return document.select(chaptersSelector()).map { chapterFromElement(it) }
@@ -241,45 +118,6 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
             document: Document,
     ): List<String>
 
-    /**
-     * Returns the Jsoup selector that returns a list of [Element] corresponding to each manga.
-     */
-    protected abstract fun searchSelector(): String
-
-    protected abstract fun searchNextPageSelector(): String?
-
-
-    open fun searchParse(document: Document): MangasPageInfo {
-        /**
-         * I Add Filter Because sometimes this value contains null values
-         * so the null book shows in search screen
-         */
-        val books = document.select(searchSelector()).map { element ->
-            searchFromElement(element)
-        }.filter {
-            it.title.isNotBlank()
-        }
-        val hasNextPage = searchNextPageSelector()?.let { selector ->
-            document.select(selector).first()
-        } != null
-
-        return MangasPageInfo(books,
-                hasNextPage)
-    }
 
     abstract fun detailParse(document: Document): MangaInfo
-    /****************************************************************************************************/
-    /****************************************************************************************************/
-
-
-    abstract fun fetchLatestEndpoint(page: Int): String?
-
-    abstract fun fetchPopularEndpoint(page: Int): String?
-
-    abstract fun fetchSearchEndpoint(page: Int, query: String): String?
-
-
-    /****************************************************************************************************/
-
-
 }

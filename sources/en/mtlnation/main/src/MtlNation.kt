@@ -3,10 +3,7 @@ package ireader.mtlnation
 import io.ktor.client.request.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
-import org.ireader.core.LatestListing
-import org.ireader.core.ParsedHttpSource
-import org.ireader.core.PopularListing
-import org.ireader.core.SearchListing
+import org.ireader.core.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomi.source.Dependencies
@@ -45,14 +42,36 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
         )
     }
 
-    override fun fetchLatestEndpoint(page: Int): String? =
-        "/novel/page/${page}/?m_orderby=latest"
 
-    override fun fetchPopularEndpoint(page: Int): String? =
-        "/novel/page/2/?m_orderby=views"
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return getLatest(page)
+    }
 
-    override fun fetchSearchEndpoint(page: Int, query: String): String? =
-        "/search/?searchkey=$query"
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val sorts = filters.findInstance<Filter.Sort>()?.value?.index
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return getSearch(page,query)
+        }
+        return when(sorts) {
+            0 -> getLatest(page)
+            1 -> getPopular(page)
+            else -> getLatest(page)
+        }
+    }
+
+    suspend fun getLatest(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/novel/page/${page}/?m_orderby=latest")
+        return bookListParse(client.get<Document>(res),"div.page-item-detail","a.last") { popularFromElement(it) }
+    }
+    suspend fun getPopular(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/novel/page/2/?m_orderby=views")
+        return bookListParse(client.get<Document>(res),"div.page-item-detail","a.last") { popularFromElement(it) }
+    }
+    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/search/?searchkey=$query")
+        return bookListParse(client.get<Document>(res),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+    }
 
 
     fun headersBuilder() = Headers.Builder().apply {
@@ -78,16 +97,8 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
     override val headers: Headers = headersBuilder().build()
 
 
-    // popular
-    override fun popularRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchPopularEndpoint(page = page))
-        }
-    }
 
-    override fun popularSelector() = "div.page-item-detail"
-
-    override fun popularFromElement(element: Element): MangaInfo {
+    fun popularFromElement(element: Element): MangaInfo {
 
         val url = baseUrl + element.select("h3.h5 a").attr("href")
         val title = element.select("h3.h5 a").text()
@@ -95,39 +106,14 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    override fun popularNextPageSelector() = "a.last"
 
 
-    // latest
-
-    override fun latestRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchLatestEndpoint(page)!!)
-            headers { headers }
-
-        }
-    }
-
-    override fun latestSelector(): String = popularSelector()
-
-
-    override fun latestFromElement(element: Element): MangaInfo =
-        popularFromElement(element = element)
-
-    override fun latestNextPageSelector() = popularNextPageSelector()
-
-    //Not configured from here
-
-    override fun searchSelector() = "div.ul-list1 div.li-row"
-
-    override fun searchFromElement(element: Element): MangaInfo {
+    fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
         val url = baseUrl + element.select("div.txt a").attr("href")
         val thumbnailUrl = element.select("div.pic img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
-    override fun searchNextPageSelector(): String? = null
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
@@ -245,19 +231,6 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
             url(chapter.key)
             headers { headers }
         }
-    }
-
-
-    override fun searchRequest(
-        page: Int,
-        query: String,
-        filters: List<Filter<*>>,
-    ): HttpRequestBuilder {
-        return requestBuilder(baseUrl + fetchSearchEndpoint(page = page, query = query))
-    }
-
-    override suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
-        return searchParse(client.get<String>(searchRequest(page, query, filters)).parseHtml())
     }
 
 

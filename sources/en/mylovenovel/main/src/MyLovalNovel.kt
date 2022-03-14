@@ -1,16 +1,14 @@
 package ireader.mylovenovel
 
 import android.util.Log
+import io.ktor.client.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.merge
 import merge
 import okhttp3.Headers
 import okhttp3.OkHttpClient
-import org.ireader.core.LatestListing
-import org.ireader.core.ParsedHttpSource
-import org.ireader.core.PopularListing
-import org.ireader.core.SearchListing
+import org.ireader.core.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -21,7 +19,7 @@ import tachiyomix.annotations.Extension
 @Extension
 abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
-    override val name = "FreeWebNovel"
+    override val name = "MyLoveNovel"
 
 
     override val id: Long
@@ -37,25 +35,40 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
                 Filter.Sort(
                         "Sort By:",arrayOf(
                         "Latest",
-                        "Popular"
+                        "Popular",
                 )),
         )
     }
 
-    override fun getListings(): List<Listing> {
-        return listOf(
-            LatestListing(),
-        )
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return getLatest(page)
     }
 
-    override fun fetchLatestEndpoint(page: Int): String? =
-        "/lastupdate-${page}.html"
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val sorts = filters.findInstance<Filter.Sort>()?.value?.index
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return getSearch(page,query)
+        }
+        return when(sorts) {
+            0 -> getLatest(page)
+            1 -> getPopular(page)
+            else -> getLatest(page)
+        }
+    }
 
-    override fun fetchPopularEndpoint(page: Int): String? =
-        "/monthvisit-${page}.html"
-
-    override fun fetchSearchEndpoint(page: Int, query: String): String? =
-        "/index.php?s=so&module=book&keyword=${query}"
+    suspend fun getLatest(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/lastupdate-${page}.html")
+        return bookListParse(client.get<Document>(res),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+    }
+    suspend fun getPopular(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/monthvisit-${page}.html")
+        return bookListParse(client.get<Document>(res),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+    }
+    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/index.php?s=so&module=book&keyword=${query}")
+        return bookListParse(client.get<Document>(res),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+    }
 
 
     fun headersBuilder() = Headers.Builder().apply {
@@ -68,47 +81,30 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val headers: Headers = headersBuilder().build()
 
+    fun popularSelector() =  "ul.list li a"
 
-    // popular
-    override fun popularRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchPopularEndpoint(page = page))
-        }
-    }
-
-    override fun popularSelector() =  "ul.list li a"
-
-    override fun popularFromElement(element: Element): MangaInfo {
+    fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("p.bookname").text()
         val url = baseUrl + element.attr("href")
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    override fun popularNextPageSelector() = "div.pagelist>a"
+    fun popularNextPageSelector() = "div.pagelist>a"
 
 
-    // latest
-
-    override fun latestRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchLatestEndpoint(page)!!)
-            headers { headers }
-        }
-    }
-
-    override fun latestSelector(): String = popularSelector()
+     fun latestSelector(): String = popularSelector()
 
 
-    override fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
+     fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
 
-    override fun latestNextPageSelector() = popularNextPageSelector()
+     fun latestNextPageSelector() = popularNextPageSelector()
 
-    override fun searchSelector() = "ul.list li a"
+    fun searchSelector() = "ul.list li a"
 
-    override fun searchFromElement(element: Element): MangaInfo = popularFromElement(element)
+    fun searchFromElement(element: Element): MangaInfo = popularFromElement(element)
 
-    override fun searchNextPageSelector(): String? = popularNextPageSelector()
+    fun searchNextPageSelector(): String? = popularNextPageSelector()
 
 
     // manga details
@@ -198,19 +194,6 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         val request = client.get<String>(chaptersRequest(manga)).parseHtml()
         return chaptersParse(request)
-    }
-
-
-    override fun searchRequest(
-        page: Int,
-        query: String,
-        filters: List<Filter<*>>,
-    ): HttpRequestBuilder {
-        return requestBuilder(baseUrl + fetchSearchEndpoint(page = page, query = query))
-    }
-
-    override suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
-        return searchParse(client.get<String>(searchRequest(page, query, filters)).parseHtml())
     }
 
 

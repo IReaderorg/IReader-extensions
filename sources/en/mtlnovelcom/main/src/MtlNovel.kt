@@ -8,12 +8,9 @@ import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import okhttp3.Headers
-import org.ireader.core.LatestListing
-import org.ireader.core.ParsedHttpSource
-import org.ireader.core.PopularListing
-import org.ireader.core.SearchListing
 import mtlSearchItem
 import okhttp3.OkHttpClient
+import org.ireader.core.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -32,6 +29,8 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     override val baseUrl = "https://www.mtlnovel.com"
     override val lang = "en"
 
+    override val id: Long
+        get() = 4963245176571628870
     override val client = HttpClient(OkHttp) {
         engine {
             preconfigured = clientBuilder()
@@ -59,15 +58,36 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         )
     }
 
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return getLatest(page)
+    }
 
-    override fun fetchLatestEndpoint(page: Int): String? =
-        "/novel-list/?orderby=date&order=desc&status=all&pg=$page"
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val sorts = filters.findInstance<Filter.Sort>()?.value?.index
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return getSearch(page,query)
+        }
+        return when(sorts) {
+            0 -> getLatest(page)
+            1 -> getPopular(page)
+            else -> getLatest(page)
+        }
+    }
 
-    override fun fetchPopularEndpoint(page: Int): String? =
-        "/monthly-rank/page/$page/"
+    suspend fun getLatest(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/novel-list/?orderby=date&order=desc&status=all&pg=$page")
+        return bookListParse(client.get<Document>(res),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
+    }
+    suspend fun getPopular(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/monthly-rank/page/$page/")
+        return bookListParse(client.get<Document>(res),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
+    }
+    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/wp-admin/admin-ajax.php?action=autosuggest&q=$query&__amp_source_origin=https%3A%2F%2Fwww.mtlnovel.com")
+        return bookListParse(client.get<Document>(res),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+    }
 
-    override fun fetchSearchEndpoint(page: Int, query: String): String? =
-        "/wp-admin/admin-ajax.php?action=autosuggest&q=$query&__amp_source_origin=https%3A%2F%2Fwww.mtlnovel.com"
 
 
     fun headersBuilder() = Headers.Builder().apply {
@@ -82,51 +102,21 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     override val headers: Headers = headersBuilder().build()
 
 
-    // popular
-    override fun popularRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchPopularEndpoint(page = page))
-        }
-    }
 
-    override fun popularSelector() = "div.box"
-
-    override fun popularFromElement(element: Element): MangaInfo {
+    fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("a.list-title").attr("aria-label")
         val url = element.select("a.list-title").attr("href")
         val thumbnailUrl = element.select("amp-img.list-img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    override fun popularNextPageSelector() = "#pagination > a:nth-child(13)"
 
-
-    // latest
-
-    override fun latestRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchLatestEndpoint(page)!!)
-            headers { headers }
-        }
-    }
-
-    override fun latestSelector(): String = "div.box"
-
-
-    override fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
-    override fun latestNextPageSelector() = popularNextPageSelector()
-
-    override fun searchSelector() = "div.ul-list1 div.li-row"
-
-    override fun searchFromElement(element: Element): MangaInfo {
+    fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
         val url = element.select("div.txt a").attr("href")
         val thumbnailUrl = element.select("div.pic img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
-    override fun searchNextPageSelector(): String? = null
-
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
@@ -188,24 +178,6 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         }
     }
 
-    override fun searchRequest(
-        page: Int,
-        query: String,
-        filters: List<Filter<*>>,
-    ): HttpRequestBuilder {
-        Log.e("TAG", "customJsonSearchParse: $query")
-        return requestBuilder(baseUrl + fetchSearchEndpoint(page = page, query = query))
-    }
-
-
-    override suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
-        Log.e("TAG", "customJsonSearchParse: $query")
-        Log.e("TAG", "customJsonSearchParse: $filters")
-        Log.e("TAG", "customJsonSearchParse: $page")
-        val req = client.get<mtlSearchItem>(searchRequest(page, query, filters))
-        Log.e("TAG", "customJsonSearchParse: $req")
-        return customJsonSearchParse(req)
-    }
 
     private fun customJsonSearchParse(mtlSearchItem: mtlSearchItem): MangasPageInfo {
         val books = mutableListOf<MangaInfo>()

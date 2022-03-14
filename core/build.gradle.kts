@@ -37,5 +37,6 @@ dependencies {
     compileOnly(libs.tachiyomi.core)
     compileOnly(libs.tachiyomi.api)
     compileOnly(libs.jsoup)
+    compileOnly(libs.ktor.jsoup)
    // compileOnly(Deps.tachiyomi.api)
 }

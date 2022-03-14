@@ -6,10 +6,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.withContext
 import okhttp3.Headers
 import okhttp3.OkHttpClient
-import org.ireader.core.LatestListing
-import org.ireader.core.ParsedHttpSource
-import org.ireader.core.PopularListing
-import org.ireader.core.SearchListing
+import org.ireader.core.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomi.source.Dependencies
@@ -47,13 +44,44 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
         )
     }
 
-    override fun fetchLatestEndpoint(page: Int): String? =
+
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return getLatest(page)
+    }
+
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val sorts = filters.findInstance<Filter.Sort>()?.value?.index
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return getSearch(page,query)
+        }
+        return when(sorts) {
+            0 -> getLatest(page)
+            1 -> getPopular(page)
+            else -> getLatest(page)
+        }
+    }
+
+    suspend fun getLatest(page: Int) : MangasPageInfo {
+        val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
+        return bookListParse(client.get<Document>(res),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+    }
+    suspend fun getPopular(page: Int) : MangasPageInfo {
+        val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
+        return bookListParse(client.get<Document>(res),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+    }
+    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
+        val res = requestBuilder(baseUrl + fetchSearchEndpoint(page,query))
+        return bookListParse(client.get<Document>(res),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+    }
+
+     fun fetchLatestEndpoint(page: Int): String? =
         "/stories/novel?pageIndex=$page&orderBy=5"
 
-    override fun fetchPopularEndpoint(page: Int): String? =
+     fun fetchPopularEndpoint(page: Int): String? =
         "/stories/novel?pageIndex=$page&orderBy=1"
 
-    override fun fetchSearchEndpoint(page: Int, query: String): String? =
+     fun fetchSearchEndpoint(page: Int, query: String): String? =
         "/search?keywords=$query?pageIndex=$page"
 
 
@@ -71,43 +99,43 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     // popular
-    override fun popularRequest(page: Int): HttpRequestBuilder {
+     fun popularRequest(page: Int): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(baseUrl + fetchPopularEndpoint(page = page)!!)
         }
     }
 
-    override fun popularSelector() = "div.j_category_wrapper li.fl a.g_thumb"
+     fun popularSelector() = "div.j_category_wrapper li.fl a.g_thumb"
 
-    override fun popularFromElement(element: Element): MangaInfo {
+     fun popularFromElement(element: Element): MangaInfo {
         val url = baseUrl + element.attr("href")
         val title = element.attr("title")
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    override fun popularNextPageSelector() = "[rel=next]"
+     fun popularNextPageSelector() = "[rel=next]"
 
     // latest
 
-    override fun latestRequest(page: Int): HttpRequestBuilder {
+     fun latestRequest(page: Int): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(baseUrl + fetchLatestEndpoint(page)!!)
             headers { headers }
         }
     }
 
-    override fun latestSelector(): String = popularSelector()
+     fun latestSelector(): String = popularSelector()
 
 
-    override fun latestFromElement(element: Element) = popularFromElement(element)
+     fun latestFromElement(element: Element) = popularFromElement(element)
 
-    override fun latestNextPageSelector() = popularNextPageSelector()
+     fun latestNextPageSelector() = popularNextPageSelector()
 
 
 
     // search
-    override fun searchRequest(
+     fun searchRequest(
         page: Int,
         query: String,
         filters: List<Filter<*>>,
@@ -123,12 +151,11 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
         }
     }
 
-    override fun searchSelector() = popularSelector()
+     fun searchSelector() = popularSelector()
 
-    override fun searchFromElement(element: Element) = popularFromElement(element)
+     fun searchFromElement(element: Element) = popularFromElement(element)
 
-    override fun searchNextPageSelector() = popularNextPageSelector()
-
+     fun searchNextPageSelector() = popularNextPageSelector()
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {

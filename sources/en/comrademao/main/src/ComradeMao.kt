@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit
 @Extension
 abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
 
+
     override val name = "Comrademao"
 
 

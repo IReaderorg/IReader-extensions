@@ -6,6 +6,7 @@ import okhttp3.Headers
 import org.ireader.core.LatestListing
 import org.ireader.core.ParsedHttpSource
 import org.ireader.core.SearchListing
+import org.ireader.core.findInstance
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomi.source.Dependencies
@@ -40,13 +41,31 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
         )
     }
 
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return getLatest(page)
+    }
 
-    override fun fetchLatestEndpoint(page: Int): String? =
-        "/p/novels-listing.html"
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val sorts = filters.findInstance<Filter.Sort>()?.value?.index
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return getSearch(page,query)
+        }
+        return when(sorts) {
+            0 -> getLatest(page)
+            else -> getLatest(page)
+        }
+    }
 
-    override fun fetchPopularEndpoint(page: Int): String? = null
-    override fun fetchSearchEndpoint(page: Int, query: String): String? =
-        "/p/novels-listing.html"
+    suspend fun getLatest(page: Int) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/p/novels-listing.html")
+        return bookListParse(client.get<Document>(res),"ul.a li.b",null) { latestFromElement(it) }
+    }
+    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
+        val res = requestBuilder("$baseUrl/p/novels-listing.html")
+        return bookListParse(client.get<Document>(res),"ul.a li.b",null) { latestFromElement(it) }
+    }
+
 
 
     fun headersBuilder() = Headers.Builder().apply {
@@ -59,52 +78,15 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val headers: Headers = headersBuilder().build()
 
-    override fun popularRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchLatestEndpoint(page))
-            headers { headers }
-        }
-    }
-
-    override fun popularSelector() = ""
-
-    override fun popularFromElement(element: Element): MangaInfo {
-        return MangaInfo(key = "", title = "")
-    }
-
-    override fun popularNextPageSelector() = null
 
 
-    override suspend fun getLatest(page: Int): MangasPageInfo {
-        val request = client.get<String>(latestRequest(page)).parseHtml()
-        return latestParse(request)
-    }
 
-    override fun latestRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchLatestEndpoint(page)!!)
-            headers { headers }
-        }
-    }
-
-    override fun latestSelector(): String ="ul.a li.b"
-
-
-    override fun latestFromElement(element: Element): MangaInfo {
+    fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("a").text()
         val url = element.select("a").attr("href")
-        Log.d("TAG", "latestFromElement: $title")
 
         return MangaInfo(key = url, title = title)
     }
-
-    override fun latestNextPageSelector() = null
-
-    override fun searchSelector() = latestSelector()
-
-    override fun searchFromElement(element: Element): MangaInfo = latestFromElement(element)
-
-    override fun searchNextPageSelector(): String? = null
 
 
     // manga details
@@ -157,22 +139,6 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
             url(chapter.key)
             headers { headers }
         }
-    }
-
-
-    override fun searchRequest(
-        page: Int,
-        query: String,
-        filters: List<Filter<*>>,
-    ): HttpRequestBuilder {
-        return requestBuilder(baseUrl + fetchSearchEndpoint(page = page, query = query))
-    }
-
-    override suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
-        val response = searchParse(client.get<String>(searchRequest(page, query, filters)).parseHtml())
-        val books = response.mangas.filter { it.title.contains(query) }
-
-        return MangasPageInfo(books , response.hasNextPage)
     }
 
 
