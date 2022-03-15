@@ -6,6 +6,7 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.features.json.*
 import io.ktor.client.features.json.serializer.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import okhttp3.Headers
 import mtlSearchItem
@@ -84,11 +85,11 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel-list/?orderby=date&order=desc&status=all&pg=$page")
-        return bookListParse(client.get<String>(res).parseHtml(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/monthly-rank/page/$page/")
-        return bookListParse(client.get<String>(res).parseHtml(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/wp-admin/admin-ajax.php?action=autosuggest&q=$query&__amp_source_origin=https%3A%2F%2Fwww.mtlnovel.com")
@@ -96,14 +97,13 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     }
 
 
-
-    private fun headersBuilder() = io.ktor.http.Headers.build {
-        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
-        append(HttpHeaders.CacheControl, "max-age=0")
-        append(HttpHeaders.Referrer, baseUrl)
+    override fun HttpRequestBuilder.headersBuilder() {
+        headers {
+            append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+            append(HttpHeaders.CacheControl, "max-age=0")
+            append(HttpHeaders.Referrer, baseUrl)
+        }
     }
-
-    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
 
@@ -158,7 +158,7 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     }
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
-        val request = client.get<String>(chaptersRequest(manga)).parseHtml()
+        val request = client.get<HttpResponse>(chaptersRequest(manga)).asJsoup()
         return chaptersParse(request).reversed()
     }
 
@@ -171,7 +171,7 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<String>(contentRequest(chapter)).parseHtml())
+        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
     }
 
 

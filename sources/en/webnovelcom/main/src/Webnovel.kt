@@ -1,6 +1,7 @@
 package ireader.webnovelcom
 
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.merge
@@ -65,15 +66,15 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
-        return bookListParse(client.get<String>(res).parseHtml(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
-        return bookListParse(client.get<String>(res).parseHtml(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchSearchEndpoint(page,query))
-        return bookListParse(client.get<String>(res).parseHtml(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
     }
 
      fun fetchLatestEndpoint(page: Int): String? =
@@ -93,8 +94,6 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
         append(HttpHeaders.CacheControl, "max-age=0")
         append(HttpHeaders.Referrer, baseUrl)
     }
-
-    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
     // popular
@@ -199,7 +198,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
 
-                val request = client.get<String>(chaptersRequest(book = book)).parseHtml()
+                val request = client.get<HttpResponse>(chaptersRequest(book = book)).asJsoup()
 
                 return@withContext chaptersParse(request)
             }
@@ -213,7 +212,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<String>(contentRequest(chapter)).parseHtml())
+        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
     }
 
 

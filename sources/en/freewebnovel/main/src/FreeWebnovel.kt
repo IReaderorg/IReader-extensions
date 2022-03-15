@@ -4,6 +4,7 @@ import com.tfowl.ktor.client.features.JsoupFeature
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
@@ -60,27 +61,27 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/latest-release-novel/$page/")
-        return bookListParse(client.get<String>(res).parseHtml(),"div.ul-list1 div.li","div.ul-list1") { latestFromElement(it) }
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.ul-list1 div.li","div.ul-list1") { latestFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/most-popular-novel/")
-        return bookListParse(client.get<String>(res).parseHtml(),"div.ul-list1 div.li-row",null) { popularFromElement(it) }
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.ul-list1 div.li-row",null) { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/search/?searchkey=$query")
-        return bookListParse(client.get<String>(res).parseHtml(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
     }
 
 
 
 
-    private fun headersBuilder() = io.ktor.http.Headers.build {
-        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
-        append(HttpHeaders.CacheControl, "max-age=0")
-        append(HttpHeaders.Referrer, baseUrl)
+    override fun HttpRequestBuilder.headersBuilder() {
+        headers {
+            append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+            append(HttpHeaders.CacheControl, "max-age=0")
+            append(HttpHeaders.Referrer, baseUrl)
+        }
     }
-
-    override val headers: io.ktor.http.Headers = headersBuilder()
 
 
     private fun popularFromElement(element: Element): MangaInfo {
@@ -179,18 +180,17 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
-                val page = client.get<String>(chaptersRequest(book = manga))
                 val maxPage = parseMaxPage(manga)
                 val list = mutableListOf<Deferred<List<ChapterInfo>>>()
                 for (i in 1..maxPage) {
                     val pChapters = async {
                         chaptersParse(
-                            client.get<String>(
+                            client.get<HttpResponse>(
                                 uniqueChaptersRequest(
                                     book = manga,
                                     page = i
                                 )
-                            ).parseHtml()
+                            ).asJsoup()
                         )
                     }
                     list.addAll(listOf(pChapters))
@@ -203,7 +203,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get<String>(chaptersRequest(book = book)).parseHtml()
+        val page = client.get<HttpResponse>(chaptersRequest(book = book)).asJsoup()
         val maxPage = page.select("#indexselect option").eachText().size
         return maxPage
     }
@@ -214,7 +214,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<String>(contentRequest(chapter)).parseHtml())
+        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
     }
 
 

@@ -1,10 +1,7 @@
 package org.ireader.core
 
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.*
 import io.ktor.client.request.*
-import io.ktor.client.utils.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -25,21 +22,25 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
                 .reduce(Long::or) and Long.MAX_VALUE
     }
 
-    private fun headersBuilder() = io.ktor.http.Headers.build {
-        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
-        append(HttpHeaders.CacheControl, "max-age=0")
-    }
 
-    open val headers: Headers = headersBuilder()
+    open fun HttpRequestBuilder.headersBuilder() {
+        headers {
+            append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+            append(HttpHeaders.CacheControl, "max-age=0")
+        }
+    }
 
 
     fun requestBuilder(
             url: String,
-            mHeaders: io.ktor.http.Headers = headers,
+            block: HeadersBuilder.() -> Unit = {
+                append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+                append(HttpHeaders.CacheControl, "max-age=0")
+            }
     ): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(url)
-            headersBuilder()
+            HeadersBuilder().apply(block)
         }
     }
 
@@ -47,18 +48,19 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     protected open fun detailRequest(manga: MangaInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(manga.key)
-            headers { headers }
+            headersBuilder()
+
         }
     }
 
     override suspend fun getMangaDetails(manga: MangaInfo): MangaInfo {
-        return detailParse(client.get<String>(detailRequest(manga)).parseHtml())
+        return detailParse(client.get<HttpResponse>(detailRequest(manga)).asJsoup())
     }
 
     open fun chaptersRequest(book: MangaInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(book.key)
-            headers { headers }
+            headersBuilder()
         }
     }
 
@@ -67,20 +69,15 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     }
 
     open suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<String>(contentRequest(chapter)).parseHtml())
+        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
     }
 
     open fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
-            headers { headers }
+            headersBuilder()
         }
     }
-
-    fun String.parseHtml(): Document {
-        return Jsoup.parse(this)
-    }
-
 
     abstract fun chapterFromElement(element: Element): ChapterInfo
 

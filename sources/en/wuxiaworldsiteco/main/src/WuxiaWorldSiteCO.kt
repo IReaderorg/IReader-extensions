@@ -1,15 +1,16 @@
-package ireader.realwebnovel
+package ireader.wuxiaworldsiteco
 
+import android.util.Log
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.Headers
-import okhttp3.OkHttpClient
 import org.ireader.core.*
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomi.core.http.okhttp
@@ -20,13 +21,13 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Extension
-abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(deps) {
+abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
-    override val name = "RealWebNovel"
+    override val name = "WuxiaWorldSite.co"
     override val id: Long
-        get() = 858825962
+        get() = 997814001019
 
-    override val baseUrl = "https://readwebnovels.net"
+    override val baseUrl = "https://wuxiaworldsite.co/"
 
     override val lang = "en"
 
@@ -34,7 +35,7 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         return listOf(
                 Filter.Title(),
                 Filter.Sort(
-                        "Sort By:",arrayOf(
+                        "Sort By:", arrayOf(
                         "Latest",
                         "Popular"
                 )),
@@ -45,6 +46,12 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         return listOf(LatestListing())
     }
 
+    override val client: HttpClient
+        get() = HttpClient(OkHttp) {
+            engine {
+                preconfigured = deps.httpClients.default.okhttp
+            }
+        }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
@@ -54,37 +61,57 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return getSearch(page,query)
+            return getSearch(query, page)
         }
-        return when(sorts) {
+        return when (sorts) {
             0 -> getLatest(page)
             1 -> getPopular(page)
             else -> getLatest(page)
         }
     }
 
-    suspend fun getLatest(page: Int) : MangasPageInfo {
-        val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+
+    suspend fun getLatest(page: Int): MangasPageInfo {
+        val res = client.submitForm<HttpResponse>(
+                url = "$baseUrl/novel-updates",
+                formParameters = Parameters.build {
+                    append("count", "6")
+                    append("genres_include", "")
+                    append("keyword", "")
+                    append("limit", "6")
+                    append("order_by", "real_time")
+                    append("page", "$page")
+                },
+                encodeInQuery = true,
+        ) {
+            headersBuilder()
+        }
+        return bookListParse(res.asJsoup(), "#ajax-div .item", popularNextPageSelector()) { latestFromElement(it) }
     }
-    suspend fun getPopular(page: Int) : MangasPageInfo {
-        val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+
+    suspend fun getPopular(page: Int): MangasPageInfo {
+        val res = client.submitForm<HttpResponse>(
+                url = "$baseUrl/power-ranking",
+                formParameters = Parameters.build {
+                    append("count", "6")
+                    append("genres_include", "")
+                    append("keyword", "")
+                    append("limit", "6")
+                    append("order_by", "views")
+                    append("page", "$page")
+                },
+                encodeInQuery = true
+
+        ) {
+            headersBuilder()
+        }
+        return bookListParse(res.asJsoup(), "#ajax-div .item", popularNextPageSelector()) { latestFromElement(it) }
     }
-    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
-        val res = requestBuilder(baseUrl + fetchSearchEndpoint(page,query))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+
+    suspend fun getSearch(query: String, page: Int): MangasPageInfo {
+        val res = requestBuilder("$baseUrl/search/$query")
+        return bookListParse(client.get<HttpResponse>(res).asJsoup(), ".item", null) { latestFromElement(it) }
     }
-
-     fun fetchLatestEndpoint(page: Int): String? =
-        "/manga-2/page/${page}/?m_orderby=latest"
-
-     fun fetchPopularEndpoint(page: Int): String? =
-        "/manga-2/page/${page}/?m_orderby=trending"
-
-     fun fetchSearchEndpoint(page: Int, query: String): String? =
-        "/?s=${query}&post_type=wp-manga&op=&author=&artist=&release=&adult="
-
 
 
     override fun HttpRequestBuilder.headersBuilder() {
@@ -96,66 +123,39 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
     }
 
 
-    // popular
-     fun popularRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchPopularEndpoint(page = page))
-        }
-    }
+    fun popularNextPageSelector() = "div.paging_section > div > span:nth-child(6)"
 
-     fun popularSelector() = "div.page-item-detail"
 
-     fun popularFromElement(element: Element): MangaInfo {
+    fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("a").attr("title")
-        val url = element.select("a").attr("href")
-        val thumbnailUrl = element.select("img").attr("src")
+        val url = baseUrl + element.select("a").attr("href")
+        val thumbnailUrl = baseUrl + element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
-     fun popularNextPageSelector() = "div.nav-previous>a"
-
-     fun latestSelector(): String = popularSelector()
-
-
-     fun latestFromElement(element: Element): MangaInfo =popularFromElement(element)
-
-     fun latestNextPageSelector() = popularNextPageSelector()
-
-     fun searchSelector() = "div.c-tabs-item__content"
-
-     fun searchFromElement(element: Element): MangaInfo {
-        val title = element.select("h3.h4 a").text()
-        val url = element.select("div.tab-thumb a").attr("href")
-        val thumbnailUrl = element.select("div.tab-thumb a img").attr("src")
-        return MangaInfo(key = url, title = title, cover = thumbnailUrl)
-    }
-
-     fun searchNextPageSelector(): String? = null
 
 
     // manga details
 
     override fun detailParse(document: Document): MangaInfo {
-        val title = document.select("div.post-title h1").text()
-        val cover = document.select("div.summary__content").attr("src")
-        val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
-        val authorBookSelector = document.select("div.author-content a").text()
+        val title = document.select("h1.heading_read").text()
+        val cover = baseUrl + document.select(".img-read img").attr("src")
+        val link = ""
+        val authorBookSelector = document.select(".content-reading p").text()
         val description =
-            document.select("div.description-summary div.summary__content p").eachText()
-                .joinToString("\n\n")
-        val category = document.select("div.genres-content a").eachText()
-        val rating = document.select("div.post-rating span.score").text()
-        val status = document.select("div.post-status div.summary-content").text()
+                document.select(".story-introduction-content p").eachText()
+                        .joinToString("\n\n")
+        val category = document.select(".tags a").eachText()
+        val status = document.select(".a_tag_item:last-child").text()
 
 
         return MangaInfo(
-            title = title,
-            cover = cover,
-            description = description,
-            author = authorBookSelector,
-            genres = category,
-            key = link,
-            status = parseStatus(status)
+                title = title,
+                cover = cover,
+                description = description,
+                author = authorBookSelector,
+                genres = category,
+                key = link,
+                status = parseStatus(status)
         )
     }
 
@@ -163,7 +163,7 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         return when {
             "OnGoing" in string -> MangaInfo.ONGOING
             "Completed" in string -> MangaInfo.COMPLETED
-            else -> MangaInfo.UNKNOWN
+            else -> MangaInfo.ONGOING
         }
     }
 
@@ -188,14 +188,23 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         }
     }
 
-    override fun chaptersSelector() = "li.wp-manga-chapter"
 
     override fun chapterFromElement(element: Element): ChapterInfo {
-        val link = baseUrl + element.select("a").attr("href").substringAfter(baseUrl)
-        val name = element.select("a").text()
+        val link = baseUrl + element.select("a").attr("href")
+        val name = element.select("a:not(i)").text()
         val dateUploaded = element.select("i").text()
 
         return ChapterInfo(name = name, key = link, dateUpload = parseChapterDate(dateUploaded))
+    }
+    override fun chaptersParse(document: Document): List<ChapterInfo> {
+        return document.select(chaptersSelector()).map {
+            try {
+                chapterFromElement(it)
+            }catch (e:Exception){
+                ChapterInfo("","",)
+            }
+
+        }
     }
 
     fun parseChapterDate(date: String): Long {
@@ -235,24 +244,25 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
 
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
 
-    override suspend fun getChapterList(book: MangaInfo): List<ChapterInfo> {
-        return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
-                var chapters =
-                    chaptersParse(
-                        client.post<HttpResponse>(requestBuilder(book.key + "ajax/chapters/")).asJsoup()
-                    )
-                if (chapters.isEmpty()) {
-                    chapters = chaptersParse(client.post<HttpResponse>(requestBuilder(book.key)).asJsoup())
-                }
-                return@withContext chapters.reversed()
-            }
-        }.getOrThrow()
+    override fun chaptersSelector(): String = "a"
+
+    suspend fun customRequest(document: Document): String? {
+        return document.select(".story-introduction__toggler span").attr("data-id")
+    }
+
+    override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
+        val init = client.get<HttpResponse>(requestBuilder(manga.key)).asJsoup()
+        val bookId = customRequest(init)
+        val response = client.get<HttpResponse>(requestBuilder("$baseUrl/get-full-list.ajax?id=$bookId")).asJsoup()
+        val parser = chaptersParse(response)
+        Log.d("TAG", "parser: $parser")
+        return parser
     }
 
 
     override fun pageContentParse(document: Document): List<String> {
-        return document.select("div.read-container h3,p").eachText()
+        val par = document.select(".content-story p").eachText()
+        return par.drop(1)
     }
 
 
@@ -267,6 +277,5 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
             headers { headers }
         }
     }
-
 
 }

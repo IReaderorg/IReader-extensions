@@ -4,10 +4,12 @@ import com.tfowl.ktor.client.features.JsoupFeature
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import org.ireader.core.SearchListing
+import org.ireader.core.asJsoup
 import org.ireader.core.findInstance
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -212,7 +214,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
-                val page = client.get<String>(chaptersRequest(book = manga))
+                val page = client.get<HttpResponse>(chaptersRequest(book = manga))
                 val maxPage = parseMaxPage(manga)
                 val list = mutableListOf<Deferred<List<ChapterInfo>>>()
                 for (i in 1..maxPage) {
@@ -228,7 +230,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
                     }
                     list.addAll(listOf(pChapters))
                 }
-                //  val request = client.get<String>(chaptersRequest(book = book))
+                //  val request = client.get<HttpResponse>(chaptersRequest(book = book))
 
                 return@withContext list.awaitAll().flatten().reversed()
             }
@@ -249,7 +251,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get<Document>(chaptersRequest(book = book))
+        val page = client.get<HttpResponse>(chaptersRequest(book = book)).asJsoup()
         val maxPage = page.select(".pagination-list li:last-child").prev().text()
         return maxPage.toInt()
     }
