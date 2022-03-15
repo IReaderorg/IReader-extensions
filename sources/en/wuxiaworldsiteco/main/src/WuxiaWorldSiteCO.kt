@@ -27,7 +27,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     override val id: Long
         get() = 997814001019
 
-    override val baseUrl = "https://wuxiaworldsite.co/"
+    override val baseUrl = "https://wuxiaworldsite.co"
 
     override val lang = "en"
 
@@ -71,41 +71,45 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
 
+
     suspend fun getLatest(page: Int): MangasPageInfo {
         val res = client.submitForm<HttpResponse>(
-                url = "$baseUrl/novel-updates",
+                url = "$baseUrl/ajax-story.ajax",
                 formParameters = Parameters.build {
                     append("count", "6")
                     append("genres_include", "")
                     append("keyword", "")
                     append("limit", "6")
                     append("order_by", "real_time")
-                    append("page", "$page")
+                    append("order_type", "DESC")
+                    append("page", page.toString())
                 },
-                encodeInQuery = true,
+                encodeInQuery = false
+
         ) {
             headersBuilder()
         }
-        return bookListParse(res.asJsoup(), "#ajax-div .item", popularNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(res.asJsoup(), ".item", popularNextPageSelector()) { latestFromElement(it) }
     }
 
     suspend fun getPopular(page: Int): MangasPageInfo {
         val res = client.submitForm<HttpResponse>(
-                url = "$baseUrl/power-ranking",
+                url = "$baseUrl/ajax-story.ajax",
                 formParameters = Parameters.build {
                     append("count", "6")
                     append("genres_include", "")
                     append("keyword", "")
                     append("limit", "6")
                     append("order_by", "views")
-                    append("page", "$page")
+                    append("order_type", "DESC")
+                    append("page", page.toString())
                 },
-                encodeInQuery = true
+                encodeInQuery = false
 
         ) {
             headersBuilder()
         }
-        return bookListParse(res.asJsoup(), "#ajax-div .item", popularNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(res.asJsoup(), ".item", popularNextPageSelector()) { latestFromElement(it) }
     }
 
     suspend fun getSearch(query: String, page: Int): MangasPageInfo {
@@ -123,7 +127,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
 
-    fun popularNextPageSelector() = "div.paging_section > div > span:nth-child(6)"
+    fun popularNextPageSelector() = ".paging_section"
 
 
     fun latestFromElement(element: Element): MangaInfo {
