@@ -103,6 +103,9 @@ dependencies {
   compileOnly(libs.findLibrary("jsoup").get())
   compileOnly(libs.findLibrary("jsoup").get())
   compileOnly(libs.findLibrary("ktor-jsoup").get())
+  implementation(libs.findLibrary("ktor-serialization").get())
+  implementation(libs.findLibrary("ktor-gson").get())
+  implementation(libs.findLibrary("ktor-jackson").get())
 
   compileOnly(project(Proj.annotation))
   ksp(project(Proj.compiler))
