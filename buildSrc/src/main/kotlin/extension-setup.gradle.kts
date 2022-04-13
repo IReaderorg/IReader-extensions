@@ -105,7 +105,6 @@ dependencies {
   compileOnly(libs.findLibrary("ktor-jsoup").get())
   implementation(libs.findLibrary("ktor-serialization").get())
   implementation(libs.findLibrary("ktor-gson").get())
-  implementation(libs.findLibrary("ktor-jackson").get())
 
   compileOnly(project(Proj.annotation))
   ksp(project(Proj.compiler))
@@ -132,3 +131,9 @@ fun BaseVariantImpl.currentExtension(): Extension {
   return extensionList.first { it.flavor == flavor.name }
 }
 
+configurations.all {
+  resolutionStrategy {
+    cacheChangingModulesFor(0, "seconds")
+    force("org.jsoup:jsoup:1.14.3")
+  }
+}

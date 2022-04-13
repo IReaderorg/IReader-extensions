@@ -89,7 +89,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
 
     suspend fun getLatest(page: Int): MangasPageInfo {
         val res = requestBuilder("$baseUrl/api/v1/pages/public")
-        //Log.e("TAG", "getLatest: ${Json.decodeFromString<List<QUGroupItem>>( client.get<String>(res))}", )
 
         return parseBooks(
             Gson().fromJson<QUGroup>(
@@ -181,21 +180,25 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         val request = client.get<String>(chaptersRequest(manga))
-        val chapters = Gson().fromJson(request,ChapterGroup::class.java)
+        val chapters = Gson().fromJson(request, ChapterGroup::class.java)
         return chapters.map { ChapterInfo(key = it.Href, name = it.Text) }
     }
 
 
     fun pageContentParse(document: Document): List<String> {
-        return document.select(".well h2,p").eachText()
+        return document.select("div > p,h2").eachText().map { Jsoup.parse(it).text() }
     }
 
     override suspend fun getPageList(chapter: ChapterInfo): List<Page> {
-        return when (chapter.key) {
-            PARSE_CONTENT -> pageContentParse(Jsoup.parse(chapter.name)).map { Text(it) }
-            else -> return getContents(chapter).map { Text(it) }
+        val cmd = parseWebViewCommand(chapter.scanlator)
+       return when {
+           cmd != null && chapter.scanlator.contains(PARSE_CONTENT) ->  pageContentParse(Jsoup.parse(cmd.html)).map { Text(it) }
+           chapter.key.contains(PARSE_CONTENT) -> pageContentParse(Jsoup.parse(chapter.scanlator)).map { Text(it) }
+            else -> {
+                    val cmd = buildWebViewCommand(chapter.key, ajaxSelector = ".well", 0, mode = PARSE_CONTENT)
+                    return listOf(Text(cmd))
+            }
         }
-
     }
 
     suspend fun getContents(chapter: ChapterInfo): List<String> {
@@ -213,3 +216,4 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
 
 
 }
+

@@ -16,6 +16,9 @@ tachiyomi-api = { module = "org.tachiyomi:source-api-jvm", version.ref = "tachiy
 
 okhttp = "com.squareup.okhttp3:okhttp:4.10.0-RC1"
 jsoup = "org.jsoup:jsoup:1.14.3"
+skrapeit = "it.skrape:skrapeit:1.2.1"
+skrapeit-snaphsot = "it.skrape:skrapeit:0-SNAPSHOT"
+
 
 ktor-jsoup = "com.tfowl.ktor:ktor-jsoup:1.6.4"
 ktor-serialization = { module = "io.ktor:ktor-serialization", version.ref = "ktor" }
