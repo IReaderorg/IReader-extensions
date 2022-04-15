@@ -2,21 +2,22 @@ package ireader.wuxiaworldsite
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.Headers
 import org.ireader.core.*
+import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.core.http.okhttp
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 @Extension
 abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -70,16 +71,16 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel-list/page/$page/")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.page-item-detail",popularNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),"div.page-item-detail",popularNextPageSelector()) { latestFromElement(it) }
     }
 
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel-list/page/$page/?m_orderby=views")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(), "div.page-item-detail",popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), "div.page-item-detail",popularNextPageSelector()) { popularFromElement(it) }
     }
     suspend fun getSearch(query: String,page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult=")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(), "div.c-tabs-item__content",null) { searchFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), "div.c-tabs-item__content",null) { searchFromElement(it) }
     }
 
 
@@ -221,7 +222,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
 
-    override fun chaptersSelector(): String? {
+    override fun chaptersSelector(): String {
         return "li.wp-manga-chapter"
     }
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
@@ -229,10 +230,10 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             return@runCatching withContext(Dispatchers.IO) {
                 var chapters =
                     chaptersParse(
-                        client.post<HttpResponse>(requestBuilder(manga.key + "ajax/chapters/")).asJsoup(),
+                        client.post(requestBuilder(manga.key + "ajax/chapters/")).asJsoup(),
                     )
                 if (chapters.isEmpty()) {
-                    chapters = chaptersParse(client.post<Document>(requestBuilder(manga.key)))
+                    chapters = chaptersParse(client.post(requestBuilder(manga.key)).asJsoup())
                 }
                 return@withContext chapters.reversed()
             }
@@ -249,7 +250,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 

@@ -1,7 +1,7 @@
 package org.ireader.core
 
-import tachiyomi.source.model.Filter
-import tachiyomi.source.model.Listing
+import org.ireader.core_api.source.model.Listing
+
 
 class LatestListing : Listing("Latest")
 class PopularListing : Listing("Popular")

@@ -1,18 +1,16 @@
 package ireader.webnovelcom
 
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.withContext
-import okhttp3.Headers
-import okhttp3.OkHttpClient
-import org.ireader.core.*
+import org.ireader.core.LatestListing
+import org.ireader.core.ParsedHttpSource
+import org.ireader.core.asJsoup
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
 import java.util.*
@@ -66,15 +64,15 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchSearchEndpoint(page,query))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
     }
 
      fun fetchLatestEndpoint(page: Int): String? =
@@ -198,7 +196,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
 
-                val request = client.get<HttpResponse>(chaptersRequest(book = book)).asJsoup()
+                val request = client.get(chaptersRequest(book = book)).asJsoup()
 
                 return@withContext chaptersParse(request)
             }
@@ -212,7 +210,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 

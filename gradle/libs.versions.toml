@@ -1,6 +1,6 @@
 [versions]
-tachiyomi = "1.2-SNAPSHOT"
-ktor = "1.6.8"
+ireader = "1.2-SNAPSHOT"
+ktor = "2.0.0"
 
 
 
@@ -11,17 +11,17 @@ android-gradle = "com.android.tools.build:gradle:7.1.2"
 
 kotlinpoet = "com.squareup:kotlinpoet-ksp:1.10.2"
 
-tachiyomi-core = { module = "org.tachiyomi:core-jvm", version.ref = "tachiyomi" }
-tachiyomi-api = { module = "org.tachiyomi:source-api-jvm", version.ref = "tachiyomi" }
+ireader-core = { module = "io.github.kazemcodes:core-api", version.ref = "ireader" }
+
 
 okhttp = "com.squareup.okhttp3:okhttp:4.10.0-RC1"
 jsoup = "org.jsoup:jsoup:1.14.3"
 skrapeit = "it.skrape:skrapeit:1.2.1"
 skrapeit-snaphsot = "it.skrape:skrapeit:0-SNAPSHOT"
 
-
-ktor-jsoup = "com.tfowl.ktor:ktor-jsoup:1.6.4"
-ktor-serialization = { module = "io.ktor:ktor-serialization", version.ref = "ktor" }
-ktor-gson = { module = "io.ktor:ktor-gson", version.ref = "ktor" }
-ktor-jackson = { module = "io.ktor:ktor-jackson", version.ref = "ktor" }
-ktor-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version = "2.0.0" }
+ktor-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-core-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+ktor-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-gson = { module = "io.ktor:ktor-serialization-gson", version.ref = "ktor" }

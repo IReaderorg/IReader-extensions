@@ -2,22 +2,25 @@ package ireader.mtlnovelcom
 
 import android.util.Log
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import okhttp3.Headers
+import io.ktor.http.ContentType.Application.Json
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 import mtlSearchItem
 import okhttp3.OkHttpClient
 import org.ireader.core.*
+import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.core.http.okhttp
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 import java.util.concurrent.TimeUnit
 
@@ -36,9 +39,9 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         engine {
             preconfigured = clientBuilder()
         }
-        install(JsonFeature) {
-            serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
-                ignoreUnknownKeys = true
+        install(ContentNegotiation) {
+            json(Json {
+               ignoreUnknownKeys = true
             })
         }
     }
@@ -85,15 +88,15 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel-list/?orderby=date&order=desc&status=all&pg=$page")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/monthly-rank/page/$page/")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),"div.box","#pagination > a:nth-child(13)") { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/wp-admin/admin-ajax.php?action=autosuggest&q=$query&__amp_source_origin=https%3A%2F%2Fwww.mtlnovel.com")
-        return customJsonSearchParse(client.get<mtlSearchItem>(res))
+        return customJsonSearchParse(client.get(res).body())
     }
 
 
@@ -158,7 +161,7 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     }
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
-        val request = client.get<HttpResponse>(chaptersRequest(manga)).asJsoup()
+        val request = client.get(chaptersRequest(manga)).asJsoup()
         return chaptersParse(request).reversed()
     }
 
@@ -171,7 +174,7 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 

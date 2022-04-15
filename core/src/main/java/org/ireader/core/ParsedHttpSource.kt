@@ -3,12 +3,12 @@ package org.ireader.core
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.HttpSource
+import org.ireader.core_api.source.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.source.Dependencies
-import tachiyomi.source.HttpSource
-import tachiyomi.source.model.*
 import java.security.MessageDigest
 
 /** Taken from https://tachiyomi.org/ **/
@@ -54,7 +54,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     }
 
     override suspend fun getMangaDetails(manga: MangaInfo): MangaInfo {
-        return detailParse(client.get<HttpResponse>(detailRequest(manga)).asJsoup())
+        return detailParse(client.get(detailRequest(manga)).asJsoup())
     }
 
     open fun chaptersRequest(book: MangaInfo): HttpRequestBuilder {
@@ -69,7 +69,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
     }
 
     open suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
     open fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
@@ -94,7 +94,7 @@ abstract class ParsedHttpSource(private val dependencies: Dependencies) : HttpSo
         return MangasPageInfo(books, hasNextPage)
     }
 
-    abstract fun chaptersSelector(): String?
+    abstract fun chaptersSelector(): String
 
     open fun chaptersParse(document: Document): List<ChapterInfo> {
         return document.select(chaptersSelector()).map { chapterFromElement(it) }

@@ -4,17 +4,16 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import okhttp3.OkHttpClient
 import org.ireader.core.*
+import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.core.http.okhttp
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
-@Extension
 abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "Ranobes"

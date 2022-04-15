@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import java.io.File
+import java.lang.Exception
 
 @KotlinPoetKspPreview
 class ExtensionProcessor(
@@ -45,7 +46,8 @@ class ExtensionProcessor(
     }
 
     // Check that the extension implements the Source interface
-    val sourceClass = resolver.getClassDeclarationByName(SOURCE_FQ_CLASS)!!
+    val sourceClass = resolver.getClassDeclarationByName(SOURCE_FQ_CLASS) ?:throw Exception("This class in not implementing the Source")
+
     check(sourceClass.asStarProjectedType().isAssignableFrom(extensionType)) {
       "$extension doesn't implement $sourceClass"
     }
@@ -146,12 +148,15 @@ class ExtensionProcessor(
     }
   }
 
-  //TODO if you are not using windows remove ".replace("\\", "/")"
   private fun getBuildDir(): String {
     val pathOf = codeGenerator::class.java
       .getDeclaredMethod("pathOf", String::class.java, String::class.java, String::class.java)
     val stubFile = pathOf.invoke(codeGenerator, "", "a", "kt") as String
-    return File(stubFile).parentFile.parent.replace("\\", "/")
+    return if (System.getProperty("os.name").contains("win", true)) {
+      File(stubFile).parentFile.parent.replace("\\", "/")
+    } else {
+      File(stubFile).parentFile.parent
+    }
   }
 
   // TODO: this is temporary until ksp configurations are applied per variant rather than globally
@@ -177,9 +182,9 @@ class ExtensionProcessor(
   )
 
   private companion object {
-    const val SOURCE_FQ_CLASS = "tachiyomi.source.Source"
-    const val DEEPLINKSOURCE_FQ_CLASS = "tachiyomi.source.DeepLinkSource"
-    const val DEPENDENCIES_FQ_CLASS = "tachiyomi.source.Dependencies"
+    const val SOURCE_FQ_CLASS = "org.ireader.core_api.source.Source"
+    const val DEEPLINKSOURCE_FQ_CLASS = "org.ireader.core_api.source.DeepLinkSource"
+    const val DEPENDENCIES_FQ_CLASS = "org.ireader.core_api.source.Dependencies"
     const val EXTENSION_FQ_ANNOTATION = "tachiyomix.annotations.Extension"
     const val EXTENSION_PACKAGE = "tachiyomix.extension"
     const val EXTENSION_CLASS = "Extension"

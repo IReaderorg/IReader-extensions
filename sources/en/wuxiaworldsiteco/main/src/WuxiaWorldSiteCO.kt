@@ -3,22 +3,21 @@ package ireader.wuxiaworldsiteco
 import android.util.Log
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.ireader.core.*
-import org.jsoup.Jsoup
+import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.core.http.okhttp
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 @Extension
 abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -73,7 +72,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
 
     suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = client.submitForm<HttpResponse>(
+        val res = client.submitForm(
                 url = "$baseUrl/ajax-story.ajax",
                 formParameters = Parameters.build {
                     append("count", "6")
@@ -93,7 +92,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
     suspend fun getPopular(page: Int): MangasPageInfo {
-        val res = client.submitForm<HttpResponse>(
+        val res = client.submitForm(
                 url = "$baseUrl/ajax-story.ajax",
                 formParameters = Parameters.build {
                     append("count", "6")
@@ -114,7 +113,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     suspend fun getSearch(query: String, page: Int): MangasPageInfo {
         val res = requestBuilder("$baseUrl/search/$query")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(), ".item", null) { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), ".item", null) { latestFromElement(it) }
     }
 
 
@@ -255,9 +254,9 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
-        val init = client.get<HttpResponse>(requestBuilder(manga.key)).asJsoup()
+        val init = client.get(requestBuilder(manga.key)).asJsoup()
         val bookId = customRequest(init)
-        val response = client.get<HttpResponse>(requestBuilder("$baseUrl/get-full-list.ajax?id=$bookId")).asJsoup()
+        val response = client.get(requestBuilder("$baseUrl/get-full-list.ajax?id=$bookId")).asJsoup()
         val parser = chaptersParse(response)
         Log.d("TAG", "parser: $parser")
         return parser
@@ -271,7 +270,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 

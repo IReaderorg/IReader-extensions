@@ -2,32 +2,28 @@ package ireader.qidianundergrond
 
 import ChapterGroup
 import QUGroup
-import QUGroupItem
-import android.util.Log
-import android.webkit.WebView
 import com.google.gson.Gson
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.features.*
-import io.ktor.gson.*
 import io.ktor.http.*
-import kotlinx.serialization.decodeFromString
+import io.ktor.http.ContentType.Application.Json
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.ireader.core.*
+import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.HttpSource
+import org.ireader.core_api.source.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
-import tachiyomi.core.http.okhttp
-import tachiyomi.core.util.replace
-import tachiyomi.source.Dependencies
-import tachiyomi.source.HttpSource
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 @Extension
@@ -44,10 +40,11 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         engine {
             preconfigured = clientBuilder()
         }
-        install(JsonFeature) {
-            serializer = KotlinxSerializer(kotlinx.serialization.json.Json {
+        install(ContentNegotiation) {
+            json(Json {
                 ignoreUnknownKeys = true
             })
+
         }
     }
 
@@ -92,7 +89,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
 
         return parseBooks(
             Gson().fromJson<QUGroup>(
-                client.get<String>(res),
+                client.get(res).bodyAsText(),
                 QUGroup::class.java
             )
         )
@@ -119,7 +116,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         val res = requestBuilder("$baseUrl/api/v1/pages/public")
         return parseBooks(
             Gson().fromJson<QUGroup>(
-                client.get<String>(res),
+                client.get(res).bodyAsText(),
                 QUGroup::class.java
             ),
             query
@@ -179,7 +176,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
 
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
-        val request = client.get<String>(chaptersRequest(manga))
+        val request = client.get(chaptersRequest(manga)).bodyAsText()
         val chapters = Gson().fromJson(request, ChapterGroup::class.java)
         return chapters.map { ChapterInfo(key = it.Href, name = it.Text) }
     }
@@ -192,7 +189,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
     override suspend fun getPageList(chapter: ChapterInfo): List<Page> {
         val cmd = parseWebViewCommand(chapter.scanlator)
        return when {
-           cmd != null && chapter.scanlator.contains(PARSE_CONTENT) ->  pageContentParse(Jsoup.parse(cmd.html)).map { Text(it) }
+           cmd != null && chapter.scanlator.contains(PARSE_CONTENT) ->  pageContentParse(Jsoup.parse(cmd.html?:"")).map { Text(it) }
            chapter.key.contains(PARSE_CONTENT) -> pageContentParse(Jsoup.parse(chapter.scanlator)).map { Text(it) }
             else -> {
                     val cmd = buildWebViewCommand(chapter.key, ajaxSelector = ".well", 0, mode = PARSE_CONTENT)
@@ -202,7 +199,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
     }
 
     suspend fun getContents(chapter: ChapterInfo): List<String> {
-        val html = client.get<HttpResponse>(contentRequest(chapter)).asJsoup()
+        val html = client.get(contentRequest(chapter)).asJsoup()
         return pageContentParse(html)
     }
 

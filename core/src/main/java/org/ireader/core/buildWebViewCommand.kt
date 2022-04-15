@@ -1,11 +1,8 @@
 package org.ireader.core
 
-import android.util.Log
-import okhttp3.internal.userAgent
-import org.jsoup.Jsoup
+import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.source.model.*
 
 const val WEBVIEW_PARSE = "https://www.ireader.org/"
 const val PARSE_BOOKS = "parseBooks"

@@ -1,15 +1,13 @@
 package ireader.koreanonline
 
-import android.util.Log
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import okhttp3.Headers
 import org.ireader.core.*
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -58,11 +56,11 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/p/novels-listing.html")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"ul.a li.b",null) { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),"ul.a li.b",null) { latestFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/p/novels-listing.html")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"ul.a li.b",null) { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),"ul.a li.b",null) { latestFromElement(it) }
     }
 
 
@@ -115,7 +113,7 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
-        val request = client.get<HttpResponse>(chaptersRequest(manga)).asJsoup()
+        val request = client.get(chaptersRequest(manga)).asJsoup()
         return chaptersParse(request)
     }
 
@@ -125,7 +123,7 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 

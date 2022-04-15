@@ -2,23 +2,28 @@ package ireader.ranobes
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.features.json.*
-import io.ktor.client.features.json.serializer.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
-import okhttp3.internal.wait
+import okhttp3.OkHttpClient
 import org.ireader.core.*
+import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
+import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
 
+@Extension
 abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "Ranobes"
@@ -30,6 +35,20 @@ abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSo
 
     override val lang = "en"
 
+    private fun clientBuilder(): OkHttpClient = deps.httpClients.default.okhttp
+        .newBuilder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    override val client = HttpClient(OkHttp) {
+        engine {
+            preconfigured = clientBuilder()
+        }
+        install(HttpCookies) {
+            storage = ConstantCookiesStorage()
+        }
+    }
 
 
     override fun getFilters(): FilterList {
@@ -77,7 +96,7 @@ abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSo
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
 
-        val response = client.submitForm<HttpResponse>(
+        val response = client.submitForm(
             url=baseUrl + fetchLatestEndpoint(page),
             formParameters = Parameters.build {
                 append("ajax", "true")
@@ -93,7 +112,7 @@ abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSo
         return bookListParse(response.asJsoup(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
-        val response = client.submitForm<HttpResponse>(
+        val response = client.submitForm(
             url=baseUrl + fetchPopularEndpoint(page),
             formParameters = Parameters.build {
                 append("ajax", "true")
@@ -109,7 +128,7 @@ abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSo
         return bookListParse(response.asJsoup(),popularSelector(),popularLastPageSelector()) { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
-        val response = client.submitForm<HttpResponse>(
+        val response = client.submitForm(
             url=baseUrl + fetchSearchEndpoint(page,query),
             formParameters = Parameters.build {
                 append("do", "search")
@@ -272,7 +291,7 @@ abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSo
                 for (i in 1..maxPage) {
                     val pChapters = async {
                         chaptersParse(
-                            client.get<HttpResponse>(
+                            client.get(
                                 uniqueChaptersRequest(
                                     book = manga,
                                     page = i
@@ -290,7 +309,7 @@ abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSo
     }
 
     suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get<HttpResponse>(chaptersRequest(book = book)).asJsoup()
+        val page = client.get(chaptersRequest(book = book)).asJsoup()
         val maxPage = page.select("li.last > a").attr("data-page")
         return maxPage.toInt()
     }
@@ -301,7 +320,7 @@ abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSo
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 

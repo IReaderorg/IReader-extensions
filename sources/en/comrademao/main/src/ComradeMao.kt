@@ -1,7 +1,7 @@
 package ireader.comrademao
 
-import com.tfowl.ktor.client.features.JsoupFeature
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -11,12 +11,12 @@ import okhttp3.OkHttpClient
 import org.ireader.core.SearchListing
 import org.ireader.core.asJsoup
 import org.ireader.core.findInstance
+import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.HttpSource
+import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.core.http.okhttp
-import tachiyomi.source.Dependencies
-import tachiyomi.source.HttpSource
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
 import java.util.*
@@ -72,7 +72,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
-        val request = client.get<Document>(searchRequest(page, query, filters))
+        val request = client.get(searchRequest(page, query, filters)).asJsoup()
         return searchParse(request)
     }
 
@@ -95,7 +95,6 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         engine {
             preconfigured = clientBuilder()
         }
-        install(JsoupFeature)
     }
 
     fun selectors() = ".columns"
@@ -146,7 +145,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
                 headers { headers }
             }
         }
-        val request = client.get<Document>(req)
+        val request = client.get(req).asJsoup()
 
         return novelsParse(request)
     }
@@ -180,7 +179,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     override suspend fun getMangaDetails(manga: MangaInfo): MangaInfo {
-        return novelParsing(client.get<Document>(detailRequest(manga)))
+        return novelParsing(client.get(detailRequest(manga)).asJsoup())
     }
 
     private fun novelParsing(document: Document): MangaInfo {
@@ -214,23 +213,23 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
-                val page = client.get<HttpResponse>(chaptersRequest(book = manga))
+                val page = client.get(chaptersRequest(book = manga))
                 val maxPage = parseMaxPage(manga)
                 val list = mutableListOf<Deferred<List<ChapterInfo>>>()
                 for (i in 1..maxPage) {
                     val pChapters = async {
                         chaptersParse(
-                            client.get<Document>(
+                            client.get(
                                 uniqueChaptersRequest(
                                     book = manga,
                                     page = i
                                 )
-                            )
+                            ).asJsoup()
                         )
                     }
                     list.addAll(listOf(pChapters))
                 }
-                //  val request = client.get<HttpResponse>(chaptersRequest(book = book))
+                //  val request = client.get(chaptersRequest(book = book))
 
                 return@withContext list.awaitAll().flatten().reversed()
             }
@@ -251,7 +250,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get<HttpResponse>(chaptersRequest(book = book)).asJsoup()
+        val page = client.get(chaptersRequest(book = book)).asJsoup()
         val maxPage = page.select(".pagination-list li:last-child").prev().text()
         return maxPage.toInt()
     }
@@ -315,7 +314,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     private suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<Document>(contentRequest(chapter)))
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
     fun pageContentParse(document: Document): List<String> {

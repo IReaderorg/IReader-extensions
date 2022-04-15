@@ -1,20 +1,26 @@
 package ireader.mtlnation
 
+import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
+import okhttp3.OkHttpClient
 import org.ireader.core.*
+import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
+import java.util.concurrent.TimeUnit
 
 //not working
 @Extension
-abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
+abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "MtlNation"
 
@@ -35,6 +41,21 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
                         "Popular"
                 )),
         )
+    }
+
+    private fun clientBuilder(): OkHttpClient = deps.httpClients.default.okhttp
+        .newBuilder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    override val client = HttpClient(OkHttp) {
+        engine {
+            preconfigured = clientBuilder()
+        }
+        install(HttpCookies) {
+            storage = ConstantCookiesStorage()
+        }
     }
 
 
@@ -64,15 +85,15 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel/page/${page}/?m_orderby=latest")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.page-item-detail","a.last") { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),"div.page-item-detail","a.last") { popularFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/novel/page/2/?m_orderby=views")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.page-item-detail","a.last") { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),"div.page-item-detail","a.last") { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder("$baseUrl/search/?searchkey=$query")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
     }
 
 
@@ -174,13 +195,13 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
-                val page = client.get<HttpResponse>(chaptersRequest(book = manga))
+                val page = client.get(chaptersRequest(book = manga))
                 val maxPage = parseMaxPage(manga)
                 val list = mutableListOf<Deferred<List<ChapterInfo>>>()
                 for (i in 1..maxPage) {
                     val pChapters = async {
                         chaptersParse(
-                            client.get<HttpResponse>(
+                            client.get(
                                 uniqueChaptersRequest(
                                     book = manga,
                                     page = i
@@ -198,7 +219,7 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get<HttpResponse>(chaptersRequest(book = book)).asJsoup()
+        val page = client.get(chaptersRequest(book = book)).asJsoup()
         val maxPage = page.select("#indexselect option").eachText().size
         return maxPage
     }
@@ -209,7 +230,7 @@ abstract class MtlNation(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 

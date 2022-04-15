@@ -95,14 +95,14 @@ dependencies {
   val libs = project.extensions.getByType<VersionCatalogsExtension>()
     .named("libs")
   implementation(project(":core"))
-  compileOnly(libs.findLibrary("tachiyomi-core").get())
-  compileOnly(libs.findLibrary("tachiyomi-api").get())
+
+  compileOnly(libs.findLibrary("ireader-core").get()) { isChanging = true }
 
   compileOnly(kotlinLibs.findLibrary("stdlib").get())
   compileOnly(libs.findLibrary("okhttp").get())
   compileOnly(libs.findLibrary("jsoup").get())
-  compileOnly(libs.findLibrary("jsoup").get())
-  compileOnly(libs.findLibrary("ktor-jsoup").get())
+  implementation(libs.findLibrary("ktor-core").get())
+  implementation(libs.findLibrary("ktor-contentNegotiation").get())
   implementation(libs.findLibrary("ktor-serialization").get())
   implementation(libs.findLibrary("ktor-gson").get())
 

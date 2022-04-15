@@ -6,10 +6,10 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
 import org.ireader.core.*
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -59,15 +59,15 @@ abstract class NovelFull(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchSearchEndpoint(page,query))
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
     }
 
 
@@ -200,7 +200,7 @@ abstract class NovelFull(deps: Dependencies) : ParsedHttpSource(deps) {
                 for (i in 1..maxPage) {
                     val pChapters = async {
                         chaptersParse(
-                            client.get<HttpResponse>(
+                            client.get(
                                 uniqueChaptersRequest(
                                     book = manga,
                                     page = i
@@ -218,7 +218,7 @@ abstract class NovelFull(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get<HttpResponse>(chaptersRequest(book = book)).asJsoup()
+        val page = client.get(chaptersRequest(book = book)).asJsoup()
         val maxPage = page.select("li.last > a").attr("data-page")
         return maxPage.toInt()
     }
@@ -229,7 +229,7 @@ abstract class NovelFull(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 

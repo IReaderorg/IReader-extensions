@@ -11,11 +11,11 @@ import merge
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import org.ireader.core.*
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomi.source.Dependencies
-import tachiyomi.source.model.*
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -67,17 +67,17 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     suspend fun getLatest(page: Int): MangasPageInfo {
         val res = requestBuilder("$baseUrl/lastupdate-${page}.html")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(), latestSelector(), latestNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), latestSelector(), latestNextPageSelector()) { latestFromElement(it) }
     }
 
     suspend fun getPopular(page: Int): MangasPageInfo {
         val res = requestBuilder("$baseUrl/monthvisit-${page}.html")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(), popularSelector(), popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), popularSelector(), popularNextPageSelector()) { popularFromElement(it) }
     }
 
     suspend fun getSearch(page: Int, query: String): MangasPageInfo {
         val res = requestBuilder("$baseUrl/index.php?s=so&module=book&keyword=${query}")
-        return bookListParse(client.get<HttpResponse>(res).asJsoup(), searchSelector(), searchNextPageSelector()) { searchFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), searchSelector(), searchNextPageSelector()) { searchFromElement(it) }
     }
 
 
@@ -191,7 +191,7 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get<HttpResponse>(contentRequest(chapter)).asJsoup())
+        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
 
@@ -203,7 +203,7 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
-        val request = client.get<HttpResponse>(chaptersRequest(manga)).asJsoup()
+        val request = client.get(chaptersRequest(manga)).asJsoup()
         return chaptersParse(request)
     }
 
