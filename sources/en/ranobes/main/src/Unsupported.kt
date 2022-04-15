@@ -23,7 +23,7 @@ import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
 
-@Extension
+
 abstract class UnsupportedRenobes(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "Ranobes"

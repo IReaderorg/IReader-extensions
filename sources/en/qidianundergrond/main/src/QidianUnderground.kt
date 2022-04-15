@@ -2,6 +2,7 @@ package ireader.qidianundergrond
 
 import ChapterGroup
 import QUGroup
+import android.util.Log
 import com.google.gson.Gson
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -16,6 +17,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.ireader.core.*
+import org.ireader.core_api.http.Result
 import org.ireader.core_api.http.okhttp
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.HttpSource
@@ -23,7 +25,6 @@ import org.ireader.core_api.source.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 @Extension
@@ -59,7 +60,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
     override fun getListings(): List<Listing> {
         return listOf(
             LatestListing(),
-            ChapterParse(),
         )
     }
 
@@ -187,15 +187,11 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
     }
 
     override suspend fun getPageList(chapter: ChapterInfo): List<Page> {
-        val cmd = parseWebViewCommand(chapter.scanlator)
-       return when {
-           cmd != null && chapter.scanlator.contains(PARSE_CONTENT) ->  pageContentParse(Jsoup.parse(cmd.html?:"")).map { Text(it) }
-           chapter.key.contains(PARSE_CONTENT) -> pageContentParse(Jsoup.parse(chapter.scanlator)).map { Text(it) }
-            else -> {
-                    val cmd = buildWebViewCommand(chapter.key, ajaxSelector = ".well", 0, mode = PARSE_CONTENT)
-                    return listOf(Text(cmd))
-            }
+        var html : Result ?= null
+        withContext(Dispatchers.Main) {
+            html = deps.httpClients.browser.fetch(chapter.key, selector = ".well")
         }
+        return pageContentParse(Jsoup.parse(html?.responseBody?:"")).map { Text(it) }
     }
 
     suspend fun getContents(chapter: ChapterInfo): List<String> {

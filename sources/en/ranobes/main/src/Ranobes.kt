@@ -1,10 +1,20 @@
 package ireader.ranobes
 
+import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.ireader.core.*
 import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.model.*
 import org.jsoup.Jsoup
@@ -14,6 +24,7 @@ import tachiyomix.annotations.Extension
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
+@Extension
 abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "Ranobes"
@@ -25,6 +36,14 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
     override val lang = "en"
 
+    override val client = HttpClient(OkHttp) {
+        engine {
+            preconfigured = clientBuilder()
+        }
+        install(HttpCookies) {
+            storage = ConstantCookiesStorage()
+        }
+    }
 
     override fun getFilters(): FilterList {
         return listOf(
@@ -59,52 +78,47 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
-        var manga = MangasPageInfo(emptyList(), false)
-        sort?.name?.let {
-            val cmd = parseWebViewCommand(sort.name)
-            if (cmd?.html?.contains(
-                    "Our system has detected abnormal activity"
-                ) == true
-            ) {
-                throw Exception("AntiBot System is Active, please open the app in WebView")
-            }
-            when (cmd?.mode) {
-                "1" -> {
-                    manga = booksRequestReceiver(
-                        Jsoup.parse(cmd.html ?: ""),
-                        popularSelector(),
-                        popularLastPageSelector()
-                    ) { popularFromElement(it) }
+        return getLatest(page)
+    }
 
-                }
-                "0" -> {
-                    manga = booksRequestReceiver(
-                        Jsoup.parse(cmd.html ?: ""),
-                        latestSelector(),
-                        latestNextPageSelector()
-                    ) { latestFromElement(it) }
-
-                }
-                "3" -> {
-                    manga = booksRequestReceiver(
-                        Jsoup.parse(cmd.html ?: ""),
-                        searchSelector(),
-                        searchNextPageSelector()
-                    ) { searchFromElement(it) }
-
-                }
-                else -> {
-                    manga = booksRequestSender(
-                        urL = baseUrl + fetchLatestEndpoint(page),
-                        "article:nth-child(1) > div.short-cont > h2 > a",
-                        mode = "0"
-                    )
-                }
-            }
-
+    suspend fun getLatest(page: Int): MangasPageInfo {
+        var response = ""
+        withContext(Dispatchers.Main) {
+            response = deps.httpClients.browser.fetch(
+                url = baseUrl + fetchLatestEndpoint(page),
+            ).responseBody
         }
-        return manga
 
+        return bookListParse(
+            Jsoup.parse(response),
+            latestSelector(),
+            latestNextPageSelector()
+        ) { latestFromElement(it) }
+    }
+
+    suspend fun getPopular(page: Int): MangasPageInfo {
+        val response = deps.httpClients.browser.fetch(
+            url = baseUrl + fetchPopularEndpoint(page),
+        )
+        return bookListParse(
+            response.responseBody.asJsoup(),
+            popularSelector(),
+            popularLastPageSelector()
+        ) { popularFromElement(it) }
+    }
+
+    fun fetchSearchEndpoint(page: Int, query: String): String? =
+        "/do=search&subaction=search&search_start=0&full_search=0&result_from=1&story=$query"
+
+    suspend fun getSearch(page: Int, query: String): MangasPageInfo {
+        val response = deps.httpClients.browser.fetch(
+            url = baseUrl + fetchSearchEndpoint(page,query),
+        )
+        return bookListParse(
+            response.responseBody.asJsoup(),
+            searchSelector(),
+            searchNextPageSelector()
+        ) { searchFromElement(it) }
     }
 
 
@@ -112,35 +126,12 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return booksRequestSender(
-                urL = baseUrl + "/catlist%5B%5D=1&story=${
-                    URLEncoder.encode(
-                        query,
-                        "utf-8"
-                    )
-                }&do=search&subaction=search",
-                "article:nth-child(2) > div.short-cont > h2 > a",
-                mode = "3"
-            )
-
+            return getSearch(page, query)
         }
-
         return when (sorts) {
-            0 -> booksRequestSender(
-                urL = baseUrl + fetchLatestEndpoint(page),
-                "article:nth-child(1) > div.short-cont > h2 > a",
-                mode = "0"
-            )
-            1 -> booksRequestSender(
-                urL = baseUrl + fetchPopularEndpoint(page),
-                "#ranking-content > article:nth-child(1) > h2 > a",
-                mode = "1"
-            )
-            else -> booksRequestSender(
-                urL = baseUrl + fetchLatestEndpoint(page),
-                "article:nth-child(1) > div.short-cont > h2 > a",
-                mode = "0"
-            )
+            0 -> getLatest(page)
+            1 -> getPopular(page)
+            else -> getLatest(page)
         }
     }
 
@@ -151,7 +142,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         "/novels/page/$page/"
 
     fun fetchPopularEndpoint(page: Int): String? =
-        "cstart=$page&ajax=true"
+        "/cstart=$page&ajax=true"
 
 
     override fun HttpRequestBuilder.headersBuilder() {
@@ -221,18 +212,8 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
 
     override suspend fun getMangaDetails(manga: MangaInfo): MangaInfo {
-        return when {
-            manga.key.contains(PARSE_DETAIL) -> detailParse(Jsoup.parse(manga.artist))
-            else -> {
-                val cmd = buildWebViewCommand(
-                    manga.artist,
-                    ajaxSelector = "div.r-fullstory-s1 > h1",
-                    0,
-                    mode = PARSE_DETAIL
-                )
-                return MangaInfo("", "", artist = cmd)
-            }
-        }
+        val res = deps.httpClients.browser.fetch(manga.key)
+        return detailParse(Jsoup.parse(res.responseBody))
     }
 
     // manga details
@@ -285,7 +266,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     override fun chaptersSelector() = ".cat_line"
 
     override fun chapterFromElement(element: Element): ChapterInfo {
-        val link = baseUrl + element.select("a").attr("href").substringAfter(baseUrl)
+        val link = baseUrl + element.select("a").attr("href")
         val name = element.select("a").attr("title")
 
         return ChapterInfo(name = name, key = link)
@@ -293,63 +274,28 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
-        val chapters = mutableListOf<ChapterInfo>()
-        if (manga.key == PARSE_CHAPTERS) {
-            return chaptersParse(Jsoup.parse(manga.title))
-        }
-        val cmd = parseWebViewCommand(manga.artist)
-        when (cmd?.mode) {
-            "2" -> {
-                val html = Jsoup.parse(manga.artist)
-                chapters.addAll(chaptersRequestReceiver(
-                    html,
-                    "cat_line"
-                ) { chapterFromElement(it) })
-                val lastPage = html.select(".pages a[href]").last()?.text()
-
-                chapters.addAll(chaptersRequestSender(
-                    "null",
-                    selector = ".ccline",
-                    mode = "2",
-                    maxPage = lastPage?:"1"
-                ))
-            }
-            "null" -> {
-                val url = Regex("[0-9]+").findAll(manga.key)
-                    .map(MatchResult::value)
-                    .toList()
-                chapters.addAll(chaptersRequestSender(
-                    "https://ranobes.net/chapters/${url.first()}/page/{page}/",
-                    selector = ".ccline",
-                    mode = "2"
-                ))
-            }
-            else -> {}
-        }
-        return chapters
+        val url = Regex("[0-9]+").findAll(manga.key)
+            .map(MatchResult::value)
+            .toList()
+        val res =
+            deps.httpClients.browser.fetch("https://ranobes.net/chapters/${url.first()}", selector = chaptersSelector())
+        return chaptersParse(Jsoup.parse(res.responseBody))
     }
 
+    override fun chaptersParse(document: Document): List<ChapterInfo> {
+        return document.select(chaptersSelector()).map { chapterFromElement(it) }
+    }
 
     override fun pageContentParse(document: Document): List<String> {
         return document.select(".shortstory h1,p").eachText()
     }
 
     override suspend fun getPageList(chapter: ChapterInfo): List<Page> {
-        return when {
-            chapter.scanlator.contains(PARSE_CONTENT) -> pageContentParse(Jsoup.parse(chapter.scanlator)).map {
-                Text(
-                    it
-                )
-            }
-            else -> {
-                val cmd = buildWebViewCommand(
-                    chapter.key,
-                    ajaxSelector = "#arrticle > p:nth-child(1)",
-                    0,
-                    mode = PARSE_CONTENT
-                )
-                return listOf(Text(cmd))
-            }
+        val res = deps.httpClients.browser.fetch(chapter.key)
+        return pageContentParse(Jsoup.parse(res.responseBody)).map {
+            Text(
+                it
+            )
         }
     }
 
