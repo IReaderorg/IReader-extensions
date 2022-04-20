@@ -1,5 +1,6 @@
 package ireader.mtlnation
 
+import android.util.Log
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.cookies.*
@@ -18,7 +19,7 @@ import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
 import java.util.concurrent.TimeUnit
 
-//not working
+//I haven't finished configuring this extension because of its aggressive cloudflare protecion
 @Extension
 abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
@@ -82,18 +83,32 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
             else -> getLatest(page)
         }
     }
-
+    val agent =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
     suspend fun getLatest(page: Int) : MangasPageInfo {
-        val res = requestBuilder("$baseUrl/novel/page/${page}/?m_orderby=latest")
-        return bookListParse(client.get(res).asJsoup(),"div.page-item-detail","a.last") { popularFromElement(it) }
+        val response = deps.httpClients.browser.fetch(
+                url = "$baseUrl/novel/page/${page}/?m_orderby=latest",
+                selector = ".active a",
+                userAgent = agent
+        )
+        org.ireader.core_api.log.Log.error { response.responseBody }
+        return bookListParse(response.responseBody.asJsoup(),"div.page-item-detail",".last") { popularFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
-        val res = requestBuilder("$baseUrl/novel/page/2/?m_orderby=views")
-        return bookListParse(client.get(res).asJsoup(),"div.page-item-detail","a.last") { popularFromElement(it) }
+        val response = deps.httpClients.browser.fetch(
+                url ="$baseUrl/novel/page/$page/?m_orderby=views",
+                selector ="div.page-item-detail",
+                userAgent = agent
+        )
+        return bookListParse(response.responseBody.asJsoup(),"div.page-item-detail","a.last") { popularFromElement(it) }
     }
     suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
-        val res = requestBuilder("$baseUrl/search/?searchkey=$query")
-        return bookListParse(client.get(res).asJsoup(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+        val response = deps.httpClients.browser.fetch(
+                url ="$baseUrl/search/?searchkey=$query",
+                selector ="div.ul-list1 div.li-row",
+                userAgent = agent
+        )
+        return bookListParse(response.responseBody.asJsoup(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
     }
 
 
@@ -108,7 +123,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
     fun popularFromElement(element: Element): MangaInfo {
 
-        val url = baseUrl + element.select("h3.h5 a").attr("href")
+        val url = element.select("h3.h5 a").attr("href")
         val title = element.select("h3.h5 a").text()
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
@@ -125,21 +140,17 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
-        val title = document.select("div.m-desc h1.tit").text()
-        val cover = document.select("div.m-book1 div.pic img").text()
-        val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
-        val authorBookSelector = document.select("div.right a.a1").attr("title")
-        val description = document.select("div.inner p").eachText().joinToString("\n")
+        val title = document.select(".post-title h1").text()
+        val cover = document.select(".summary_image img").attr("src")
+        val link =  document.select(".summary_image a").attr("href")
+        val authorBookSelector = document.select(".author-content a").text()
+        val description = document.select(".summary__content p").eachText().joinToString("\n")
         //not sure why its not working.
-        val category = document.select("[title=Genre]")
-            .next()
-            .text()
-            .split(",")
+        val category = document.select(".genres-content a")
+            .eachText()
 
-        val status = document.select("[title=Status]")
-            .next()
+        val status = document.select(".post-status .summary-content")
             .text()
-            .replace("/[\t\n]/g", "")
             .handleStatus()
 
 
