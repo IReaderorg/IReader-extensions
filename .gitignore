@@ -16,7 +16,4 @@ build
 .git-rewrite/
 build/
 
-/gradle.properties
-gradle.properties
-
 
