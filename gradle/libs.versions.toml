@@ -7,14 +7,14 @@ ktor = "2.0.0"
 [libraries]
 
 android-sdklib = "com.android.tools:sdklib:30.0.4"
-android-gradle = "com.android.tools.build:gradle:7.1.2"
+android-gradle = "com.android.tools.build:gradle:7.1.3"
 
 kotlinpoet = "com.squareup:kotlinpoet-ksp:1.10.2"
 
 ireader-core = { module = "io.github.kazemcodes:core-api", version.ref = "ireader" }
 
 
-okhttp = "com.squareup.okhttp3:okhttp:4.10.0-RC1"
+okhttp = "com.squareup.okhttp3:okhttp:4.9.3"
 jsoup = "org.jsoup:jsoup:1.14.3"
 skrapeit = "it.skrape:skrapeit:1.2.1"
 skrapeit-snaphsot = "it.skrape:skrapeit:0-SNAPSHOT"
