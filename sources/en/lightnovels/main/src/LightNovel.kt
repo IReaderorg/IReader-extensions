@@ -16,8 +16,10 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.gson.*
 import kotlinx.coroutines.*
+import okhttp3.OkHttpClient
 import org.ireader.core.asJsoup
 import org.ireader.core.findInstance
+import org.ireader.core_api.http.okhttp
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.HttpSource
 import org.ireader.core_api.source.model.*
@@ -26,6 +28,7 @@ import search_dto.SearchResult
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 @Extension
 abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
@@ -41,6 +44,10 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
     override val lang = "en"
 
     override val client = HttpClient(OkHttp) {
+        engine {
+            preconfigured = clientBuilder()
+        }
+
         install(ContentNegotiation) {
             gson()
         }
@@ -48,7 +55,11 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
             storage = ConstantCookiesStorage()
         }
     }
-
+    private fun clientBuilder(): OkHttpClient = deps.httpClients.default.okhttp
+        .newBuilder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
 
     override fun getFilters(): FilterList {
         return listOf(
@@ -142,6 +153,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
 
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
         return client to HttpRequestBuilder(url).apply {
+            url(url)
             headers {
                 append(
                     "User-Agent",
