@@ -27,6 +27,13 @@ File(rootDir, "sources").eachDir { dir ->
     project(name).projectDir = File("sources/${dir.name}/${subdir.name}")
   }
 }
+//File(rootDir, "extensions").eachDir { dir ->
+//  dir.eachDir { subdir ->
+//    val name = ":extensions:individual:${dir.name}:${subdir.name}"
+//    include(name)
+//    project(name).projectDir = File("extensions/${dir.name}/${subdir.name}")
+//  }
+//}
 
 pluginManagement {
   repositories {

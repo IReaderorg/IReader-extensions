@@ -5,11 +5,13 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.client.utils.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.ireader.core.*
 import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
@@ -97,7 +99,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("h3.h5 a").text()
         val url = element.select("h3.h5 a").attr("href")
-        val thumbnailUrl = element.select("img").attr("src")
+        val thumbnailUrl = element.select("img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
@@ -108,7 +110,8 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("h3.h5 a").text()
         val url = element.select("h3.h5 a").attr("href")
-        val thumbnailUrl = element.select("img").attr("src")
+        val thumbnailUrl = element.select("img").attr("data-src")
+        Log.error { thumbnailUrl }
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
@@ -116,7 +119,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.post-title h3.h4 a").text()
         val url = element.select("div.post-title h3.h4 a").attr("href")
-        val thumbnailUrl = element.select("img").attr("src")
+        val thumbnailUrl = element.select("img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
@@ -125,7 +128,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     override fun detailParse(document: Document): MangaInfo {
         val title = document.select("div.post-title>h1").text()
-        val cover = document.select("div.summary_image a img").attr("src")
+        val cover = document.select("div.summary_image a img").attr("data-src")
         val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
         val authorBookSelector = document.select("div.author-content>a").attr("title")
         val description =
@@ -242,7 +245,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
 
     override fun pageContentParse(document: Document): List<String> {
-         val par = document.select("div.read-container .reading-content p").eachText()
+         val par = document.select("div.read-container .reading-content p").eachText().map { it.replace("Read latest Chapters at Wuxia World . Site Only","") }
          val head = document.select("div.read-container .reading-content h3").eachText()
 
         return head + par
@@ -258,6 +261,14 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return HttpRequestBuilder().apply {
             url(chapter.key)
             headers { headers }
+        }
+    }
+
+    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
+        return client to requestBuilder(url) {
+            append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+            append(HttpHeaders.CacheControl, "max-age=0")
+            append(HttpHeaders.Referrer, "https://wuxiaworld.site/")
         }
     }
 

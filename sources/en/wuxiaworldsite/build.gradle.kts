@@ -1,10 +1,10 @@
 listOf("en").map { lang ->
   Extension(
     name = "WuxiaWorldSite",
-    versionCode = 5,
-    libVersion = "1.4",
+    versionCode = 6,
+    libVersion = "1",
     lang = lang,
-    description = "Highest quality and scanlator-approved source",
+    description = "",
     nsfw = false,
   )
 }.also(::register)

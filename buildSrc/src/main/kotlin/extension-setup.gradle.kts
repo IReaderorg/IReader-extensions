@@ -96,7 +96,7 @@ dependencies {
     .named("libs")
   implementation(project(":core"))
 
-  compileOnly(libs.findLibrary("ireader-core").get()) { isChanging = true }
+  compileOnly(libs.findLibrary("ireader-core").get())
 
   compileOnly(kotlinLibs.findLibrary("stdlib").get())
   compileOnly(libs.findLibrary("okhttp").get())

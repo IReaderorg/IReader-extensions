@@ -8,8 +8,7 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import org.ireader.core.*
 import org.ireader.core_api.http.okhttp
@@ -223,7 +222,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
-        val title = document.select("h1.title").text()
+        val title = document.select("h1.title").first()?.ownText()
         val authorBookSelector = document.select(".tag_list a").text()
         val cover = document.select(".r-fullstory-poster a").attr("href")
         val description = document.select(".cont-in .showcont-h[itemprop=\"description\"] .moreless__full").text()
@@ -240,7 +239,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
 
         return MangaInfo(
-            title = title,
+            title = title?:"",
             cover = cover,
             description = description,
             author = authorBookSelector ?: "",
@@ -280,8 +279,8 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
     override suspend fun getChapterList(manga: MangaInfo): List<ChapterInfo> {
         val bookId = Regex("[0-9]+").findAll(manga.key)
-            .map(MatchResult::value)
-            .toList()
+                .map(MatchResult::value)
+                .toList()
         val chapters = mutableListOf<ChapterInfo>()
         var currentPage = 1
         val res =
