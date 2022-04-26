@@ -4,11 +4,13 @@ import books_dto.BookListDTO
 import chapter_dto.ChapterDTO
 import chapter_dto.Result
 import com.google.gson.Gson
+import content_dto.ContentDTO
 import detail_dto.NovelDetail
 import detail_dto.PageProps
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
@@ -20,9 +22,11 @@ import okhttp3.OkHttpClient
 import org.ireader.core.asJsoup
 import org.ireader.core.findInstance
 import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.HttpSource
 import org.ireader.core_api.source.model.*
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import search_dto.SearchResult
 import tachiyomix.annotations.Extension
@@ -47,7 +51,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         engine {
             preconfigured = clientBuilder()
         }
-
+        BrowserUserAgent()
         install(ContentNegotiation) {
             gson()
         }
@@ -343,16 +347,20 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     fun pageContentParse(document: Document): List<String> {
-        val head = document.select("h1.text-lg").text()
-        val par = document.select(".text-xl p").eachText()
+        val json = document.select("#__NEXT_DATA__").html()
+        val parsedJson = Gson().fromJson(json, ContentDTO::class.java)
+        val head = parsedJson.props.pageProps.cachedChapterInfo.chapter_name
+        val par = parsedJson.props.pageProps.cachedChapterInfo.content.split("\\u003c/p\\u003e\\u003cp\\u003e\\u003c/p\\u003e\\u003cp\\u003e","<p>","<br>").map { Jsoup.parse(it).text() }
         return listOf(head) + par
     }
 
     fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
+            header(HttpHeaders.UserAgent,"Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
             headers {
-                applyHeader()
+                append("cache-control", " max-age=0")
+                append(HttpHeaders.Referrer, baseUrl)
             }
         }
     }
