@@ -28,6 +28,7 @@ import org.ireader.core_api.source.HttpSource
 import org.ireader.core_api.source.model.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import search_dto.SearchDTO
 import search_dto.SearchResult
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
@@ -102,11 +103,26 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
 
     private suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
         val request = client.get(searchRequest(page, query, filters)).bodyAsText()
-        val json = Gson().fromJson(request, SearchResult::class.java)
+        val json = try {
+            Gson().fromJson(request, SearchResult::class.java)
+        }catch (e:Exception) {
+            Gson().fromJson(request, SearchDTO::class.java)
+        }
         return searchParse(json)
     }
 
     private fun fromSearchElement(e: search_dto.Result): MangaInfo {
+        return MangaInfo(
+            key = baseUrl + "/novel" + e.novel_slug,
+            title = e.novel_name,
+            artist = "",
+            author = "",
+            status = handleStatue(e.status),
+            cover = baseUrl + e.novel_image
+        )
+    }
+
+    private fun fromSearchElement(e: search_dto.ResultX): MangaInfo {
         return MangaInfo(
             key = baseUrl + "/novel" + e.novel_slug,
             title = e.novel_name,
@@ -126,10 +142,23 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         }
     }
 
-    private fun searchParse(novels: SearchResult): MangasPageInfo {
-        val books = novels.results.map { element ->
-            fromSearchElement(element)
+    private fun searchParse(novels: Any): MangasPageInfo {
+        val books = when (novels) {
+            is SearchDTO -> {
+                novels.results.map { element ->
+                    fromSearchElement(element)
+                }
+            }
+            is SearchResult -> {
+                novels.results.map { element ->
+                    fromSearchElement(element)
+                }
+            }
+            else -> {
+                throw IllegalArgumentException()
+            }
         }
+
 
         return MangasPageInfo(books, false)
     }
