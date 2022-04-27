@@ -1,16 +1,36 @@
-![CI](https://github.com/tachiyomiorg/tachiyomi-extensions-1.x/workflows/CI/badge.svg?event=push)
 
-## What is this?
+# IReader Extension
 
-Extensions for the rewrite of Tachiyomi.
+This repository contains the available extension catalogues for the IReader app.
 
-if you want to create sources you can take a look at this [samples](https://github.com/kazemcodes/tachiyomi-extensions-1.x/tree/master/src/en)
+# Usage
+
+Extension sources can be downloaded, installed, and uninstalled via the main Tachiyomi app. They are installed and uninstalled like regular apps, in `.apk` format.
+
+# Contributing
+
+Contributions are welcome!
+
+Check out the repo's [sample](https://github.com/kazemcodes/IReader-extensions/tree/master/sources/en).
+
+
+# Disclaimer
+
+The core part of this repository all belongs to [tachiyomi](https://github.com/tachiyomiorg/tachiyomi-extensions-1.x)
 
 
 ## License
 
-    Copyright (C) 2018 The Tachiyomi Open Source Project
+    Copyright 2015 Javier Tomás
 
-    This Source Code Form is subject to the terms of the Mozilla Public
-    License, v. 2.0. If a copy of the MPL was not distributed with this
-    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
