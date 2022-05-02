@@ -111,7 +111,6 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         val title = element.select("h3.h5 a").text()
         val url = element.select("h3.h5 a").attr("href")
         val thumbnailUrl = element.select(".page-item-detail.text img").attr("src")
-        Log.error { thumbnailUrl }
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
@@ -119,7 +118,7 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.post-title h3.h4 a").text()
         val url = element.select("div.post-title h3.h4 a").attr("href")
-        val thumbnailUrl = element.select(".page-item-detail.text img").attr("src")
+        val thumbnailUrl = element.select(".c-image-hover img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
