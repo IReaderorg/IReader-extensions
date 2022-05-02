@@ -1,7 +1,7 @@
 listOf("en").map { lang ->
   Extension(
     name = "BoxNovel",
-    versionCode = 6,
+    versionCode = 1,
     libVersion = "1",
     lang = lang,
     description = "",
