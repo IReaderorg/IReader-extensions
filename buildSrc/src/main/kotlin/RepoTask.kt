@@ -84,7 +84,13 @@ open class RepoTask : DefaultTask() {
 
     val (pkgName, vcode, vname) = PACKAGE.find(lines.first())!!.destructured
 
-    val resourceIcon = appResources.first { it.endsWith("type=PNG") && it.contains("xxxhdpi")}.let { it ->  RESOURCE_ICON.find(it)?.value }
+    val resourceIcon = appResources
+      .first { it.endsWith("type=PNG") && it.contains("xxxhdpi")}
+      .let { it ->
+        RESOURCE_ICON.find(it)?.groupValues.let {
+          it?.getOrNull(1)
+        }
+      }
 
     val iconPath = lines.last { it.startsWith("application-icon-") }
       .let { it -> APPLICATION_ICON.find(it)!!.groupValues.let { it[1] } }
@@ -181,7 +187,7 @@ open class RepoTask : DefaultTask() {
     val PACKAGE = Regex("^package: name='([^']+)' versionCode='([0-9]*)' versionName='([^']*)'.*$")
     val METADATA = Regex("^meta-data: name='([^']*)' value='([^']*)")
     val APPLICATION_ICON = Regex("^application-icon-\\d+:'([^']*)'$")
-    val RESOURCE_ICON = Regex("[a-zA-Z]+/[a-zA-Z]+.[a-zA-Z]+")
+    val RESOURCE_ICON = Regex("\\(xxxhdpi\\) \\(file\\) (res/[A-Z]*.png) type=PNG")
   }
 
   private data class Metadata(

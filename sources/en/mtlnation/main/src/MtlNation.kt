@@ -66,6 +66,20 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
         )
     }
 
+    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
+        return client to HttpRequestBuilder(url).apply {
+            url(url)
+            headers {
+                append(
+                    HttpHeaders.UserAgent,
+                    agent
+                )
+                append(HttpHeaders.CacheControl, "max-age=0")
+                append(HttpHeaders.Referrer, baseUrl)
+            }
+        }
+    }
+
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
@@ -83,15 +97,14 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
             else -> getLatest(page)
         }
     }
-    val agent =
+    private val agent =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
     suspend fun getLatest(page: Int) : MangasPageInfo {
         val response = deps.httpClients.browser.fetch(
                 url = "$baseUrl/novel/page/${page}/?m_orderby=latest",
-                selector = ".active a",
+                selector = ".item-summary",
                 userAgent = agent
         )
-        org.ireader.core_api.log.Log.error { response.responseBody }
         return bookListParse(response.responseBody.asJsoup(),"div.page-item-detail",".last") { popularFromElement(it) }
     }
     suspend fun getPopular(page: Int) : MangasPageInfo {
