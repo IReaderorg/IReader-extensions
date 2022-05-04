@@ -5,7 +5,7 @@ This repository contains the available extension catalogues for the IReader app.
 
 # Usage
 
-Extension sources can be downloaded, installed, and uninstalled via the main Tachiyomi app. They are installed and uninstalled like regular apps, in `.apk` format.
+Extension sources can be downloaded, installed, and uninstalled via the main IReader app. They are installed and uninstalled like regular apps, in `.apk` format.
 
 # Contributing
 
