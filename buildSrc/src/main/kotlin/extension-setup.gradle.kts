@@ -53,6 +53,11 @@ android {
     }
   }
   compileOptions {
+    tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
+      kotlinOptions {
+        jvmTarget = "11"
+      }
+    }
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
@@ -94,17 +99,16 @@ dependencies {
     .named("kotlinLibs")
   val libs = project.extensions.getByType<VersionCatalogsExtension>()
     .named("libs")
-  implementation(project(":core"))
 
   compileOnly(libs.findLibrary("ireader-core").get())
 
   compileOnly(kotlinLibs.findLibrary("stdlib").get())
   compileOnly(libs.findLibrary("okhttp").get())
   compileOnly(libs.findLibrary("jsoup").get())
-  implementation(libs.findLibrary("ktor-core").get())
-  implementation(libs.findLibrary("ktor-contentNegotiation").get())
-  implementation(libs.findLibrary("ktor-serialization").get())
-  implementation(libs.findLibrary("ktor-gson").get())
+  compileOnly(libs.findLibrary("ktor-core").get())
+  compileOnly(libs.findLibrary("ktor-contentNegotiation").get())
+  compileOnly(libs.findLibrary("ktor-serialization").get())
+  compileOnly(libs.findLibrary("ktor-gson").get())
 
   compileOnly(project(Proj.annotation))
   ksp(project(Proj.compiler))
@@ -130,6 +134,7 @@ fun BaseVariantImpl.currentExtension(): Extension {
   val flavor = (productFlavors as List<ProductFlavor>).first()
   return extensionList.first { it.flavor == flavor.name }
 }
+
 
 configurations.all {
   resolutionStrategy {
