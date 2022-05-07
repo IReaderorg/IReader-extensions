@@ -3,6 +3,8 @@ package ireader.comrademao
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import okhttp3.Headers
 import okhttp3.OkHttpClient
@@ -15,6 +17,7 @@ import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -97,13 +100,13 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         }
     }
 
-    fun selectors() = ".columns"
-    fun nextPageSelector() = "ul.pagination-list li:last-child"
+    fun selectors() = ".listupd .bsx"
+    fun nextPageSelector() = "div.pagination a:nth-child(2)"
 
     fun fromElement(element: Element): MangaInfo {
-        val name = element.select("div.columns > div:nth-child(2) > a").text()
+        val name = element.select("a").text()
         val img = element.select("img").attr("src")
-        val url = element.select("div.columns > div:nth-child(2) > a").attr("href")
+        val url = element.select("a").attr("href")
 
         return MangaInfo(title = name, cover = img, key = url)
     }
@@ -184,14 +187,14 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
 
     private fun novelParsing(document: Document): MangaInfo {
         val name =
-            document.select("#NovelInfo > div > div.column.is-one-third.has-text-centered > p")
+            document.select(".entry-title")
                 .text().trim()
-        val img = document.select("img.attachment-post-thumbnail").attr("src")
-        val summary = document.select("#NovelInfo > div > div:nth-child(2) > p").text().trim()
-        val genre = document.select("NovelInfo > p:nth-child(2)").eachText()
+        val img = document.select(".thumb img").attr("src")
+        val summary = document.select(".wd-full").last()?.text()?.trim()
+        val genre = document.select(".wd-full").next().next().next().select("a").eachText()
             .filter { !it.contains("Genre") }
-        val author = document.select("#NovelInfo > p:nth-child(4)").text()
-        val status = document.select("#NovelInfo > p:nth-child(5)").text()
+        val author = document.select(".wd-full").first()?.text()
+        val status = document.select(".wd-full").next().text()
         val fStatus = when (status) {
             "OnGoing" -> MangaInfo.ONGOING
             "Complete" -> MangaInfo.COMPLETED
@@ -203,9 +206,9 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
             title = name,
             cover = img,
             key = "",
-            description = summary,
+            description = summary?:"",
             genres = genre,
-            author = author,
+            author = author ?: "",
             status = fStatus
         )
     }
@@ -214,30 +217,11 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
-                val page = client.get(chaptersRequest(book = manga))
-                val maxPage = parseMaxPage(manga)
-                val list = mutableListOf<Deferred<List<ChapterInfo>>>()
-                for (i in 1..maxPage) {
-                    val pChapters = async {
-                        chaptersParse(
-                            client.get(
-                                uniqueChaptersRequest(
-                                    book = manga,
-                                    page = i
-                                )
-                            ).asJsoup()
-                        )
-                    }
-                    list.addAll(listOf(pChapters))
-                }
-                //  val request = client.get(chaptersRequest(book = book))
 
-                return@withContext list.awaitAll().flatten().reversed()
-            }
-        }.getOrThrow()
+        val body: HttpResponse = client.get(Url(manga.key))
+        return chaptersParse(body.asJsoup()).reversed()
     }
+
 
     private fun uniqueChaptersRequest(book: MangaInfo, page: Int): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -252,11 +236,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         return document.select(chaptersSelector()).map { chapterFromElement(it) }
     }
 
-    suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get(chaptersRequest(book = book)).asJsoup()
-        val maxPage = page.select(".pagination-list li:last-child").prev().text()
-        return maxPage.toInt()
-    }
+
 
     fun chaptersRequest(book: MangaInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -265,12 +245,12 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         }
     }
 
-    fun chaptersSelector() = "table > tbody tr"
+    fun chaptersSelector() = ".chbox a"
 
     fun chapterFromElement(element: Element): ChapterInfo {
         val link = element.select("a").attr("href")
-        val name = element.select("a").text()
-        val dateUploaded = element.select("span").text()
+        val name = element.select("a .chapternum").text()
+        val dateUploaded = element.select("a .chapterdate").text()
 
         return ChapterInfo(name = name, key = link, dateUpload = parseChapterDate(dateUploaded))
     }
@@ -321,7 +301,9 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     fun pageContentParse(document: Document): List<String> {
-        return document.select("#content p").eachText()
+        val header = document.select("h3").text()
+        val body = document.select("#chaptercontent p").eachText()
+        return listOf(header) + body
     }
 
     fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {

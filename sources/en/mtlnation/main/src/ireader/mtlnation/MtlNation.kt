@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
@@ -38,12 +39,13 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
     override fun getFilters(): FilterList {
         return listOf(
-                Filter.Title(),
-                Filter.Sort(
-                        "Sort By:",arrayOf(
-                        "Latest",
-                        "Popular"
-                )),
+            Filter.Title(),
+            Filter.Sort(
+                "Sort By:", arrayOf(
+                    "Latest",
+                    "Popular"
+                )
+            ),
         )
     }
 
@@ -65,7 +67,9 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
             LatestListing(),
         )
     }
+
     class LatestListing() : Listing("Latest")
+
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
         return client to HttpRequestBuilder(url).apply {
             url(url)
@@ -89,9 +93,9 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return getSearch(page,query)
+            return getSearch(page, query)
         }
-        return when(sorts) {
+        return when (sorts) {
             0 -> getLatest(page)
             1 -> getPopular(page)
             else -> getLatest(page)
@@ -108,57 +112,96 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         val command = commands.find { it is Command.Detail.Fetch }
-        if (command != null && command is  Command.Detail.Fetch) {
-            return detailParsed(Jsoup.parse(command.html),command.url)
+        if (command != null && command is Command.Detail.Fetch) {
+            return detailParsed(Jsoup.parse(command.html), command.url)
         }
-        val html = deps.httpClients.browser.fetch(manga.key,"#manga-discussion", timeout = 50000, userAgent = agent).responseBody
+        val html = deps.httpClients.browser.fetch(
+            manga.key,
+            "#manga-discussion",
+            timeout = 50000,
+            userAgent = agent
+        ).responseBody
         return detailParse(Jsoup.parse(html))
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
         val command = commands.find { it is Command.Content.Fetch }
-        if (command != null && command is  Command.Content.Fetch) {
-           return pageContentParse(Jsoup.parse(command.html)).map { Text(it) }
+        if (command != null && command is Command.Content.Fetch) {
+            return pageContentParse(Jsoup.parse(command.html)).map { Text(it) }
         }
         //val html = client.get(requestBuilder(url = chapter.key))
-        val html = deps.httpClients.browser.fetch(chapter.key,".main-col-inner p", timeout = 50000, userAgent = agent).responseBody
+        val html = deps.httpClients.browser.fetch(
+            chapter.key,
+            ".main-col-inner p",
+            timeout = 50000,
+            userAgent = agent
+        ).responseBody
         return pageContentParse(html.asJsoup()).map { Text(it) }
     }
 
     private val agent =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
-    suspend fun getLatest(page: Int) : MangasPageInfo {
-        val response = deps.httpClients.browser.fetch(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
+
+    suspend fun getLatest(page: Int): MangasPageInfo {
+        var response :HttpResponse? = client.get(requestBuilder("$baseUrl/novel/page/${page}/?m_orderby=latest"))
+        var webResponse = ""
+        if (response?.status == HttpStatusCode.ServiceUnavailable) {
+            response = null
+            webResponse = deps.httpClients.browser.fetch(
                 url = "$baseUrl/novel/page/${page}/?m_orderby=latest",
                 selector = ".item-summary",
                 userAgent = agent,
-            timeout = 30000
-        ).responseBody
-        return bookListParse(response.asJsoup(),"div.page-item-detail",".last") { popularFromElement(it) }
+                timeout = 30000
+            ).responseBody
+        }
+
+        return bookListParse(
+            response?.asJsoup()?:Jsoup.parse(webResponse),
+            "div.page-item-detail",
+            ".last"
+        ) { popularFromElement(it) }
     }
-    suspend fun getPopular(page: Int) : MangasPageInfo {
+
+    suspend fun getPopular(page: Int): MangasPageInfo {
         val response = deps.httpClients.browser.fetch(
-                url ="$baseUrl/novel/page/$page/?m_orderby=views",
-                selector ="div.page-item-detail",
-                userAgent = agent,
+            url = "$baseUrl/novel/page/$page/?m_orderby=views",
+            selector = "div.page-item-detail",
+            userAgent = agent,
             timeout = 30000
         )
-        return bookListParse(response.responseBody.asJsoup(),"div.page-item-detail","a.last") { popularFromElement(it) }
+        return bookListParse(
+            response.responseBody.asJsoup(),
+            "div.page-item-detail",
+            "a.last"
+        ) { popularFromElement(it) }
     }
-    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
-        val response = deps.httpClients.browser.fetch(
-                url ="$baseUrl/search/?searchkey=$query",
-                selector ="div.ul-list1 div.li-row",
+
+    suspend fun getSearch(page: Int, query: String): MangasPageInfo {
+        var response :HttpResponse? = client.get(requestBuilder("$baseUrl/search/?searchkey=$query",))
+        var webResponse = ""
+        if (response?.status == HttpStatusCode.ServiceUnavailable) {
+            response = null
+            webResponse = deps.httpClients.browser.fetch(
+                url = "$baseUrl/search/?searchkey=$query",
+                selector = "div.ul-list1 div.li-row",
                 userAgent = agent,
                 timeout = 30000
-        )
-        return bookListParse(response.responseBody.asJsoup(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+            ).responseBody
+        }
+        return bookListParse(
+            response?.asJsoup()?:Jsoup.parse(webResponse),
+            "div.ul-list1 div.li-row",
+            null
+        ) { searchFromElement(it) }
     }
 
 
     override fun HttpRequestBuilder.headersBuilder() {
         headers {
-            append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
+            append(
+                HttpHeaders.UserAgent,
+                "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
+            )
             append(HttpHeaders.CacheControl, "max-age=0")
             append(HttpHeaders.Referrer, baseUrl)
         }
@@ -174,7 +217,6 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
     }
 
 
-
     fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
         val url = baseUrl + element.select("div.txt a").attr("href")
@@ -183,10 +225,10 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
     }
 
     // manga details
-    fun detailParsed(document: Document, url:String): MangaInfo {
+    fun detailParsed(document: Document, url: String): MangaInfo {
         val title = document.select(".post-title h1").text()
         val cover = document.select(".summary_image img").attr("data-src")
-        val link =  url.ifBlank { document.select(".summary_image a").attr("href") }
+        val link = url.ifBlank { document.select(".summary_image a").attr("href") }
         val authorBookSelector = document.select(".author-content a").text()
         val description = document.select(".summary__content p").eachText().joinToString("\n")
         //not sure why its not working.
@@ -210,10 +252,11 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
             status = status
         )
     }
+
     override fun detailParse(document: Document): MangaInfo {
         val title = document.select(".post-title h1").text()
         val cover = document.select(".summary_image img").attr("src")
-        val link =  document.select(".summary_image a").attr("href")
+        val link = document.select(".summary_image a").attr("href")
         val authorBookSelector = document.select(".author-content a").text()
         val description = document.select(".summary__content p").eachText().joinToString("\n")
         //not sure why its not working.
@@ -279,10 +322,15 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         val command = commands.find { it is Command.Chapter.Fetch }
-        if (command != null && command is  Command.Chapter.Fetch) {
-           return chaptersParse(Jsoup.parse(command.html)).reversed()
+        if (command != null && command is Command.Chapter.Fetch) {
+            return chaptersParse(Jsoup.parse(command.html)).reversed()
         }
-        val html = deps.httpClients.browser.fetch(manga.key,chaptersSelector(), timeout = 50000, userAgent = agent).responseBody
+        val html = deps.httpClients.browser.fetch(
+            manga.key,
+            chaptersSelector(),
+            timeout = 50000,
+            userAgent = agent
+        ).responseBody
         return chaptersParse(Jsoup.parse(html)).reversed()
     }
 
