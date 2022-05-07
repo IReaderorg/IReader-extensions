@@ -1,14 +1,13 @@
 package ireader.mtlnation
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.cookies.*
+import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
-import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
-import org.ireader.core_api.http.BrowseEngine
 
 import org.ireader.core_api.http.okhttp
 import org.ireader.core_api.log.Log
@@ -33,6 +32,8 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
     override val id: Long
         get() = 488631435
     override val baseUrl = "https://mtlnation.com"
+    val translatorUrl = "https://mtlnation-com.translate.goog"
+    val translatorEndPoint = "?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en-US&_x_tr_pto=op,wapp"
 
     override val lang = "en"
 
@@ -79,7 +80,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
                     agent
                 )
                 append(HttpHeaders.CacheControl, "max-age=0")
-                append(HttpHeaders.Referrer, baseUrl)
+                append(HttpHeaders.Referrer, translatorUrl)
             }
         }
     }
@@ -104,6 +105,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
     override fun getCommands(): CommandList {
         return listOf(
+            Command.Chapter.Note("you can fetch chapters by going to WebView and click on Fetch Chapters "),
             Command.Chapter.Fetch(),
             Command.Content.Fetch(),
             Command.Detail.Fetch()
@@ -115,13 +117,9 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
         if (command != null && command is Command.Detail.Fetch) {
             return detailParsed(Jsoup.parse(command.html), command.url)
         }
-        val html = deps.httpClients.browser.fetch(
-            manga.key,
-            "#manga-discussion",
-            timeout = 50000,
-            userAgent = agent
-        ).responseBody
-        return detailParse(Jsoup.parse(html))
+        val html = client.get(requestBuilder(manga.key))
+
+        return detailParse(html.asJsoup())
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
@@ -129,13 +127,11 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
         if (command != null && command is Command.Content.Fetch) {
             return pageContentParse(Jsoup.parse(command.html)).map { Text(it) }
         }
-        //val html = client.get(requestBuilder(url = chapter.key))
-        val html = deps.httpClients.browser.fetch(
-            chapter.key,
-            ".main-col-inner p",
-            timeout = 50000,
-            userAgent = agent
-        ).responseBody
+        val url = chapter.key.replace(
+            baseUrl,
+            translatorUrl
+        ) + "?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en-US&_x_tr_pto=op,wapp"
+        val html = client.get(requestBuilder(url = url))
         return pageContentParse(html.asJsoup()).map { Text(it) }
     }
 
@@ -143,54 +139,35 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
 
     suspend fun getLatest(page: Int): MangasPageInfo {
-        var response :HttpResponse? = client.get(requestBuilder("$baseUrl/novel/page/${page}/?m_orderby=latest"))
-        var webResponse = ""
-        if (response?.status == HttpStatusCode.ServiceUnavailable) {
-            response = null
-            webResponse = deps.httpClients.browser.fetch(
-                url = "$baseUrl/novel/page/${page}/?m_orderby=latest",
-                selector = ".item-summary",
-                userAgent = agent,
-                timeout = 30000
-            ).responseBody
-        }
+        val html: HttpResponse =
+            client.get(requestBuilder("https://mtlnation-com.translate.goog/novel/page/$page/?m_orderby=latest&_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en-US&_x_tr_pto=wapp"))
 
         return bookListParse(
-            response?.asJsoup()?:Jsoup.parse(webResponse),
+            html.asJsoup(),
             "div.page-item-detail",
             ".last"
         ) { popularFromElement(it) }
     }
 
+
     suspend fun getPopular(page: Int): MangasPageInfo {
-        val response = deps.httpClients.browser.fetch(
-            url = "$baseUrl/novel/page/$page/?m_orderby=views",
-            selector = "div.page-item-detail",
-            userAgent = agent,
-            timeout = 30000
+        val response =client.get(
+            requestBuilder("https://mtlnation-com.translate.goog/novel/page/$page/?m_orderby=trending&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",)
         )
         return bookListParse(
-            response.responseBody.asJsoup(),
+            response.asJsoup(),
             "div.page-item-detail",
             "a.last"
         ) { popularFromElement(it) }
     }
 
     suspend fun getSearch(page: Int, query: String): MangasPageInfo {
-        var response :HttpResponse? = client.get(requestBuilder("$baseUrl/search/?searchkey=$query",))
-        var webResponse = ""
-        if (response?.status == HttpStatusCode.ServiceUnavailable) {
-            response = null
-            webResponse = deps.httpClients.browser.fetch(
-                url = "$baseUrl/search/?searchkey=$query",
-                selector = "div.ul-list1 div.li-row",
-                userAgent = agent,
-                timeout = 30000
-            ).responseBody
-        }
+        val response: HttpResponse =
+            client.get(requestBuilder("https://mtlnation-com.translate.goog/?s=$query&post_type=wp-manga&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp"))
+
         return bookListParse(
-            response?.asJsoup()?:Jsoup.parse(webResponse),
-            "div.ul-list1 div.li-row",
+            response.asJsoup(),
+            ".c-tabs-item__content",
             null
         ) { searchFromElement(it) }
     }
@@ -218,16 +195,16 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
 
     fun searchFromElement(element: Element): MangaInfo {
-        val title = element.select("div.txt a").attr("title")
-        val url = baseUrl + element.select("div.txt a").attr("href")
-        val thumbnailUrl = element.select("div.pic img").attr("src")
+        val title = element.select("a").text()
+        val url = baseUrl + element.select("a").attr("href")
+        val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
     // manga details
     fun detailParsed(document: Document, url: String): MangaInfo {
         val title = document.select(".post-title h1").text()
-        val cover = document.select(".summary_image img").attr("data-src")
+        val cover = document.select(".summary_image img").attr("src")
         val link = url.ifBlank { document.select(".summary_image a").attr("href") }
         val authorBookSelector = document.select(".author-content a").text()
         val description = document.select(".summary__content p").eachText().joinToString("\n")
@@ -307,15 +284,6 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
         return ChapterInfo(name = name, key = link)
     }
 
-    fun uniqueChaptersRequest(book: MangaInfo, page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(
-                book.key.replace("/${page - 1}.html", "").replace(".html", "")
-                    .plus("/$page.html")
-            )
-            headers { headers }
-        }
-    }
 
     override suspend fun getChapterList(
         manga: MangaInfo,
@@ -325,24 +293,20 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
         if (command != null && command is Command.Chapter.Fetch) {
             return chaptersParse(Jsoup.parse(command.html)).reversed()
         }
+
+        val url = manga.key.replace(baseUrl, translatorUrl) + translatorEndPoint
         val html = deps.httpClients.browser.fetch(
-            manga.key,
+            url,
             chaptersSelector(),
             timeout = 50000,
             userAgent = agent
         ).responseBody
-        return chaptersParse(Jsoup.parse(html)).reversed()
-    }
-
-    suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get(chaptersRequest(book = book)).asJsoup()
-        val maxPage = page.select("#indexselect option").eachText().size
-        return maxPage
+        return chaptersParse(html.asJsoup()).reversed()
     }
 
 
     override fun pageContentParse(document: Document): List<String> {
-        return document.select("div.txt h4,p").eachText()
+        return document.select("div.txt h4,p").eachText().drop(1)
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
