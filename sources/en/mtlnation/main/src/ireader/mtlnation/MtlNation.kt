@@ -189,7 +189,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
         val url = element.select("h3.h5 a").attr("href")
         val title = element.select("h3.h5 a").text()
-        val thumbnailUrl = element.select("img").attr("src")
+        val thumbnailUrl = element.select("img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
@@ -197,14 +197,14 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
     fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("a").text()
         val url = baseUrl + element.select("a").attr("href")
-        val thumbnailUrl = element.select("img").attr("src")
+        val thumbnailUrl = element.select("img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
     // manga details
     fun detailParsed(document: Document, url: String): MangaInfo {
         val title = document.select(".post-title h1").text()
-        val cover = document.select(".summary_image img").attr("src")
+        val cover = document.select(".summary_image img").attr("data-src")
         val link = url.ifBlank { document.select(".summary_image a").attr("href") }
         val authorBookSelector = document.select(".author-content a").text()
         val description = document.select(".summary__content p").eachText().joinToString("\n")
@@ -232,7 +232,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
     override fun detailParse(document: Document): MangaInfo {
         val title = document.select(".post-title h1").text()
-        val cover = document.select(".summary_image img").attr("src")
+        val cover = document.select(".summary_image img").attr("data-src")
         val link = document.select(".summary_image a").attr("href")
         val authorBookSelector = document.select(".author-content a").text()
         val description = document.select(".summary__content p").eachText().joinToString("\n")
@@ -294,7 +294,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
             return chaptersParse(Jsoup.parse(command.html)).reversed()
         }
 
-        val url = manga.key.replace(baseUrl, translatorUrl) + translatorEndPoint
+        val url = manga.key
         val html = deps.httpClients.browser.fetch(
             url,
             chaptersSelector(),

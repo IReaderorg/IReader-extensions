@@ -1,13 +1,16 @@
 package ireader.ranobes
 
+import com.google.gson.Gson
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.cookies.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import org.ireader.core_api.http.okhttp
+import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
@@ -35,9 +38,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         engine {
             preconfigured = clientBuilder()
         }
-        install(HttpCookies) {
-            storage = ConstantCookiesStorage()
-        }
+        BrowserUserAgent()
     }
 
     override fun getFilters(): FilterList {
@@ -89,14 +90,17 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
     suspend fun getLatest(page: Int): MangasPageInfo {
         var response = ""
-        withContext(Dispatchers.Main) {
-            response = deps.httpClients.browser.fetch(
-                url = baseUrl + fetchLatestEndpoint(page),
-                selector = latestSelector(),
-                userAgent = agent,
-                timeout = maxTimeout
-            ).responseBody
-        }
+
+        val html = client.get(requestBuilder(baseUrl + fetchLatestEndpoint(page)))
+        response = html.asJsoup().html()
+//        withContext(Dispatchers.Main) {
+//            response = deps.httpClients.browser.fetch(
+//                url = baseUrl + fetchLatestEndpoint(page),
+//                selector = latestSelector(),
+//                userAgent = agent,
+//                timeout = maxTimeout
+//            ).responseBody
+//        }
 
         return bookListParse(
             Jsoup.parse(response),
@@ -106,14 +110,20 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     suspend fun getPopular(page: Int): MangasPageInfo {
-        val response = deps.httpClients.browser.fetch(
-            url = "https://ranobes.net/ranking/cstart=$page&ajax=true",
-            selector = ".rank-story a",
-            userAgent = agent,
-            timeout = maxTimeout
-        )
+
+        var response = ""
+
+        val html = client.get(requestBuilder("https://ranobes.net/ranking/cstart=$page&ajax=true"))
+        response = html.asJsoup().html()
+
+//        response = deps.httpClients.browser.fetch(
+//            url = "https://ranobes.net/ranking/cstart=$page&ajax=true",
+//            selector = ".rank-story a",
+//            userAgent = agent,
+//            timeout = maxTimeout
+//        ).responseBody
         return bookListParse(
-            response.responseBody.asJsoup(),
+            response.asJsoup(),
             popularSelector(),
             null
         ) { popularFromElement(it) }
@@ -124,14 +134,20 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         "/index.php?do=search&subaction=search&search_start=0&full_search=0&result_from=1&story=$query"
 
     suspend fun getSearch(page: Int, query: String): MangasPageInfo {
-        val response = deps.httpClients.browser.fetch(
-            url = baseUrl + fetchSearchEndpoint(page, query),
-            selector = searchSelector(),
-            userAgent = agent,
-            timeout = maxTimeout
-        )
+
+        var response = ""
+
+        val html = client.get(requestBuilder(baseUrl + fetchSearchEndpoint(page, query)))
+        response = html.asJsoup().html()
+
+//        response = deps.httpClients.browser.fetch(
+//            url = baseUrl + fetchSearchEndpoint(page, query),
+//            selector = searchSelector(),
+//            userAgent = agent,
+//            timeout = maxTimeout
+//        ).responseBody
         return bookListParse(
-            response.responseBody.asJsoup(),
+            response.asJsoup(),
             searchSelector(),
             searchNextPageSelector()
         ) { searchFromElement(it) }
@@ -226,13 +242,18 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
-        val res = deps.httpClients.browser.fetch(
-            manga.key,
-            selector = "h1.title",
-            userAgent = agent,
-            timeout = maxTimeout
-        )
-        return detailParse(Jsoup.parse(res.responseBody))
+        var response = ""
+
+        val html = client.get(manga.key)
+        response = html.asJsoup().html()
+
+//        response = deps.httpClients.browser.fetch(
+//            manga.key,
+//            selector = "h1.title",
+//            userAgent = agent,
+//            timeout = maxTimeout
+//        ).responseBody
+        return detailParse(Jsoup.parse(response))
     }
 
     // manga details
@@ -302,49 +323,71 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
             .map(MatchResult::value)
             .toList()
         if (command != null) {
-            val res =
-                Jsoup.parse(
-                    deps.httpClients.browser.fetch(
-                        "https://ranobes.net/chapters/${bookId.first()}/page/1/",
-                        selector = chaptersSelector(),
-                        timeout = maxTimeout
-                    ).responseBody
-                )
-            return chaptersParse(res)
+            var response = ""
+
+            val html =
+                client.get(requestBuilder("https://ranobes.net/chapters/${bookId.first()}/page/1/"))
+            response = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
+                .substringBefore("</script>")
+            val chapters = Gson().fromJson(response, ChapterDTO::class.java)
+//            response = deps.httpClients.browser.fetch(
+//                        "https://ranobes.net/chapters/${bookId.first()}/page/1/",
+//                        selector = chaptersSelector(),
+//                        timeout = maxTimeout
+//                    ).responseBody
+
+            return chaptersParse(chapters)
         }
 
 
         val chapters = mutableListOf<ChapterInfo>()
         var currentPage = 1
-        val res =
-            Jsoup.parse(
-                deps.httpClients.browser.fetch(
-                    "https://ranobes.net/chapters/${bookId.first()}/page/1/",
-                    selector = chaptersSelector(),
-                    timeout = maxTimeout
-                ).responseBody
-            )
-        chapters.addAll(chaptersParse(res))
-        val maxPage = res.select(".pages a").last()?.text()?.toInt() ?: 1
-        while (currentPage <= maxPage) {
-            val response = Jsoup.parse(
-                deps.httpClients.browser.fetch(
-                    "https://ranobes.net/chapters/${bookId.first()}/page/$currentPage/",
-                    selector = chaptersSelector(),
-                    timeout = maxTimeout
-                ).responseBody
-            )
-            chapters.addAll(chaptersParse(response))
-            currentPage++
+        var res = ""
+        val html =
+            client.get(requestBuilder("https://ranobes.net/chapters/${bookId.first()}/page/1/"))
+        res = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
+            .substringBefore("</script>")
+        val json1 = Gson().fromJson(res, ChapterDTO::class.java)
+
+//        res = deps.httpClients.browser.fetch(
+//                    "https://ranobes.net/chapters/${bookId.first()}/page/1/",
+//                    selector = chaptersSelector(),
+//                    timeout = maxTimeout
+//                ).responseBody
+
+        chapters.addAll(chaptersParse(json1))
+        val maxPage: Int = json1.pages_count
+        val list = mutableListOf<Deferred<List<ChapterInfo>>>()
+        withContext(Dispatchers.IO) {
+            for (i in 1..maxPage) {
+                val pChapters = async {
+                    val response = client.get(
+                    "https://ranobes.net/chapters/${json1.book_id}/page/$i/"
+                    ).asJsoup().html().substringAfter("<script>window.__DATA__ = ")
+                        .substringBefore("</script>")
+
+                    val json2 = Gson().fromJson(response, ChapterDTO::class.java)
+                    chaptersParse(
+                        json2
+                    )
+                }
+                list.addAll(listOf(pChapters))
+            }
         }
-
-
-
-        return chapters.reversed()
+        return list.awaitAll().flatten().reversed()
     }
 
     override fun chaptersParse(document: Document): List<ChapterInfo> {
         return document.select(chaptersSelector()).map { chapterFromElement(it) }
+    }
+
+    fun chaptersParse(chapterDTO: ChapterDTO): List<ChapterInfo> {
+        return chapterDTO.chapters.map { chater ->
+            ChapterInfo(
+                key = "https://ranobes.net/read-${chater.id}.html",
+                name = chater.title,
+            )
+        }
     }
 
     override fun pageContentParse(document: Document): List<String> {
@@ -352,13 +395,18 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
-        val res = deps.httpClients.browser.fetch(
-            chapter.key,
-            selector = ".shortstory h1,p",
-            userAgent = agent,
-            timeout = maxTimeout
-        )
-        return pageContentParse(Jsoup.parse(res.responseBody)).map {
+        var response = ""
+
+        val htmlPage = client.get(chapter.key)
+        response = htmlPage.asJsoup().html()
+
+//        response = deps.httpClients.browser.fetch(
+//            chapter.key,
+//            selector = ".shortstory h1,p",
+//            userAgent = agent,
+//            timeout = maxTimeout
+//        ).responseBody
+        return pageContentParse(Jsoup.parse(response)).map {
             Text(
                 it
             )
