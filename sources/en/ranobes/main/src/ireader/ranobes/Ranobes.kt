@@ -357,24 +357,23 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
         chapters.addAll(chaptersParse(json1))
         val maxPage: Int = json1.pages_count
-        val list = mutableListOf<Deferred<List<ChapterInfo>>>()
+        val list = mutableListOf<ChapterInfo>()
         withContext(Dispatchers.IO) {
             for (i in 1..maxPage) {
-                val pChapters = async {
-                    val response = client.get(
+                val response = client.get(
                     "https://ranobes.net/chapters/${json1.book_id}/page/$i/"
-                    ).asJsoup().html().substringAfter("<script>window.__DATA__ = ")
-                        .substringBefore("</script>")
+                ).asJsoup().html().substringAfter("<script>window.__DATA__ = ")
+                    .substringBefore("</script>")
 
-                    val json2 = Gson().fromJson(response, ChapterDTO::class.java)
-                    chaptersParse(
-                        json2
-                    )
-                }
-                list.addAll(listOf(pChapters))
+                val json2 = Gson().fromJson(response, ChapterDTO::class.java)
+
+
+                list.addAll(chaptersParse(
+                    json2
+                ))
             }
         }
-        return list.awaitAll().flatten().reversed()
+        return list.reversed()
     }
 
     override fun chaptersParse(document: Document): List<ChapterInfo> {

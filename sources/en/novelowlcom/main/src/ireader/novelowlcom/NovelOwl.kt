@@ -1,8 +1,9 @@
-package ireader.wuxiaworldsiteco
+package ireader.novelowlcom
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,13 +22,13 @@ import java.util.*
 
 
 @Extension
-abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(deps) {
+abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
-    override val name = "WuxiaWorld.site"
+    override val name = "NovelWol"
     override val id: Long
         get() = 2499283573021320255
 
-    override val baseUrl = "https://wuxiaworld.site"
+    override val baseUrl = "https://novelowl.com"
 
     override val lang = "en"
 
@@ -74,32 +75,33 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
     suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/novel-list/page/$page/")
+        val res = requestBuilder("$baseUrl/novel/page/$page/?m_orderby=latest")
         return bookListParse(
             client.get(res).asJsoup(),
-            "div.page-item-detail",
+            ".badge-pos-1",
             popularNextPageSelector()
         ) { latestFromElement(it) }
     }
 
     suspend fun getPopular(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/novel-list/page/$page/?m_orderby=views")
+        val res = requestBuilder("$baseUrl/novel/page/$page/?m_orderby=trending")
         return bookListParse(
             client.get(res).asJsoup(),
-            "div.page-item-detail",
+            ".badge-pos-1",
             popularNextPageSelector()
-        ) { popularFromElement(it) }
+        ) { latestFromElement(it) }
     }
 
     suspend fun getSearch(query: String, page: Int): MangasPageInfo {
         val res =
-            requestBuilder("$baseUrl/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult=")
+            requestBuilder("$baseUrl/page/$page/?s=$query&post_type=wp-manga")
         return bookListParse(
             client.get(res).asJsoup(),
             "div.c-tabs-item__content",
-            null
+            ".nextpostslink"
         ) { searchFromElement(it) }
     }
+
 
 
     override fun HttpRequestBuilder.headersBuilder() {
@@ -114,19 +116,12 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
 
-    fun popularFromElement(element: Element): MangaInfo {
-        val title = element.select("h3.h5 a").text()
-        val url = element.select("h3.h5 a").attr("href")
-        val thumbnailUrl = element.select("img").attr("data-src")
-        return MangaInfo(key = url, title = title, cover = thumbnailUrl)
-    }
-
-    fun popularNextPageSelector() = "div.nav-previous>a"
+    fun popularNextPageSelector() = ".wp-pagenavi .last"
 
 
     fun latestFromElement(element: Element): MangaInfo {
-        val title = element.select("h3.h5 a").text()
-        val url = element.select("h3.h5 a").attr("href")
+        val title = element.select("a").attr("title")
+        val url = element.select("a").attr("href")
         val thumbnailUrl = element.select("img").attr("data-src")
 
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
@@ -146,8 +141,8 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     override fun detailParse(document: Document): MangaInfo {
         val title = document.select("div.post-title>h1").text()
         val cover = document.select("div.summary_image a img").attr("data-src")
-        val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
-        val authorBookSelector = document.select("div.author-content>a").attr("title")
+
+        val authorBookSelector = document.select("div.author-content>a").text()
         val description =
             document.select("div.description-summary div.summary__content p").eachText()
                 .joinToString("\n\n")
@@ -162,8 +157,8 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             description = description,
             author = authorBookSelector,
             genres = category,
-            key = link,
-            status = parseStatus(status)
+            status = parseStatus(status),
+            key = ""
         )
     }
 
@@ -198,7 +193,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
 
     override fun chapterFromElement(element: Element): ChapterInfo {
-        val link = baseUrl + element.select("a").attr("href").substringAfter(baseUrl)
+        val link =  element.select("a").attr("href")
         val name = element.select("a").text()
         val dateUploaded = element.select("i").text()
 
@@ -268,9 +263,9 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     override fun pageContentParse(document: Document): List<String> {
         val par = document.select("div.read-container .reading-content p").eachText()
             .map { it.replace("Read latest Chapters at Wuxia World . Site Only", "") }
-        val head = document.select("div.read-container .reading-content h3").eachText()
+        val head = document.select("#chapter-heading ").text()
 
-        return head + par
+        return listOf(head) + par
     }
 
 
