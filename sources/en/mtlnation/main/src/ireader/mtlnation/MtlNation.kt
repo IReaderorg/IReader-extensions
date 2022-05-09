@@ -30,7 +30,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
 
     override val id: Long
-        get() = 488631435
+        get() = 7
     override val baseUrl = "https://mtlnation.com"
     val translatorUrl = "https://mtlnation-com.translate.goog"
     val translatorEndPoint = "?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en-US&_x_tr_pto=op,wapp"

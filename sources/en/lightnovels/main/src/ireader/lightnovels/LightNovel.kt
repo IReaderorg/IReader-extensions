@@ -44,7 +44,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
 
 
     override val id: Long
-        get() = 9999999997
+        get() = 6
     override val baseUrl = "https://lightnovels.me"
 
     override val lang = "en"

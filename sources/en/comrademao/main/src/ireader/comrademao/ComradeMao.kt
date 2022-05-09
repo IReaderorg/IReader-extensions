@@ -30,7 +30,7 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
 
 
     override val id: Long
-        get() = 9999999998
+        get() = 3
     override val baseUrl = "https://comrademao.com"
 
     override val lang = "en"

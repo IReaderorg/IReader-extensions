@@ -32,7 +32,7 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     override val lang = "en"
 
     override val id: Long
-        get() = 4963245176571628870
+        get() = 8
     override val client = HttpClient(OkHttp) {
         engine {
             preconfigured = clientBuilder()

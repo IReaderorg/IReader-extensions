@@ -19,7 +19,7 @@ abstract class NovelFull(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     override val id: Long
-        get() = 9999999999
+        get() = 10
     override val baseUrl = "https://novelfull.com"
 
     override val lang = "en"

@@ -24,7 +24,7 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
 
     override val name = "BoxNovel"
     override val id: Long
-        get() = 2499283573021320255
+        get() = 2
 
     override val baseUrl = "https://boxnovel.com"
 

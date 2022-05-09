@@ -25,7 +25,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     override val name = "WuxiaWorldSite.co"
     override val id: Long
-        get() = 997814001019
+        get() = 18
 
     override val baseUrl = "https://wuxiaworldsite.co"
 

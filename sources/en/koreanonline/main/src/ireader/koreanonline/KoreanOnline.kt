@@ -19,7 +19,7 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     override val id: Long
-        get() = 14204738993432853
+        get() = 5
     override val baseUrl = "https://www.koreanmtl.online"
 
     override val lang = "en"

@@ -22,7 +22,7 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     override val id: Long
-        get() = 14204738996342153
+        get() = 9
     override val baseUrl = "https://m.novelhold.com"
 
     override val lang = "en"

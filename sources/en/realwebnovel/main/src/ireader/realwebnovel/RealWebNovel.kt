@@ -20,7 +20,7 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
 
     override val name = "RealWebNovel"
     override val id: Long
-        get() = 858825962
+        get() = 14
 
     override val baseUrl = "https://readwebnovels.net"
 

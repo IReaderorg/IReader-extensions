@@ -26,7 +26,7 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
 
     override val name = "NovelWol"
     override val id: Long
-        get() = 2499283573021320255
+        get() = 11
 
     override val baseUrl = "https://novelowl.com"
 

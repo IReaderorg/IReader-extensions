@@ -29,7 +29,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
 
     override val id: Long
-        get() = 999999951
+        get() = 13
     override val baseUrl = "https://ranobes.net"
 
     override val lang = "en"

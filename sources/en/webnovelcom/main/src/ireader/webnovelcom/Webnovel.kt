@@ -23,7 +23,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val lang = "en"
 
-    override val id: Long = 6741720259621999
+    override val id: Long = 16
 
 
     override fun getListings(): List<Listing> {

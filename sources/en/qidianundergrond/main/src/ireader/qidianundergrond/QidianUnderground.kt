@@ -31,7 +31,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
 
 
     override val id: Long
-        get() = 14204738993432811
+        get() = 12
     override val baseUrl = "https://toc.qidianunderground.org"
 
     override val client = HttpClient(OkHttp) {

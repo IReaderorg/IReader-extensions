@@ -19,7 +19,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     override val name = "FreeWebNovel"
 
     override val id: Long
-        get() = 1420473899634853
+        get() = 4
 
     override val baseUrl = "https://freewebnovel.com"
     override val lang = "en"
