@@ -79,15 +79,15 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     fun fromSearchElement(element: Element): MangaInfo {
-        val name = element.select("h3 a").text()
-        val img = element.select("a.imgbox img").attr("src")
-        val url = element.select("h3 a").attr("href")
+        val name = element.select("a").attr("title")
+        val img = element.select("img").attr("src")
+        val url = element.select("a").attr("href")
 
         return MangaInfo(title = name, cover = img, key = url)
     }
 
     open fun searchParse(document: Document): MangasPageInfo {
-        val books = document.select(".newbox ul li").map { element ->
+        val books = document.select(".bs .bsx a").map { element ->
             fromSearchElement(element)
         }
 
