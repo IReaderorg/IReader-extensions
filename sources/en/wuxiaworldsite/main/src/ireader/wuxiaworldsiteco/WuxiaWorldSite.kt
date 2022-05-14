@@ -13,6 +13,7 @@ import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
 import org.ireader.core_api.source.model.*
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
@@ -112,7 +113,13 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             append(HttpHeaders.Referrer, baseUrl)
         }
     }
-
+    override fun getCommands(): CommandList {
+        return listOf(
+            Command.Chapter.Fetch(),
+            Command.Content.Fetch(),
+            Command.Detail.Fetch()
+        )
+    }
 
     fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("h3.h5 a").text()
@@ -196,6 +203,13 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         }
     }
 
+    override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
+        commands.findInstance<Command.Detail.Fetch>()?.let {
+           return detailParse(Jsoup.parse(it.html)).copy(key = it.url)
+        }
+        return super.getMangaDetails(manga, commands)
+    }
+
 
     override fun chapterFromElement(element: Element): ChapterInfo {
         val link = baseUrl + element.select("a").attr("href").substringAfter(baseUrl)
@@ -250,6 +264,9 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
+        commands.findInstance<Command.Chapter.Fetch>()?.let {
+           return chaptersParse(Jsoup.parse(it.html)).reversed()
+        }
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
                 var chapters =
@@ -273,8 +290,16 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return head + par
     }
 
+    override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+        commands.findInstance<Command.Content.Fetch>()?.let {
+            return pageContentParse(Jsoup.parse(it.html)).map { Text(it) }
+        }
+        return super.getPageList(chapter, commands)
+    }
+
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
+
         return pageContentParse(
             client.get(contentRequest(chapter)).asJsoup()
         ).map { it.replace("Come and read on our website wuxia worldsite. Thanks", "") }
