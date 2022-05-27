@@ -39,7 +39,6 @@ File(rootDir, "sources").eachDir { dir ->
 
 pluginManagement {
     repositories {
-        mavenLocal()
         gradlePluginPortal()
         google()
     }
@@ -48,7 +47,6 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        mavenLocal()
         mavenCentral()
         google()
         maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots/") }
