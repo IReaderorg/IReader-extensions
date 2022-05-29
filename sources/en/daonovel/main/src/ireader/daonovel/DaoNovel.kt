@@ -1,24 +1,24 @@
-package ireader.skynovel
+package ireader.daonovel
 
+import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.ChapterInfo
-import org.ireader.core_api.source.model.Command
-import org.ireader.core_api.source.model.Filter
-import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.*
+import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 
 @Extension
-abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
+abstract class DaoNovel(deps: Dependencies) : SourceFactory(
         lang = "en",
-        baseUrl = "https://skynovel.org",
-        id = 19,
-        name = "SkyNovel",
+        baseUrl = "https://daonovel.com",
+        id = 20,
+        name = "Dao Novel",
         deps = deps,
         filterList = listOf(
                 Filter.Title(),
@@ -32,11 +32,16 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
                 )
                 ),
         ),
+        commandList = listOf(
+                Command.Detail.Fetch(),
+                Command.Content.Fetch(),
+                Command.Chapter.Fetch(),
+        ),
         exploreFetchers = listOf(
                 BaseExploreFetcher(
                         "Latest",
-                        endpoint = "/manga/page/{page}/?m_orderby=latest",
-                        selector = ".page-item-detail .item-thumb",
+                        endpoint = "/novel-list/page/{page}/?_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
                         linkSelector = "a",
@@ -49,8 +54,9 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
                 BaseExploreFetcher(
                         "Search",
                         endpoint = "/page/{page}/?s={query}&post_type=wp-manga",
-                        selector = ".c-tabs-item .row",
+                        selector = ".c-tabs-item__content",
                         nameSelector = "a",
+                        nameAtt = "title",
                         linkSelector = "a",
                         linkAtt = "href",
                         coverSelector = "a img",
@@ -61,8 +67,8 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
                 ),
                 BaseExploreFetcher(
                         "Trending",
-                        endpoint = "/manga/page/{page}/?m_orderby=trending",
-                        selector = ".page-item-detail .item-thumb",
+                        endpoint = "/novel-list/page/{page}/?m_orderby=trending&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
                         linkSelector = "a",
@@ -74,8 +80,8 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
                 ),
                 BaseExploreFetcher(
                         "New",
-                        endpoint = "/manga/page/{page}/?m_orderby=new-manga",
-                        selector = ".page-item-detail .item-thumb",
+                        endpoint = "/novel-list/page/{page}/?m_orderby=new-manga&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
                         linkSelector = "a",
@@ -87,8 +93,8 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
                 ),
                 BaseExploreFetcher(
                         "Most Views",
-                        endpoint = "/manga/page/{page}/?m_orderby=views",
-                        selector = ".page-item-detail .item-thumb",
+                        endpoint = "/novel-list/page/{page}/?m_orderby=views&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
                         linkSelector = "a",
@@ -100,8 +106,8 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
                 ),
                 BaseExploreFetcher(
                         "Rating",
-                        endpoint = "/manga/page/{page}/?m_orderby=rating",
-                        selector = ".page-item-detail .item-thumb",
+                        endpoint = "/novel-list/page/{page}/?m_orderby=rating&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
                         linkSelector = "a",
@@ -114,18 +120,17 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
 
                 ),
         detailFetcher = SourceFactory.Detail(
-                nameSelector = ".post-title",
+                nameSelector = ".post-title h1",
                 coverSelector = ".summary_image a img",
                 coverAtt = "src",
-                authorBookSelector = ".author-content a",
-                categorySelector = ".genres-content a",
-                descriptionSelector = ".g_txt_over p",
+                descriptionSelector = ".description-summary p",
         ),
         chapterFetcher = SourceFactory.Chapters(
-                selector = ".wp-manga-chapter",
+                selector = "li.wp-manga-chapter a",
                 nameSelector = "a",
                 linkSelector = "a",
                 linkAtt = "href",
+                reverseChapterList = true,
         ),
         contentFetcher = SourceFactory.Content(
                 pageTitleSelector = ".cha-tit",
@@ -133,22 +138,8 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
         ),
 ) {
 
-    override suspend fun getChapterList(
-            manga: MangaInfo,
-            commands: List<Command<*>>
-    ): List<ChapterInfo> {
-        val html = client.get(requestBuilder(manga.key)).asJsoup()
-        val bookId = html.select(".rating-post-id").attr("value")
 
-
-        var chapters = chaptersParse(
-                        client.submitForm(url = "https://skynovel.org/wp-admin/admin-ajax.php", formParameters = Parameters.build {
-                            append("action", "manga_get_chapters")
-                            append("manga", bookId)
-                        }).asJsoup(),
-                )
-        return chapters.reversed()
-    }
-
-
+        override val baseUrl: String
+                get() = "https://daonovel-com.translate.goog"
+        
 }
