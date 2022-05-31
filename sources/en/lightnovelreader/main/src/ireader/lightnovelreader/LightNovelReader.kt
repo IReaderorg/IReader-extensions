@@ -28,7 +28,7 @@ import java.util.*
 abstract class LightNovelReader(deps: Dependencies) : SourceFactory(
         lang = "en",
         baseUrl = "https://lightnovelreader.org",
-        id = 20,
+        id = 21,
         name = "LightNovelReader",
         deps = deps,
         filterList = listOf(
@@ -122,4 +122,6 @@ abstract class LightNovelReader(deps: Dependencies) : SourceFactory(
         }
         return super.getMangaList(filters, page)
     }
+
+
 }

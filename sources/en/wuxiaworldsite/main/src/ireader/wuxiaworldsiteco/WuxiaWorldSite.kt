@@ -103,7 +103,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
 
-    override fun HttpRequestBuilder.headersBuilder() {
+    override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
                 HttpHeaders.UserAgent,

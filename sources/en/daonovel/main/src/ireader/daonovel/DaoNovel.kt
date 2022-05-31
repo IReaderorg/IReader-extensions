@@ -40,7 +40,7 @@ abstract class DaoNovel(deps: Dependencies) : SourceFactory(
         exploreFetchers = listOf(
                 BaseExploreFetcher(
                         "Latest",
-                        endpoint = "/novel-list/page/{page}/?_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        endpoint = "/novel-list/page/{page}/",
                         selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
@@ -67,7 +67,7 @@ abstract class DaoNovel(deps: Dependencies) : SourceFactory(
                 ),
                 BaseExploreFetcher(
                         "Trending",
-                        endpoint = "/novel-list/page/{page}/?m_orderby=trending&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        endpoint = "/novel-list/page/{page}/?m_orderby=trending",
                         selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
@@ -80,7 +80,7 @@ abstract class DaoNovel(deps: Dependencies) : SourceFactory(
                 ),
                 BaseExploreFetcher(
                         "New",
-                        endpoint = "/novel-list/page/{page}/?m_orderby=new-manga&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        endpoint = "/novel-list/page/{page}/?m_orderby=new-manga",
                         selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
@@ -93,7 +93,7 @@ abstract class DaoNovel(deps: Dependencies) : SourceFactory(
                 ),
                 BaseExploreFetcher(
                         "Most Views",
-                        endpoint = "/novel-list/page/{page}/?m_orderby=views&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        endpoint = "/novel-list/page/{page}/?m_orderby=views",
                         selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
@@ -106,7 +106,7 @@ abstract class DaoNovel(deps: Dependencies) : SourceFactory(
                 ),
                 BaseExploreFetcher(
                         "Rating",
-                        endpoint = "/novel-list/page/{page}/?m_orderby=rating&_x_tr_sl=auto&_x_tr_tl=fa&_x_tr_hl=en-US&_x_tr_pto=op,wapp",
+                        endpoint = "/novel-list/page/{page}/?m_orderby=rating",
                         selector = ".page-content-listing .c-image-hover a",
                         nameSelector = "a",
                         nameAtt = "title",
@@ -124,6 +124,10 @@ abstract class DaoNovel(deps: Dependencies) : SourceFactory(
                 coverSelector = ".summary_image a img",
                 coverAtt = "src",
                 descriptionSelector = ".description-summary p",
+                status = mapOf(
+                        "OnGoing" to MangaInfo.ONGOING,
+                        "Completed" to MangaInfo.COMPLETED,
+                )
         ),
         chapterFetcher = SourceFactory.Chapters(
                 selector = "li.wp-manga-chapter a",
@@ -134,12 +138,18 @@ abstract class DaoNovel(deps: Dependencies) : SourceFactory(
         ),
         contentFetcher = SourceFactory.Content(
                 pageTitleSelector = ".cha-tit",
-                pageContentSelector = ".text-left h3,p ,.cha-content .pr .dib p",
+                pageContentSelector = "div.reading-content h3,div.reading-content p",
         ),
 ) {
 
+        override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
+                if (commands.isEmpty()) {
+                        return chaptersParse(
+                                client.post(requestBuilder(manga.key + "ajax/chapters/")).asJsoup(),
+                        ).reversed()
+                }
+                return super.getChapterList(manga, commands)
+        }
 
-        override val baseUrl: String
-                get() = "https://daonovel-com.translate.goog"
         
 }
