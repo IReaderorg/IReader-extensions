@@ -96,7 +96,7 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         "/all-series/novels/"
 
 
-    override fun HttpRequestBuilder.headersBuilder() {
+    override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
                 HttpHeaders.UserAgent,

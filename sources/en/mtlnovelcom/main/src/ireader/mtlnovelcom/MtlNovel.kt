@@ -98,7 +98,7 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     }
 
 
-    override fun HttpRequestBuilder.headersBuilder() {
+    override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
             append(HttpHeaders.CacheControl, "max-age=0")

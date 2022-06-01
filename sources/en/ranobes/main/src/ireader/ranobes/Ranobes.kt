@@ -175,7 +175,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         "/cstart=$page&ajax=true"
 
 
-    override fun HttpRequestBuilder.headersBuilder() {
+    override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
                 HttpHeaders.UserAgent,

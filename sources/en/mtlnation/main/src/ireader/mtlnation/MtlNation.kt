@@ -173,7 +173,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
     }
 
 
-    override fun HttpRequestBuilder.headersBuilder() {
+    override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
                 HttpHeaders.UserAgent,
