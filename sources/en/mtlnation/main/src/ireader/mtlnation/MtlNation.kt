@@ -187,7 +187,7 @@ abstract class MtlNation(private val deps: Dependencies) : ParsedHttpSource(deps
 
     fun popularFromElement(element: Element): MangaInfo {
 
-        val url = element.select("h3.h5 a").attr("href")
+        val url = element.select("h3.h5 a").attr("href").replace(translatorUrl,baseUrl)
         val title = element.select("h3.h5 a").text()
         val thumbnailUrl = element.select("img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
