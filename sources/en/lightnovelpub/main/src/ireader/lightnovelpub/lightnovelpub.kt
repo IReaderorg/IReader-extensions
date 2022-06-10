@@ -27,96 +27,110 @@ import kotlin.math.ceil
 
 @Extension
 abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
-    lang = "en",
-    baseUrl = "https://www.lightnovelpub.com",
-    id = 24,
-    name = "LightNovelPub",
     deps = deps,
-    filterList = listOf(
+) {
+    override val lang: String
+        get() = "en"
+    override val baseUrl: String
+        get() = "https://www.lightnovelpub.com"
+    override val id: Long
+        get() = 24
+    override val name: String
+        get() =  "LightNovelPub"
+    override fun getFilters(): FilterList = listOf(
         Filter.Title()
-    ),
-    commandList = listOf(
-        Command.Detail.Fetch(),
-        Command.Chapter.Fetch(),
-        Command.Content.Fetch(),
-    ),
-    exploreFetchers = listOf(
-        BaseExploreFetcher(
-            "Popular",
-            endpoint = "/browse/all/popular/all/{page}",
-            selector = ".novel-item",
-            nameSelector = ".novel-title",
-            linkSelector = ".novel-title > a",
-            linkAtt = "href",
-            addBaseUrlToLink = true,
-            coverSelector = "img",
-            coverAtt = "data-src",
-            nextPageSelector = ".nav-previous",
-            nextPageValue = "Older Posts",
-        ),
+    )
 
-        ),
-    detailFetcher = SourceFactory.Detail(
-        nameSelector = "h1.novel-title",
-        coverSelector = "figure.cover > img",
-        coverAtt = "data-src",
-        categorySelector = "div.categories > ul > li",
-        statusSelector = "div.header-stats > span",
-        status = mapOf(
-            "Complete" to MangaInfo.COMPLETED,
-            "OnGoing" to MangaInfo.ONGOING,
-        ),
-        authorBookSelector = ".author > a > span",
-        descriptionSelector = ".summary > .content"
-    ),
-    chapterFetcher = SourceFactory.Chapters(
-        selector = ".chapter-list li",
-        nameSelector = ".chapter-title",
-        linkSelector = "a",
-        linkAtt = "href",
-        numberSelector = ".chapter-no",
-        releaseDateSelector = ".chapter-update",
-        releaseDateParser = { date ->
-            if (date.contains("ago")) {
-                val value = date.split(' ')[0].toInt()
-                when {
-                    "min" in date -> Calendar.getInstance().apply {
-                        add(Calendar.MINUTE, value * -1)
-                    }.timeInMillis
-                    "hour" in date -> Calendar.getInstance().apply {
-                        add(Calendar.HOUR_OF_DAY, value * -1)
-                    }.timeInMillis
-                    "day" in date -> Calendar.getInstance().apply {
-                        add(Calendar.DATE, value * -1)
-                    }.timeInMillis
-                    "week" in date -> Calendar.getInstance().apply {
-                        add(Calendar.DATE, value * 7 * -1)
-                    }.timeInMillis
-                    "month" in date -> Calendar.getInstance().apply {
-                        add(Calendar.MONTH, value * -1)
-                    }.timeInMillis
-                    "year" in date -> Calendar.getInstance().apply {
-                        add(Calendar.YEAR, value * -1)
-                    }.timeInMillis
-                    else -> {
+    override fun getCommands(): CommandList {
+        return listOf(
+            Command.Detail.Fetch(),
+            Command.Chapter.Fetch(),
+            Command.Content.Fetch(),
+        )
+    }
+    override val exploreFetchers: List<BaseExploreFetcher>
+        get() = listOf(
+            BaseExploreFetcher(
+                "Popular",
+                endpoint = "/browse/all/popular/all/{page}",
+                selector = ".novel-item",
+                nameSelector = ".novel-title",
+                linkSelector = ".novel-title > a",
+                linkAtt = "href",
+                addBaseUrlToLink = true,
+                coverSelector = "img",
+                coverAtt = "data-src",
+                nextPageSelector = ".pagination li",
+                nextPageValue = ">>",
+            ),
+
+            )
+
+    override val detailFetcher: Detail
+        get() = SourceFactory.Detail(
+            nameSelector = "h1.novel-title",
+            coverSelector = "figure.cover > img",
+            coverAtt = "data-src",
+            categorySelector = "div.categories > ul > li",
+            statusSelector = "div.header-stats > span",
+            status = mapOf(
+                "Complete" to MangaInfo.COMPLETED,
+                "OnGoing" to MangaInfo.ONGOING,
+            ),
+            authorBookSelector = ".author > a > span",
+            descriptionSelector = ".summary > .content"
+        )
+
+    override val chapterFetcher: Chapters
+        get() = SourceFactory.Chapters(
+            selector = ".chapter-list li",
+            nameSelector = ".chapter-title",
+            linkSelector = "a",
+            linkAtt = "href",
+            numberSelector = ".chapter-no",
+            uploadDateSelector = ".chapter-update",
+            uploadDateParser = { date ->
+                if (date.contains("ago")) {
+                    val value = date.split(' ')[0].toInt()
+                    when {
+                        "min" in date -> Calendar.getInstance().apply {
+                            add(Calendar.MINUTE, value * -1)
+                        }.timeInMillis
+                        "hour" in date -> Calendar.getInstance().apply {
+                            add(Calendar.HOUR_OF_DAY, value * -1)
+                        }.timeInMillis
+                        "day" in date -> Calendar.getInstance().apply {
+                            add(Calendar.DATE, value * -1)
+                        }.timeInMillis
+                        "week" in date -> Calendar.getInstance().apply {
+                            add(Calendar.DATE, value * 7 * -1)
+                        }.timeInMillis
+                        "month" in date -> Calendar.getInstance().apply {
+                            add(Calendar.MONTH, value * -1)
+                        }.timeInMillis
+                        "year" in date -> Calendar.getInstance().apply {
+                            add(Calendar.YEAR, value * -1)
+                        }.timeInMillis
+                        else -> {
+                            0L
+                        }
+                    }
+                } else {
+                    try {
+                        SimpleDateFormat("MMM dd,yyyy", Locale.US).parse(date)?.time ?: 0
+                    } catch (_: Exception) {
                         0L
                     }
                 }
-            } else {
-                try {
-                    SimpleDateFormat("MMM dd,yyyy", Locale.US).parse(date)?.time ?: 0
-                } catch (_: Exception) {
-                    0L
-                }
-            }
-        },
-        addBaseUrlToLink = true
-    ),
-    contentFetcher = SourceFactory.Content(
-        pageTitleSelector = "h2",
-        pageContentSelector = "#chapter-container p",
-    ),
-) {
+            },
+            addBaseUrlToLink = true
+        )
+
+    override val contentFetcher: Content
+        get() = SourceFactory.Content(
+            pageTitleSelector = "h2",
+            pageContentSelector = "#chapter-container p",
+        )
 
     override val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {
