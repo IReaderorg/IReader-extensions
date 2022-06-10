@@ -106,7 +106,7 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         val query = filters.findInstance<Filter.Title>()?.value
 
         if (query != null) {
-            val books: ExploreDTO = client.get("https://api.mystorywave.com/story-wave-backend/api/v1/content/books/search?keyWord=${query}&pageNumber=${page}&pageSize=50") {
+            val books: ExploreDTO = client.get("https://api.mystorywave.com/story-wave-backend/api/v1/content/books/search?keyWord=${query.replace(" ","+")}&pageNumber=${page}&pageSize=50") {
                 headers(clientBuilder())
             }.body()
             return MangasPageInfo(
