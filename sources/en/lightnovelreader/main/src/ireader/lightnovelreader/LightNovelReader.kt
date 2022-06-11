@@ -83,10 +83,13 @@ abstract class LightNovelReader(deps: Dependencies) : SourceFactory(
             descriptionSelector = "body > section:nth-child(4) > div > div > div.col-12.col-xl-9 > div > div:nth-child(5) > div p",
             authorBookSelector = "body > section:nth-child(4) > div > div > div.col-12.col-xl-9 > div > div:nth-child(2) > div > div.novels-detail-right > ul > li:nth-child(6) > div.novels-detail-right-in-right > a",
             categorySelector = "body > section:nth-child(4) > div > div > div.col-12.col-xl-9 > div > div:nth-child(2) > div > div.novels-detail-right > ul > li:nth-child(3) > div.novels-detail-right-in-right > a",
-            status = mapOf(
-                Pair("Ongoing", MangaInfo.ONGOING),
-                Pair("Completed", MangaInfo.COMPLETED),
-            ),
+            onStatus = { status ->
+                if (status.contains("Completed")) {
+                    MangaInfo.COMPLETED
+                } else {
+                    MangaInfo.ONGOING
+                }
+            },
             statusSelector = "body > section:nth-child(4) > div > div > div.col-12.col-xl-9 > div > div:nth-child(2) > div > div.novels-detail-right > ul > li:nth-child(2) > div.novels-detail-right-in-right"
         )
     override val chapterFetcher: Chapters

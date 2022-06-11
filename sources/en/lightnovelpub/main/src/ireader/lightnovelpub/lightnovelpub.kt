@@ -73,14 +73,18 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             coverAtt = "data-src",
             categorySelector = "div.categories > ul > li",
             statusSelector = "div.header-stats > span",
-            status = mapOf(
-                "Complete" to MangaInfo.COMPLETED,
-                "OnGoing" to MangaInfo.ONGOING,
-            ),
+            onStatus = { status ->
+                if (status.contains("Complete")) {
+                    MangaInfo.COMPLETED
+                } else {
+                    MangaInfo.ONGOING
+                }
+            },
             authorBookSelector = ".author > a > span",
             descriptionSelector = ".summary > .content"
         )
 
+    val dateFormatter =  SimpleDateFormat("MMM dd,yyyy", Locale.US)
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
             selector = ".chapter-list li",
@@ -117,7 +121,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
                     }
                 } else {
                     try {
-                        SimpleDateFormat("MMM dd,yyyy", Locale.US).parse(date)?.time ?: 0
+                        dateFormatter.parse(date)?.time ?: 0
                     } catch (_: Exception) {
                         0L
                     }

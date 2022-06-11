@@ -16,8 +16,8 @@ ireader-core = { module = "io.github.kazemcodes:core-api", version.ref = "ireade
 
 okhttp = "com.squareup.okhttp3:okhttp:4.9.3"
 jsoup = "org.jsoup:jsoup:1.14.3"
-skrapeit = "it.skrape:skrapeit:1.2.1"
-skrapeit-snaphsot = "it.skrape:skrapeit:0-SNAPSHOT"
+
+
 
 ktor-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-core-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }

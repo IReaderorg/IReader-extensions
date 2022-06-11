@@ -126,10 +126,13 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
             coverAtt = "src",
             descriptionSelector = "#tab-manga-about",
             statusSelector = ".genres",
-            status = mapOf(
-                "مستمرة" to MangaInfo.ONGOING,
-                "Completed" to MangaInfo.COMPLETED,
-            )
+            onStatus = { status ->
+                if (status.contains("مستمرة")) {
+                    MangaInfo.COMPLETED
+                } else {
+                    MangaInfo.ONGOING
+                }
+            },
         )
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
