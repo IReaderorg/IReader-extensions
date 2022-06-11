@@ -87,7 +87,7 @@ abstract class NovelUpdates(private val deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Chapters(
             selector = "li.sp_li_chp",
             nameSelector = "li",
-            linkSelector = "a",
+            linkSelector = "a:nth-child(2)",
             linkAtt = "href",
             onLink = {
                 "https:$it"
@@ -96,7 +96,7 @@ abstract class NovelUpdates(private val deps: Dependencies) : SourceFactory(
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = "",
+            pageTitleSelector = "h1,h2,h3,h4,h5,h6",
             pageContentSelector = "p",
         )
 
@@ -110,7 +110,7 @@ abstract class NovelUpdates(private val deps: Dependencies) : SourceFactory(
     ): List<ChapterInfo> {
         val html = client.get(requestBuilder(manga.key)).asJsoup()
         val bookId = html.select("#mypostid").attr("value")
-        Log.error { bookId }
+
         val chapterHtml = client.submitForm(
             url = "https://www.novelupdates.com/wp-admin/admin-ajax.php",
             formParameters = Parameters.build {
@@ -120,9 +120,11 @@ abstract class NovelUpdates(private val deps: Dependencies) : SourceFactory(
             }) {
             headersBuilder()
         }.asJsoup()
+
         val chapters = chaptersParse(
             chapterHtml
         )
+
         return chapters.reversed()
     }
 
