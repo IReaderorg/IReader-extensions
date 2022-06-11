@@ -36,7 +36,8 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
     override val id: Long
         get() = 24
     override val name: String
-        get() =  "LightNovelPub"
+        get() = "LightNovelPub"
+
     override fun getFilters(): FilterList = listOf(
         Filter.Title()
     )
@@ -48,6 +49,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             Command.Content.Fetch(),
         )
     }
+
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
@@ -84,7 +86,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             descriptionSelector = ".summary > .content"
         )
 
-    val dateFormatter =  SimpleDateFormat("MMM dd,yyyy", Locale.US)
+    val dateFormatter = SimpleDateFormat("MMM dd,yyyy", Locale.US)
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
             selector = ".chapter-list li",
@@ -188,11 +190,9 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
 
         if (query != null) {
             val response: SearchResponse =
-                client.submitForm {
-                    url("https://www.lightnovelpub.com/lnsearchlive")
-                    parameter("inputContent",query)
-                            headers( clientBuilder())
-                }.body<SearchResponse>()
+                client.submitForm("https://www.lightnovelpub.com/lnsearchlive", formParameters = Parameters.build {
+                    append("inputContent",query)
+                }) { headersBuilder() }.body<SearchResponse>()
             val mangas = response.resultview.asJsoup().select(".novel-item").map { html ->
                 val name = html.select("h4.novel-title").text().trim()
                 val cover = html.select("img").attr("src")
