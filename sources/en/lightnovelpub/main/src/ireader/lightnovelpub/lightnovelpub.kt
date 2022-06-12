@@ -19,6 +19,7 @@ import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
 import org.ireader.core_api.source.model.*
+import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
 import java.util.*
@@ -63,7 +64,6 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
                 coverSelector = "img",
                 coverAtt = "data-src",
                 nextPageSelector = ".pagination li",
-                nextPageValue = ">>",
             ),
 
             )
@@ -71,8 +71,8 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
             nameSelector = "h1.novel-title",
-            coverSelector = "figure.cover > img",
-            coverAtt = "data-src",
+            coverSelector = "figure.cover img",
+            coverAtt = "src",
             categorySelector = "div.categories > ul > li",
             statusSelector = "div.header-stats > span",
             onStatus = { status ->
@@ -134,8 +134,11 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = "h2",
+            pageTitleSelector = "#chapter-article > section.page-in.content-wrap > div.titles > h1 > span.chapter-title",
             pageContentSelector = "#chapter-container p",
+            onContent = { content ->
+                content.filter {  !it.contains("lightnovelpub",true) || !it.contains("no_vel_read_ing") }
+            }
         )
 
     override val client = HttpClient(OkHttp) {
@@ -212,5 +215,11 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
         return super.getMangaList(filters, page)
     }
 
+    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
+        return client to HttpRequestBuilder().apply {
+            url(url)
+            headersBuilder()
+        }
+    }
 
 }
