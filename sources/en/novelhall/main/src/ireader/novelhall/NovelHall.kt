@@ -37,6 +37,7 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
     override fun getListings(): List<Listing> {
         return listOf(
             SourceFactory.LatestListing(),
+
         )
     }
 
@@ -90,9 +91,6 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
 
     fun fetchPopularEndpoint(page: Int): String? =
         "/all-$page.html"
-
-//     fun fetchSearchEndpoint(page: Int, query: String): String? =
-//        "/index.php?s=so&module=book&keyword=$page"
 
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {

@@ -199,7 +199,7 @@ abstract class NovelFull(deps: Dependencies) : ParsedHttpSource(deps) {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
                // val page = client.get<String>(chaptersRequest(book = book))
-                val maxPage = parseMaxPage(manga)
+                val maxPage = parseMaxPage(manga) + 1
                 val list = mutableListOf<Deferred<List<ChapterInfo>>>()
                 for (i in 1..maxPage) {
                     val pChapters = async {
