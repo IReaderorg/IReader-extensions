@@ -39,28 +39,27 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
         Filter.Sort(
             "Sort By:", arrayOf(
                 "Latest",
-                "Popular",
-                "New",
-                "Most Views",
-                "Rating",
             )
         ),
     )
-
+    override fun getCommands(): CommandList = listOf(
+        Command.Detail.Fetch(),
+        Command.Content.Fetch(),
+        Command.Chapter.Fetch(),
+    )
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
                 "Latest",
-                endpoint = "/manga/page/{page}/?m_orderby=latest",
-                selector = ".card ",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
+                endpoint = "/library?query=&sort=novel_new&page={page}",
+                selector = ".row .my-shadow ",
+                nameSelector = ".content h3",
+                linkSelector = ".content a",
                 linkAtt = "href",
-                coverSelector = "a img",
+                addBaseUrlToLink = true,
+                coverSelector = ".content a img",
                 coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
+                nextPageSelector = ".block",
             ),
             BaseExploreFetcher(
                 "Search",
@@ -75,101 +74,61 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
                 nextPageValue = "Older Posts",
                 type = Type.Search
             ),
-            BaseExploreFetcher(
-                "Trending",
-                endpoint = "/manga/page/{page}/?m_orderby=trending",
-                selector = ".page-item-detail .item-thumb",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
-            ),
-            BaseExploreFetcher(
-                "New",
-                endpoint = "/manga/page/{page}/?m_orderby=new-manga",
-                selector = ".page-item-detail .item-thumb",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
-            ),
-            BaseExploreFetcher(
-                "Most Views",
-                endpoint = "/manga/page/{page}/?m_orderby=views",
-                selector = ".page-item-detail .item-thumb",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
-            ),
-            BaseExploreFetcher(
-                "Rating",
-                endpoint = "/manga/page/{page}/?m_orderby=rating",
-                selector = ".page-item-detail .item-thumb",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
-            ),
 
             )
 
+
+
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = ".post-title",
-            coverSelector = ".summary_image a img",
+            nameSelector = "h1.q-mt-xs",
+            coverSelector = ".text-center img",
             coverAtt = "src",
-            authorBookSelector = ".author-content a",
-            categorySelector = ".genres-content a",
-            descriptionSelector = ".g_txt_over p",
+            authorBookSelector = "div:nth-child(1) > div.text-subtitle1.text-bold.text-grey-8",
+            categorySelector = ".q-my-xs a",
+            descriptionSelector = ".text-synopsis p",
+            statusSelector = ".row.q-mx-auto.q-my-md.justify-center.text-left > div:nth-child(3) > div.text-subtitle1.text-bold.text-grey-8",
+            onStatus = { status ->
+                when(status) {
+                    "Completed"-> MangaInfo.COMPLETED
+                    else -> MangaInfo.ONGOING
+                }
+
+            }
         )
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = ".wp-manga-chapter",
-            nameSelector = "a",
+            selector = ".chapters a",
+            nameSelector = ".text-bold",
             linkSelector = "a",
             linkAtt = "href",
+            addBaseUrlToLink = true,
+            reverseChapterList = false
         )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = ".cha-tit",
-            pageContentSelector = ".text-left h3,p ,.cha-content .pr .dib p",
+            pageTitleSelector = "#item-0 > div:nth-child(2)",
+            pageContentSelector = ".font-poppins p",
+            onTitle = { title ->
+                title.replace("\\r","")
+            }
         )
 
 
-    override suspend fun getChapterList(
-        manga: MangaInfo,
+    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
+        return client to HttpRequestBuilder().apply {
+            url(url)
+            headersBuilder()
+        }
+    }
+
+    override suspend fun getContentRequest(
+        chapter: ChapterInfo,
         commands: List<Command<*>>
-    ): List<ChapterInfo> {
-        val html = client.get(requestBuilder(manga.key)).asJsoup()
-        val bookId = html.select(".rating-post-id").attr("value")
-
-
-        var chapters = chaptersParse(
-            client.submitForm(url = "https://skynovel.org/wp-admin/admin-ajax.php", formParameters = Parameters.build {
-                append("action", "manga_get_chapters")
-                append("manga", bookId)
-            }).asJsoup(),
-        )
-        return chapters.reversed()
+    ): Document {
+        return deps.httpClients.browser.fetch(chapter.key,contentFetcher.pageTitleSelector,).responseBody.asJsoup()
     }
 
 
