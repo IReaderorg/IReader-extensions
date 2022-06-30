@@ -12,8 +12,6 @@ java_pid11284.hprof
 build
 /captures
 .externalNativeBuild
-.github/
-.git-rewrite/
 build/
 
 
