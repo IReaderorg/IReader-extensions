@@ -216,7 +216,7 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         val request = client.get(chaptersRequest(manga)).asJsoup()
-        return chaptersParse(request).reversed()
+        return chaptersParse(request)
     }
 
     suspend fun parseMaxPage(book: MangaInfo): Int {
