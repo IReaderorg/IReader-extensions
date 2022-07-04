@@ -97,6 +97,7 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
             }
         )
 
+
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
             selector = ".chapters a",
@@ -117,8 +118,31 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
         )
 
 
+    override suspend fun getMangaDetailsRequest(
+        manga: MangaInfo,
+        commands: List<Command<*>>
+    ): Document {
+        return deps.httpClients.browser.fetch(manga.key,detailFetcher.nameSelector,).responseBody.asJsoup()
+    }
+
+    override suspend fun getChapterListRequest(
+        manga: MangaInfo,
+        commands: List<Command<*>>
+    ): Document {
+        return deps.httpClients.browser.fetch(manga.key,detailFetcher.nameSelector,).responseBody.asJsoup()
+    }
+
+    override suspend fun getListRequest(
+        baseExploreFetcher: BaseExploreFetcher,
+        page: Int,
+        query: String
+    ): Document {
+        return deps.httpClients.browser.fetch(baseUrl+baseExploreFetcher.endpoint?.replace("{page}",page.toString())?.replace("{query}",query),baseExploreFetcher.selector, timeout = 50000L).responseBody.asJsoup()
+    }
+
+
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
-        return client to HttpRequestBuilder().apply {
+        return deps.httpClients.cloudflareClient to HttpRequestBuilder().apply {
             url(url)
             headersBuilder()
         }
