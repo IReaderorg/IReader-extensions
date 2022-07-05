@@ -109,6 +109,7 @@ dependencies {
   compileOnly(libs.findLibrary("ktor-contentNegotiation").get())
   compileOnly(libs.findLibrary("ktor-serialization").get())
   compileOnly(libs.findLibrary("ktor-gson").get())
+  compileOnly(libs.findLibrary("ktor-jackson").get())
 
   compileOnly(project(Proj.annotation))
   ksp(project(Proj.compiler))

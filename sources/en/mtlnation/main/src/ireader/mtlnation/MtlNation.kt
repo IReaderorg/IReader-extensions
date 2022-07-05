@@ -1,24 +1,11 @@
 package ireader.mtlnation
 
 import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import okhttp3.OkHttpClient
-
-import org.ireader.core_api.http.okhttp
-import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.*
 import org.ireader.core_api.source.model.*
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
-import java.util.concurrent.TimeUnit
 
 @Extension
 abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
@@ -42,17 +29,19 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
             )
         ),
     )
+
     override fun getCommands(): CommandList = listOf(
         Command.Detail.Fetch(),
         Command.Content.Fetch(),
         Command.Chapter.Fetch(),
     )
+
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
                 "Latest",
                 endpoint = "/library?query=&sort=novel_new&page={page}",
-                selector = ".row .my-shadow ",
+                selector = ".row .my-shadow",
                 nameSelector = ".content h3",
                 linkSelector = ".content a",
                 linkAtt = "href",
@@ -63,20 +52,19 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
             ),
             BaseExploreFetcher(
                 "Search",
-                endpoint = "/page/{page}/?s={query}&post_type=wp-manga",
-                selector = ".c-tabs-item .row",
-                nameSelector = "a",
-                linkSelector = "a",
+                endpoint = "/library?query={query}&sort=chapter_new&page={page}",
+                selector = ".row .my-shadow",
+                nameSelector = ".content h3",
+                linkSelector = ".content a",
                 linkAtt = "href",
-                coverSelector = "a img",
+                addBaseUrlToLink = true,
+                coverSelector = ".content a img",
                 coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts",
+                nextPageSelector = ".block",
                 type = Type.Search
             ),
 
             )
-
 
 
     override val detailFetcher: Detail
@@ -89,8 +77,8 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
             descriptionSelector = ".text-synopsis p",
             statusSelector = ".row.q-mx-auto.q-my-md.justify-center.text-left > div:nth-child(3) > div.text-subtitle1.text-bold.text-grey-8",
             onStatus = { status ->
-                when(status) {
-                    "Completed"-> MangaInfo.COMPLETED
+                when (status) {
+                    "Completed" -> MangaInfo.COMPLETED
                     else -> MangaInfo.ONGOING
                 }
 
@@ -113,7 +101,7 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
             pageTitleSelector = "#item-0 > div:nth-child(2)",
             pageContentSelector = ".font-poppins p",
             onTitle = { title ->
-                title.replace("\\r","")
+                title.replace("\\r", "")
             }
         )
 
@@ -122,14 +110,22 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): Document {
-        return deps.httpClients.browser.fetch(manga.key,detailFetcher.nameSelector,).responseBody.asJsoup()
+        return deps.httpClients.browser.fetch(
+            manga.key,
+            "section.content-novel-mobile h1",
+            timeout = 50000
+        ).responseBody.asJsoup()
+
     }
 
     override suspend fun getChapterListRequest(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): Document {
-        return deps.httpClients.browser.fetch(manga.key,detailFetcher.nameSelector,).responseBody.asJsoup()
+        return deps.httpClients.browser.fetch(
+            manga.key,
+            chapterFetcher.nameSelector,
+        ).responseBody.asJsoup()
     }
 
     override suspend fun getListRequest(
@@ -137,7 +133,26 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
         page: Int,
         query: String
     ): Document {
-        return deps.httpClients.browser.fetch(baseUrl+baseExploreFetcher.endpoint?.replace("{page}",page.toString())?.replace("{query}",query),baseExploreFetcher.selector, timeout = 50000L).responseBody.asJsoup()
+        when(baseExploreFetcher.key) {
+            "Search" -> {
+                return  deps.httpClients.browser.fetch(
+                    baseUrl + baseExploreFetcher.endpoint?.replace(
+                        "{page}",
+                        page.toString()
+                    )?.replace("{query}", query.replace(" ", "+")), "div:nth-child(1) > div.row > div.col-9 > div > a",
+                    timeout = 50000
+                ).responseBody.asJsoup()
+            }
+            else  -> {
+                return  deps.httpClients.browser.fetch(
+                    baseUrl + baseExploreFetcher.endpoint?.replace(
+                        "{page}",
+                        page.toString()
+                    )?.replace("{query}", query.replace(" ", "+")), "div:nth-child(1) > div.content > h3 > a",
+                    timeout = 50000
+                ).responseBody.asJsoup()
+            }
+        }
     }
 
 
@@ -152,7 +167,11 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
         chapter: ChapterInfo,
         commands: List<Command<*>>
     ): Document {
-        return deps.httpClients.browser.fetch(chapter.key,contentFetcher.pageTitleSelector,).responseBody.asJsoup()
+        return deps.httpClients.browser.fetch(
+            chapter.key,
+            contentFetcher.pageTitleSelector,
+            timeout = 50000
+        ).responseBody.asJsoup()
     }
 
 

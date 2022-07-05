@@ -1,6 +1,8 @@
 package ireader.pandanovel
 
-import com.google.gson.Gson
+
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
@@ -11,15 +13,16 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import ireader.pandanovel.chapter.ChapterDTO
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.model.*
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 @Extension
@@ -45,10 +48,15 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
         Command.Content.Fetch(),
         Command.Chapter.Fetch(),
     )
+
+    @OptIn(ExperimentalSerializationApi::class)
     override val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
+                allowSpecialFloatingPointValues = true
+                allowStructuredMapKeys = true
+                explicitNulls = true
             })
         }
     }
@@ -77,7 +85,7 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
             nameSelector = ".novel-desc h1",
             coverSelector = ".novel-cover i",
             onCover = {
-               it.substringAfter("background-image: url(\"").substringBefore("\");")
+                it.substringAfter("background-image: url(\"").substringBefore("\");")
             },
             coverAtt = "style",
             authorBookSelector = ".novel-attr a",
@@ -113,36 +121,95 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
             }
         )
 
+    override suspend fun getListRequest(
+        baseExploreFetcher: BaseExploreFetcher,
+        page: Int,
+        query: String
+    ): Document {
+        return deps.httpClients.browser.fetch(
+            baseUrl + baseExploreFetcher.endpoint?.replace(
+                "{page}",
+                page.toString()
+            )?.replace("{query}", query.replace(" ", "+")), baseExploreFetcher.selector,
+            timeout = 50000
+        ).responseBody.asJsoup()
+    }
+
+    override suspend fun getChapterListRequest(
+        manga: MangaInfo,
+        commands: List<Command<*>>
+    ): Document {
+        return deps.httpClients.browser.fetch(
+            manga.key,
+            chapterFetcher.nameSelector,
+        ).responseBody.asJsoup()
+    }
+
+    override suspend fun getMangaDetailsRequest(
+        manga: MangaInfo,
+        commands: List<Command<*>>
+    ): Document {
+        return deps.httpClients.browser.fetch(
+            manga.key,
+            detailFetcher.nameSelector,
+        ).responseBody.asJsoup()
+    }
+
+
+    private val jsonFormatter = Json {
+        ignoreUnknownKeys = true
+
+    }
+    private val dateFormat: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        if(commands.isEmpty()) {
+        if (commands.isEmpty()) {
             val bookId = manga.key.substringAfterLast("-")
             val time = Clock.System.now().toEpochMilliseconds()
+            val chapters = mutableListOf<ChapterInfo>()
+            val json: String = deps.httpClients.browser.fetch(
+                "https://www.panda-novel.com/api/book/chapters/$bookId/1?_=$time",
+                detailFetcher.nameSelector,
+            ).responseBody.asJsoup().text().replace(" ", "")
+            val chapter: ChapterDTO = jacksonObjectMapper().readValue<ChapterDTO>(json)
+            chapters.addAll(chapter.parseChapters())
 
-            val json : String = client.get("https://www.panda-novel.com/api/book/chapters/$bookId/1?_=$time").body()
-            val chapters = Gson().fromJson<ChapterDTO>(json,ChapterDTO::class.java)
+            for (page in 1..chapter.data.pages) {
+                val json2: String = deps.httpClients.browser.fetch(
+                    "https://www.panda-novel.com/api/book/chapters/$bookId/${page}?_=$time",
+                    detailFetcher.nameSelector,
+                ).responseBody.asJsoup().text().replace(" ", "")
+                val chapter2: ChapterDTO = jacksonObjectMapper().readValue<ChapterDTO>(json2)
+                chapters.addAll(chapter2.parseChapters())
+            }
 
-            return chapters.data.list.mapIndexed { index, info ->
-                ChapterInfo(
-                    key = baseUrl+info.chapterUrl,
-                    name = info.name,
-                    dateUpload = Instant.parse(info.updatedAt).toEpochMilliseconds(),
-                    number = (index + 1).toFloat(),
-                )
-            }.reversed()
+
+
+            return chapters
         }
         return super.getChapterList(manga, commands).reversed()
 
+    }
+
+    fun ChapterDTO.parseChapters(): List<ChapterInfo> {
+        return this.data.list.mapIndexed { index, info ->
+            ChapterInfo(
+                key = baseUrl + info.chapterUrl,
+                name = info.name,
+                dateUpload = dateFormat.parse(info.updatedAt)?.time ?: -1,
+                number = (index + 1).toFloat(),
+            )
+        }
     }
 
     override suspend fun getContentRequest(
         chapter: ChapterInfo,
         commands: List<Command<*>>
     ): Document {
-        //return deps.httpClients.cloudflareClient.get(requestBuilder(chapter.key)).asJsoup()
+
         return deps.httpClients.browser.fetch(
             chapter.key,
             selector = "#novelArticle1",
@@ -152,9 +219,8 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
 
 
     override fun pageContentParse(document: Document): List<String> {
-
-        Log.error { document.html() }
-        val par =   document.select(contentFetcher.pageContentSelector).html().split("<br>").map { it.asJsoup().text() }
+        val par = document.select(contentFetcher.pageContentSelector).html().split("<br>")
+            .map { it.asJsoup().text() }
         val head = selectorReturnerStringType(
             document,
             selector = contentFetcher.pageTitleSelector,
