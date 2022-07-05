@@ -1,8 +1,13 @@
 package ireader.pandanovel.chapter
 
-data class Data(
-    val list: List<Info>,
-    val pages: Int,
-    val selectList: List<String>,
-    val selectNumList: List<String>
+import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class Data (
+
+	@SerializedName("selectList") val selectList : List<String>,
+	@SerializedName("pages") val pages : Int,
+	@SerializedName("list") val list : List<Info>,
+	@SerializedName("selectNumList") val selectNumList : List<Int>
 )
