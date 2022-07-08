@@ -37,9 +37,6 @@ abstract class Wuxiaworld(deps: Dependencies) : SourceFactory(
         install(ContentNegotiation) {
             json()
         }
-//        engine {
-//            preconfigured = clientBuilder()
-//        }
         BrowserUserAgent()
     }
 

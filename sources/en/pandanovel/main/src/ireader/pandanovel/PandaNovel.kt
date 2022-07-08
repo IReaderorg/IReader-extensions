@@ -102,7 +102,8 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
             },
             linkSelector = "a",
             linkAtt = "href",
-            addBaseUrlToLink = true
+            addBaseUrlToLink = true,
+            reverseChapterList = true
         )
 
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {

@@ -86,6 +86,7 @@ abstract class Scribblehub(private val deps: Dependencies) : SourceFactory(
             nameSelector = "a",
             linkSelector = "a",
             linkAtt = "href",
+            reverseChapterList = true
         )
 
     override val contentFetcher: Content
