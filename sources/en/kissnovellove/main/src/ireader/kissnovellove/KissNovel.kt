@@ -22,7 +22,7 @@ import java.util.*
 @Extension
 abstract class KissNovel(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
-    override val name = "1stnovel"
+    override val name = "1stKissnovel"
     override val id: Long
         get() = 28
 
