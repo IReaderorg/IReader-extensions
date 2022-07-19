@@ -21,7 +21,7 @@ The core part of this repository all belongs to [tachiyomi](https://github.com/t
 
 ## License
 
-    Copyright (C) 2018 The Tachiyomi Open Source Project
+    Copyright (C) 2022 The IReader Open Source Project
 
     This Source Code Form is subject to the terms of the Mozilla Public
     License, v. 2.0. If a copy of the MPL was not distributed with this

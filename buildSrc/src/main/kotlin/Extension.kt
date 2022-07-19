@@ -2,6 +2,14 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.extra
 import java.security.MessageDigest
 
+/*
+    Copyright (C) 2018 The Tachiyomi Open Source Project
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
 data class Extension(
   val name: String,
   val versionCode: Int,
