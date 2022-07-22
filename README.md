@@ -14,10 +14,10 @@ Contributions are welcome!
 Check out the repo's [sample](https://github.com/kazemcodes/IReader-extensions/tree/master/sources/en).
 
 
+
 # Disclaimer
 
 The core part of this repository all belongs to [tachiyomi](https://github.com/tachiyomiorg/tachiyomi-extensions-1.x)
-
 
 
 ## License

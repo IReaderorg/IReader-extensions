@@ -1,8 +1,5 @@
 *.iml
 .gradle
-*.apk
-java_pid11284.hprof
-*.hprof
 /local.properties
 /.idea/*
 !/.idea/codeStyleSettings.xml
@@ -12,6 +9,3 @@ java_pid11284.hprof
 build
 /captures
 .externalNativeBuild
-build/
-
-

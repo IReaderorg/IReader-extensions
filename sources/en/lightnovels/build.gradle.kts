@@ -1,6 +1,6 @@
 listOf("en").map { lang ->
   Extension(
-    name = "LightNovels.Me",
+    name = "LightNovelsMe",
     versionCode = 4,
     libVersion = "1",
     lang = lang,

@@ -38,6 +38,6 @@ jobs:
         uses: eskatos/gradle-command-action@v1
         with:
           arguments: assembleRelease repo
-          distributions-cache-enabled: true
+          wrapper-cache-enabled: true
           dependencies-cache-enabled: true
           configuration-cache-enabled: true
