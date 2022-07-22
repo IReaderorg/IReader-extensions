@@ -51,7 +51,7 @@ jobs:
           build-root-directory: master
           gradle-executable: master
           arguments: assembleRelease repo
-          wrapper-cache-enabled: true
+          distributions-cache-enabled: true
           dependencies-cache-enabled: true
           configuration-cache-enabled: true
 
