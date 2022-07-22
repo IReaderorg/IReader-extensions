@@ -1,6 +1,6 @@
 listOf("en").map { lang ->
   Extension(
-    name = "Panda Novel",
+    name = "PandaNovel",
     versionCode = 2,
     libVersion = "1",
     lang = lang,
