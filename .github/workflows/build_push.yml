@@ -49,7 +49,7 @@ jobs:
         uses: eskatos/gradle-command-action@v1
         with:
           build-root-directory: master
-          wrapper-directory: master
+          gradle-executable: master
           arguments: assembleRelease repo
           wrapper-cache-enabled: true
           dependencies-cache-enabled: true
