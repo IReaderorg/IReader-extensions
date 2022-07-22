@@ -19,6 +19,7 @@ Check out the repo's [sample](https://github.com/kazemcodes/IReader-extensions/t
 The core part of this repository all belongs to [tachiyomi](https://github.com/tachiyomiorg/tachiyomi-extensions-1.x)
 
 
+
 ## License
 
     Copyright (C) 2022 The IReader Open Source Project
