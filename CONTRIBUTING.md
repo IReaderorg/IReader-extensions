@@ -123,18 +123,16 @@ A minimal [Android manifest file](https://developer.android.com/guide/topics/man
 Make sure that your new extension's `build.gradle` file follows the following structure:
 
 ```gradle
-apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
+listOf("cn").map { lang ->
 
-ext {
-    extName = '<My source name>'
-    pkgNameSuffix = '<lang>.<mysourcename>'
-    extClass = '.<MySourceName>'
-    extVersionCode = 1
-    isNsfw = true
-}
-
-apply from: "$rootDir/common.gradle"
+Extension {
+   name = '<My source name>',
+    versionCode = 4,
+    libVersion = "1",
+    lang = lang,
+    description = "",
+    nsfw = false,
+}.also(::register)
 ```
 
 | Field | Description |
