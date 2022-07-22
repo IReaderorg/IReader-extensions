@@ -58,65 +58,19 @@ Some alternative steps can be followed to ignore "repo" branch and skip unrelate
 <details><summary>Steps</summary>
 
 1. Make sure to delete "repo" branch in your fork. You may also want to disable Actions in the repo settings.
-2. Do a partial clone.
+2. Clone This Repo in your Andiod Studio.
     ```bash
     git clone --filter=blob:none --no-checkout <fork-repo-url>
-    cd IReader-extensions/
+    /
     ```
-3. Configure sparse checkout.
-    ```bash
-    # enable sparse checkout
-    git sparse-checkout set
-    # edit sparse checkout filter
-    vim .git/info/sparse-checkout
-    # alternatively, if you have VS Code installed
-    code .git/info/sparse-checkout
-    ```
-    Here's an example:
-    ```bash
-    /*
-    !/src/*
-    !/multisrc/overrides/*
-    !/multisrc/src/main/java/eu/kanade/tachiyomi/multisrc/*
-    # allow a single source
-    /src/<lang>/<source>
-    # allow a multisrc theme
-    /multisrc/src/main/java/eu/kanade/tachiyomi/multisrc/<source>
-    /multisrc/overrides/<source>
-    ```
-4. Configure remotes.
-    ```bash
-    # add upstream
-    git remote add upstream <tachiyomiorg-repo-url>
-    # optionally disable push to upstream
-    git remote set-url --push upstream no_pushing
-    # ignore 'repo' branch of upstream
-    # option 1: use negative refspec
-    git config --add remote.upstream.fetch "^refs/heads/repo"
-    # option 2: fetch master only (ignore all other branches)
-    git config remote.upstream.fetch "+refs/heads/master:refs/remotes/upstream/master"
-    # update remotes
-    git remote update
-    # track master of upstream instead of fork
-    git branch master -u upstream/master
-    # checkout
-    git switch master
-    ```
-5. Useful configurations. (optional)
-    ```bash
-    # prune obsolete remote branches on fetch
-    git config remote.origin.prune true
-    # fast-forward only when pulling master branch
-    git config pull.ff only
-    ```
-6. Later, if you change the sparse checkout filter, run `git sparse-checkout reapply`.
+`
 
-Read more on [partial clone](https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/), [sparse checkout](https://github.blog/2020-01-17-bring-your-monorepo-down-to-size-with-sparse-checkout/) and [negative refspecs](https://github.blog/2020-10-19-git-2-29-released/#user-content-negative-refspecs).
+
 </details>
 
 ## Getting help
 
-- Join [the Discord server](https://discord.gg/tachiyomi) for online help and to ask questions while developing your extension. When doing so, please ask it in the `#programming` channel.
+- Join [the Discord server](https://discord.gg/HBU6zD8c5v) for online help and to ask questions while developing your extension. When doing so, please ask it in the `#programming` channel.
 - There are some features and tricks that are not explored in this document. Refer to existing extension code for examples.
 
 ## Writing an extension
@@ -125,7 +79,7 @@ The quickest way to get started is to copy an existing extension's folder struct
 
 ### Setting up a new Gradle module
 
-Each extension should reside in `src/<lang>/<mysourcename>`. Use `all` as `<lang>` if your target source supports multiple languages or if it could support multiple sources.
+Each extension should reside in `src/<lang>/<mysourcename>`. Use `En` as `<lang>` if your target source supports multiple languages or if it could support multiple sources.
 
 The `<lang>` used in the folder inside `src` should be the major `language` part. For example, if you will be creating a `pt-BR` source, use `<lang>` here as `pt` only. Inside the source class, use the full locale string instead.
 
@@ -153,7 +107,7 @@ src/<lang>/<mysourcename>/
 └── src
     └── eu
         └── kanade
-            └── tachiyomi
+            └── IReader
                 └── extension
                     └── <lang>
                         └── <mysourcename>
