@@ -1,8 +1,9 @@
+# This Guide is Updating
 # Contributing
 
-This guide have some instructions and tips on how to create a new Tachiyomi extension. Please **read it carefully** if you're a new contributor or don't have any experience on the required languages and knowledges.
+This guide have some instructions and tips on how to create a new IReader extension. Please **read it carefully** if you're a new contributor or don't have any experience on the required languages and knowledges.
 
-This guide is not definitive and it's being updated over time. If you find any issue on it, feel free to report it through a [Meta Issue](https://github.com/tachiyomiorg/tachiyomi-extensions/issues/new?assignees=&labels=Meta+request&template=request_meta.yml) or fixing it directly by submitting a Pull Request.
+This guide is not definitive and it's being updated over time. If you find any issue on it, feel free to report it through a [Discord]() or fixing it directly by submitting a Pull Request.
 
 ## Table of Contents
 
@@ -60,7 +61,7 @@ Some alternative steps can be followed to ignore "repo" branch and skip unrelate
 2. Do a partial clone.
     ```bash
     git clone --filter=blob:none --no-checkout <fork-repo-url>
-    cd tachiyomi-extensions/
+    cd IReader-extensions/
     ```
 3. Configure sparse checkout.
     ```bash
