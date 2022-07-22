@@ -16,7 +16,7 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     override val id: Long
-        get() = 27
+        get() = 33
     override val baseUrl = "https://m.aixdzs.com"
 
     override val lang = "cn"
@@ -114,7 +114,7 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    fun popularNextPageSelector() = ".container"
+    fun popularNextPageSelector() = ".icon-arrow-r"
     fun searchFromElement(element: Element): MangaInfo {
         val url = baseUrl + element.select(".ix-list-img-square a").attr("href")
         val title = element.select("h3.nowrap").text()
@@ -149,9 +149,8 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
             document.select("p.ix-nowrap:nth-child(1)").text().replace("作者:", "")
 
         val cover = document.select(".ix-list-img-square img").attr("src")
-        val description = document.select("ix-panel ix-border-tb p#intro").eachText().joinToString("\n")
+        val description = document.select("#intro font").eachText().joinToString("\n")
 
-        //not sure why its not working.
         val category = document.select("p.ix-nowrap:first-child a")
             .eachText()
 
