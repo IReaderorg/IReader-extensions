@@ -26,7 +26,7 @@ abstract class ReadMtl(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
     override val name = "ReadMtl"
     override val id: Long
-        get() = 28
+        get() = 35
 
     override val baseUrl = "https://readmtl.com"
 

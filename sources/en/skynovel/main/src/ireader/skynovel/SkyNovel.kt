@@ -37,6 +37,14 @@ abstract class SkyNovel(private val deps: Dependencies) : SourceFactory(
                 ),
         )
 
+        override fun getCommands(): CommandList {
+                return listOf(
+                        Command.Detail.Fetch(),
+                        Command.Chapter.Fetch(),
+                        Command.Content.Fetch(),
+                )
+        }
+
         override val exploreFetchers: List<BaseExploreFetcher>
                 get() = listOf(
                         BaseExploreFetcher(
