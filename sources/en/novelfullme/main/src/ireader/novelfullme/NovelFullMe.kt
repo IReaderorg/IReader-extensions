@@ -1,16 +1,10 @@
-package ireader.skynovel
+package ireader.novelfullme
 
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.findInstance
 import org.ireader.core_api.source.model.*
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 

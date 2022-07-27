@@ -1,4 +1,4 @@
-package ireader.skynovel
+package ireader.novelscafes
 
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
