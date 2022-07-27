@@ -11,6 +11,17 @@
     "nsfw": false
   },
   {
+    "pkg": "ireader.allnovelfull.en",
+    "apk": "ireader-en-allnovelfull-v1.1.apk",
+    "name": "AllNovelFull",
+    "id": 3273374795580060030,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false
+  },
+  {
     "pkg": "ireader.boxnovel.en",
     "apk": "ireader-en-boxnovel-v1.3.apk",
     "name": "BoxNovel",
@@ -165,6 +176,17 @@
     "nsfw": false
   },
   {
+    "pkg": "ireader.novelfullme.en",
+    "apk": "ireader-en-novelfullme-v1.1.apk",
+    "name": "NovelFullMe",
+    "id": 7539536711637595421,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false
+  },
+  {
     "pkg": "ireader.novelhall.en",
     "apk": "ireader-en-novelhall-v1.4.apk",
     "name": "NovelHall",
@@ -183,6 +205,17 @@
     "lang": "en",
     "code": 2,
     "version": "1.2",
+    "description": "",
+    "nsfw": false
+  },
+  {
+    "pkg": "ireader.novelscafes.en",
+    "apk": "ireader-en-novelscafes-v1.1.apk",
+    "name": "NovelsCafes",
+    "id": 2650729354552088801,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
     "description": "",
     "nsfw": false
   },
@@ -246,6 +279,17 @@
     "apk": "ireader-en-readmtl-v1.1.apk",
     "name": "ReadMtl",
     "id": 46506295113007807,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false
+  },
+  {
+    "pkg": "ireader.readwn.en",
+    "apk": "ireader-en-readwn-v1.1.apk",
+    "name": "ReadWn",
+    "id": 360679230228192343,
     "lang": "en",
     "code": 1,
     "version": "1.1",
