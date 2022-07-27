@@ -139,7 +139,7 @@ fun BaseVariantImpl.currentExtension(): Extension {
 
 configurations.all {
   resolutionStrategy {
-    cacheChangingModulesFor(0, "seconds")
+    //cacheChangingModulesFor(0, "seconds")
     force("org.jsoup:jsoup:1.14.3")
   }
 }

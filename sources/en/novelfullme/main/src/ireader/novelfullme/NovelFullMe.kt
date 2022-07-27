@@ -89,13 +89,13 @@ abstract class NovelFullMe(private val deps: Dependencies) : SourceFactory(
             nameSelector = ".chapter-title",
             linkSelector = "a",
             linkAtt = "href",
-
+            addBaseUrlToLink = true
             )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = "#chapter__content > h1",
-            pageContentSelector = ".chapter__content",
+            pageContentSelector = ".chapter__content p",
         )
 
 

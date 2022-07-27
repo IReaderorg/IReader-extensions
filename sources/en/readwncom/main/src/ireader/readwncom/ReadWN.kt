@@ -85,7 +85,7 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = ".titles > h2",
-            pageContentSelector = ".chapter-content",
+            pageContentSelector = ".chapter-content p",
         )
 
 
@@ -99,7 +99,7 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
             val novelId = manga.key.replace(".html", "");
             for (i in 1..lastChapterNo) {
                 val chapterName = "Chapter $i"
-                val url = "$baseUrl/${novelId}_$i.html"
+                val url = "${novelId}_$i.html"
                 chapters.add(ChapterInfo(key = url,name = chapterName, number = i.toFloat()))
             }
             return chapters
