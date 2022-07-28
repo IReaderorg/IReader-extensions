@@ -352,6 +352,17 @@
     "nsfw": false
   },
   {
+    "pkg": "ireader.sexinsex.cn",
+    "apk": "ireader-cn-sexinsex-v1.1.apk",
+    "name": "sexinsex",
+    "id": 4492180738117185078,
+    "lang": "cn",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": true
+  },
+  {
     "pkg": "ireader.skynovel.en",
     "apk": "ireader-en-skynovel-v1.4.apk",
     "name": "SkyNovel",
