@@ -16,7 +16,7 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     override val id: Long
-        get() = 34
+        get() = 39
     override val baseUrl = "http://154.84.5.213/"
 
     override val lang = "cn"
