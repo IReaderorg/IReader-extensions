@@ -17,11 +17,11 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "en"
     override val baseUrl: String
-        get() = "https://noveltop1.com"
+        get() = "https://novelbin.com"
     override val id: Long
         get() = 38
     override val name: String
-        get() = "NovelTop1"
+        get() = "NovelBin"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
@@ -39,14 +39,14 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
         get() = listOf(
             BaseExploreFetcher(
                 "Trending",
-                endpoint = "/sort/popular-novels/?page={page}",
+                endpoint = "/sort/top-view-novel?page={page}",
                 selector = "div[class=\"list list-novel col-xs-12\"] > div[class=\"row\"]",
                 nameSelector = "h3[class=\"novel-title\"] > a",
                 nameAtt = "title",
                 coverSelector = "img[class=\"cover\"]",
                 coverAtt = "src",
-                onCover = { text,key ->
-                    text.replace("/novel_200_89/","/novel/")
+                onCover = { text, key ->
+                    text.replace("/novel_200_89/", "/novel/")
                 },
                 linkSelector = "h3[class=\"novel-title\"] > a",
                 linkAtt = "href",
@@ -60,8 +60,8 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
                 nameAtt = "title",
                 coverSelector = "img[class=\"cover\"]",
                 coverAtt = "src",
-                onCover = { text,key ->
-                    text.replace("/novel_200_89/","/novel/")
+                onCover = { text, key ->
+                    text.replace("/novel_200_89/", "/novel/")
                 },
                 linkSelector = "h3[class=\"novel-title\"] > a",
                 linkAtt = "href",
@@ -81,6 +81,9 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
             authorBookSelector = "meta[property=\"og:novel:author\"]",
             authorBookAtt = "content",
             categorySelector = "meta[property=\"og:novel:genre\"]",
+            onCategory = {
+                (it.firstOrNull() ?: "").split(",")
+            },
             categoryAtt = "content",
             statusSelector = "meta[property=\"og:novel:status\"]",
             statusAtt = "content"
@@ -93,12 +96,12 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
             nameAtt = "title",
             linkSelector = "a",
             linkAtt = "href",
-            )
+            reverseChapterList = true
+        )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = ".chr-text",
-            pageContentSelector = "#chr-content",
+            pageContentSelector = "#chr-content p",
         )
 
 
@@ -106,12 +109,11 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): Document {
-        val novelId = client.get(requestBuilder(manga.key)).asJsoup().select("div[data-novel-id]").attr("data-novel-id")
+        val novelId = client.get(requestBuilder(manga.key)).asJsoup().select("div[data-novel-id]")
+            .attr("data-novel-id")
         val url = "$baseUrl/ajax/chapter-archive?novelId=$novelId"
         return client.get(url).asJsoup()
     }
-
-
 
 
 }

@@ -114,18 +114,18 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
         query: String
     ): Document {
         if (baseExploreFetcher.key == "Search") {
-            return client.submitForm(url = baseExploreFetcher.endpoint!!, formParameters = Parameters.build {
+            return client.submitForm(url = "https://www.readwn.com/e/search/index.php", formParameters = Parameters.build {
                 append("show","title")
                 append("tempid","1")
                 append("tbname","news")
                 append("keyboard",query)
-            }) { headersBuilder {
-                append("Content-Type","application/x-www-form-urlencoded")
-                append("Referer","${baseUrl}/search.html")
-                append("Origin",baseUrl)
-                append("user-agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36")
-
-            }
+            }) {
+                headersBuilder {
+                    append("Content-Type","application/x-www-form-urlencoded")
+                    append("Referer","${baseUrl}/search.html")
+                    append("Origin",baseUrl)
+                    append("user-agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36")
+                }
             }.asJsoup()
         }
         return super.getListRequest(baseExploreFetcher, page, query)

@@ -77,9 +77,10 @@ abstract class AllNovelFull(private val deps: Dependencies) : SourceFactory(
             nameSelector = "div.book > img",
             nameAtt = "alt",
             coverSelector = "div.book > img",
+            addBaseurlToCoverLink = true,
             coverAtt = "src",
-            authorBookSelector = "div.info > div > h3",
-            categorySelector = "div.info > div",
+            authorBookSelector = "div.col-xs-12.col-sm-4.col-md-4.info-holder > div.info > div:nth-child(1) > a",
+            categorySelector = "div.col-xs-12.col-sm-4.col-md-4.info-holder > div.info > div:nth-child(2) > a",
             descriptionSelector = "div.desc-text",
             statusSelector = "div.info > div > h3",
         )
@@ -90,14 +91,14 @@ abstract class AllNovelFull(private val deps: Dependencies) : SourceFactory(
             nameSelector = "option",
             linkSelector = "option",
             linkAtt = "value",
+            reverseChapterList = true,
+            addBaseUrlToLink = true
 
             )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = ".chapter-title",
-            pageTitleAtt = "title",
-            pageContentSelector = "#chapter-content",
+            pageContentSelector = "#chapter-content p",
         )
 
 
