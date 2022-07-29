@@ -55,6 +55,17 @@
     "nsfw": false
   },
   {
+    "pkg": "ireader.fastnovel.en",
+    "apk": "ireader-en-fastnovel-v1.1.apk",
+    "name": "FastNovel",
+    "id": 6945579174173853545,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false
+  },
+  {
     "pkg": "ireader.freewebnovel.en",
     "apk": "ireader-en-freewebnovel-v1.6.apk",
     "name": "FreeWebNovel",
