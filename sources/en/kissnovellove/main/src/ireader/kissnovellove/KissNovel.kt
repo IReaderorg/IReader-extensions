@@ -263,7 +263,7 @@ abstract class KissNovel(private val deps: Dependencies) : ParsedHttpSource(deps
         return client to requestBuilder(url) {
             append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
             append(HttpHeaders.CacheControl, "max-age=0")
-            append(HttpHeaders.Referrer, "https://wuxiaworld.site/")
+            append(HttpHeaders.Referrer, "https://1stkissnovel.love/")
         }
     }
 
