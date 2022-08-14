@@ -78,12 +78,12 @@
   },
   {
     "pkg": "ireader.kissnovel.en",
-    "apk": "ireader-en-kissnovel-v1.1.apk",
+    "apk": "ireader-en-kissnovel-v1.2.apk",
     "name": "KissNovel",
     "id": 8603332505269087684,
     "lang": "en",
-    "code": 1,
-    "version": "1.1",
+    "code": 2,
+    "version": "1.2",
     "description": "",
     "nsfw": false
   },
