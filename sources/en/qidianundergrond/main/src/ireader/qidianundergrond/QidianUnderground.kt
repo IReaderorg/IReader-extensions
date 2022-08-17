@@ -11,8 +11,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
-
-import org.ireader.core_api.http.Result
+import org.ireader.core_api.http.impl.Result
 import org.ireader.core_api.http.okhttp
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.HttpSource
