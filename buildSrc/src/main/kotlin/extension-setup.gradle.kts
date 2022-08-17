@@ -100,7 +100,7 @@ dependencies {
   val libs = project.extensions.getByType<VersionCatalogsExtension>()
     .named("libs")
 
-  compileOnly(libs.findLibrary("ireader-core").get())
+  compileOnly(libs.findLibrary("ireader-core").get()) { isChanging = true}
 
   compileOnly(kotlinLibs.findLibrary("stdlib").get())
   compileOnly(libs.findLibrary("okhttp").get())

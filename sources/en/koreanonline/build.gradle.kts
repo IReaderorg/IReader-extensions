@@ -1,7 +1,7 @@
 listOf("en").map { lang ->
   Extension(
     name = "KoreanOnline",
-    versionCode = 6,
+    versionCode = 7,
     libVersion = "1",
     lang = lang,
     description = "",
