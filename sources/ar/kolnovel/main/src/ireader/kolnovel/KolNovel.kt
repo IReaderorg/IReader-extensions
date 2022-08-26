@@ -42,25 +42,25 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
         get() = listOf(
             BaseExploreFetcher(
                 "Latest",
-                endpoint = "/series/?page={page}&status=&type=&order=update",
-                selector = "article.bs div.bsx",
+                endpoint = "/series/?page={page}&status=&order=latest",
+                selector = "div.inmain div.mdthumb",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
-                coverSelector = "a div.limit img",
+                coverSelector = "a img",
                 coverAtt = "src",
                 nextPageSelector = "a.r"
             ),
             BaseExploreFetcher(
                 "Search",
                 endpoint = "/page/{page}/?s={query}",
-                selector = "article.bs div.bsx",
+                selector = "div.inmain div.mdthumb",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
-                coverSelector = "a div.limit img",
+                coverSelector = "a img",
                 coverAtt = "src",
                 nextPageSelector = "a.next",
                 type = SourceFactory.Type.Search
@@ -68,24 +68,24 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
             BaseExploreFetcher(
                 "Trending",
                 endpoint = "/series/?page={page}&status=&order=popular",
-                selector = "article.bs div.bsx",
+                selector = "div.inmain div.mdthumb",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
-                coverSelector = "a div.limit img",
+                coverSelector = "a img",
                 coverAtt = "src",
-                nextPageSelector = "a.rs"
+                nextPageSelector = "a.r"
             ),
             BaseExploreFetcher(
                 "New",
                 endpoint = "/series/?page={page}&order=update",
-                selector = "article.bs div.bsx",
+                selector = "div.inmain div.mdthumb",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
-                coverSelector = "a div.limit img",
+                coverSelector = "a img",
                 coverAtt = "src",
                 nextPageSelector = "a.rs"
             ),
@@ -94,16 +94,18 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = ".infox h1",
-            coverSelector = ".thumb img",
+            nameSelector = "h1.entry-title",
+            coverSelector = "div.sertothumb img",
             coverAtt = "src",
             descriptionSelector = "div.entry-content[itemprop=description] p",
-            authorBookSelector = "span:contains(المؤلف) a",
-            categorySelector = "div.genxed a",
-            statusSelector = "span:contains(الحالة)",
+            authorBookSelector = "div.serl:contains(الكاتب) span a",
+            categorySelector = "div.sertogenre a",
+            statusSelector = "div.sertostat span",
             onStatus = { status ->
                 if (status.contains("Ongoing")) {
                     MangaInfo.ONGOING
+                } else if (status.contains("Hiatus")) {
+                    MangaInfo.ON_HIATUS
                 } else {
                     MangaInfo.COMPLETED
                 }
