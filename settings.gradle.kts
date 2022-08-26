@@ -65,6 +65,9 @@ dependencyResolutionManagement {
         create("kotlinLibs") {
             from(files("./gradle/kotlin.versions.toml"))
         }
+        create("test") {
+            from(files("./gradle/testing.versions.toml"))
+        }
     }
 }
 
@@ -85,3 +88,4 @@ inline fun File.eachDir(block: (File) -> Unit) {
 }
 
 
+include(":test-extensions")
