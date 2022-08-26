@@ -89,12 +89,12 @@
   },
   {
     "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v1.1.apk",
+    "apk": "ireader-ar-kolnovel-v1.2.apk",
     "name": "KolNovel",
     "id": 1070515268391361388,
     "lang": "ar",
-    "code": 1,
-    "version": "1.1",
+    "code": 2,
+    "version": "1.2",
     "description": "",
     "nsfw": false
   },
@@ -353,12 +353,12 @@
   },
   {
     "pkg": "ireader.riwyat.ar",
-    "apk": "ireader-ar-riwyat-v1.4.apk",
+    "apk": "ireader-ar-riwyat-v1.5.apk",
     "name": "Riwyat",
     "id": 3911602848528027929,
     "lang": "ar",
-    "code": 4,
-    "version": "1.4",
+    "code": 5,
+    "version": "1.5",
     "description": "",
     "nsfw": false
   },
@@ -392,6 +392,17 @@
     "lang": "en",
     "code": 5,
     "version": "1.5",
+    "description": "",
+    "nsfw": false
+  },
+  {
+    "pkg": "ireader.teamxnovel.ar",
+    "apk": "ireader-ar-teamxnovel-v1.1.apk",
+    "name": "Teamxnovel",
+    "id": 5927308915940879829,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
     "description": "",
     "nsfw": false
   },
