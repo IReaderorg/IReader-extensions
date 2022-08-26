@@ -137,7 +137,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = ".epheader",
-            pageContentSelector = "div.entry-content p:not([style])",
+            pageContentSelector = "div.entry-content p:not([style]), div.entry-content ol li",
         )
 
 

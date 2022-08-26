@@ -128,9 +128,9 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
             statusSelector = ".genres",
             onStatus = { status ->
                 if (status.contains("مستمرة")) {
-                    MangaInfo.COMPLETED
-                } else {
                     MangaInfo.ONGOING
+                } else {
+                    MangaInfo.COMPLETED
                 }
             },
         )
