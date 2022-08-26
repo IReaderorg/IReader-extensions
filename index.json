@@ -88,6 +88,17 @@
     "nsfw": false
   },
   {
+    "pkg": "ireader.kolnovel.ar",
+    "apk": "ireader-ar-kolnovel-v1.1.apk",
+    "name": "KolNovel",
+    "id": 1070515268391361388,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false
+  },
+  {
     "pkg": "ireader.koreanonline.en",
     "apk": "ireader-en-koreanonline-v1.7.apk",
     "name": "KoreanOnline",
