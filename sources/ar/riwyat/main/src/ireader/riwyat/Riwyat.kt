@@ -1,15 +1,10 @@
 package ireader.riwyat
 
-import io.ktor.client.*
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.model.*
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
@@ -128,9 +123,9 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
             statusSelector = ".genres",
             onStatus = { status ->
                 if (status.contains("مستمرة")) {
-                    MangaInfo.COMPLETED
-                } else {
                     MangaInfo.ONGOING
+                } else {
+                    MangaInfo.COMPLETED
                 }
             },
         )
