@@ -1,15 +1,10 @@
 package ireader.kolnovel
 
-import io.ktor.client.*
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
 import io.ktor.http.*
-import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.SourceFactory
-import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.model.*
-import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 
