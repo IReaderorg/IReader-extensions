@@ -47,13 +47,6 @@ abstract class KissNovel(private val deps: Dependencies) : ParsedHttpSource(deps
 
     class LatestListing() : Listing("Latest")
 
-    override val client: HttpClient
-        get() = HttpClient(OkHttp) {
-            engine {
-                preconfigured = deps.httpClients.default.okhttp
-            }
-        }
-
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
     }

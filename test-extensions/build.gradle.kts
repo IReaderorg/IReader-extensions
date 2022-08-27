@@ -1,3 +1,4 @@
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
@@ -7,7 +8,7 @@ plugins {
 
 android {
     compileSdk = Config.compileSdk
-    namespace = "test_extension"
+    namespace = "org.ireader.test_extensions"
     defaultConfig {
         minSdk = Config.minSdk
         targetSdk = Config.targetSdk
@@ -45,6 +46,7 @@ dependencies {
     implementation(libs.findLibrary("jsoup").get())
     implementation(libs.findLibrary("ktor-core").get())
     implementation(libs.findLibrary("ktor-cio").get())
+    implementation(libs.findLibrary("ktor-android").get())
     implementation(libs.findLibrary("ktor-okhttp").get())
     implementation(libs.findLibrary("ktor-contentNegotiation").get())
     implementation(libs.findLibrary("ktor-serialization").get())
