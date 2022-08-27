@@ -4,9 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import org.ireader.app.CHAPTER_NAME
 import org.ireader.app.CHAPTER_URL
 import org.ireader.app.extension
-import org.ireader.app.mock_components.FakeHttpClients
-import org.ireader.app.mock_components.FakePreferencesStore
-import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.model.ChapterInfo
 import org.ireader.core_api.source.model.Page
 import org.junit.Before

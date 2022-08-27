@@ -1,13 +1,10 @@
 package org.ireader.app.tests
 
 import com.google.common.truth.Truth.assertThat
-import ireader.kissnovellove.KissNovel
+
 import org.ireader.app.BOOK_NAME
 import org.ireader.app.BOOK_URL
 import org.ireader.app.extension
-import org.ireader.app.mock_components.FakeHttpClients
-import org.ireader.app.mock_components.FakePreferencesStore
-import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.model.MangaInfo
 import org.junit.Before
 import org.junit.Test
