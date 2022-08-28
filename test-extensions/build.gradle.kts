@@ -29,7 +29,7 @@ android {
 
 dependencies {
     //change this name to your extension name
-    implementation(project(":extensions:individual:ar:kolnovel"))
+    implementation(project(":extensions:individual:ar:novel4up"))
 
     val kotlinLibs = project.extensions.getByType<VersionCatalogsExtension>()
         .named("kotlinLibs")
