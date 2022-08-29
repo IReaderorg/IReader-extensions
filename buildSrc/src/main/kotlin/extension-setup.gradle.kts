@@ -110,9 +110,9 @@ dependencies {
   compileOnly(libs.findLibrary("ktor-serialization").get())
   compileOnly(libs.findLibrary("ktor-gson").get())
   compileOnly(libs.findLibrary("ktor-jackson").get())
-  implementation(libs.findLibrary("ktor-cio").get())
-  implementation(libs.findLibrary("ktor-android").get())
-  implementation(libs.findLibrary("ktor-okhttp").get())
+  compileOnly(libs.findLibrary("ktor-cio").get())
+  compileOnly(libs.findLibrary("ktor-android").get())
+  compileOnly(libs.findLibrary("ktor-okhttp").get())
 
   compileOnly(project(Proj.annotation))
   ksp(project(Proj.compiler))
