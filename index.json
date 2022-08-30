@@ -429,6 +429,17 @@
     "nsfw": false
   },
   {
+    "pkg": "ireader.webnovelsite.en",
+    "apk": "ireader-en-webnovelsite-v1.1.apk",
+    "name": "WebNovelSite",
+    "id": 9209566972422369682,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false
+  },
+  {
     "pkg": "ireader.wnmtl.en",
     "apk": "ireader-en-wnmtl-v1.5.apk",
     "name": "Wnmtl",
