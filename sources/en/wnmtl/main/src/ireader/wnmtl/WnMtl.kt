@@ -8,15 +8,15 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import ireader.wnmtl.chapter.ChapterDTO
+import ireader.wnmtl.content.ContentDTO
 import ireader.wnmtl.explore.ExploreDTO
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
-import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
 import org.ireader.core_api.source.model.*
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
@@ -41,7 +41,13 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
     override fun getCommands(): CommandList = listOf(
         Command.Detail.Fetch(),
         Command.Content.Fetch(),
-    )
+        Command.Chapter.Fetch(),
+
+        )
+
+    override fun getUserAgent(): String {
+        return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
+    }
 
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
@@ -61,6 +67,27 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
             ),
         )
 
+    override val detailFetcher: Detail
+        get() = SourceFactory.Detail(
+            nameSelector = ".book-name span",
+            authorBookSelector = ".author-name",
+            categorySelector = ".gnere-name",
+            descriptionSelector = "#about-panel .content",
+            coverSelector = ".cover-container .cover img",
+            coverAtt = "src"
+        )
+
+    override val chapterFetcher: Chapters
+        get() = SourceFactory.Chapters(
+            selector = ".chapters ul li a",
+            nameSelector = "a",
+            linkSelector = "a",
+            linkAtt = "href",
+            onLink = { link ->
+                baseUrl + link
+            }
+        )
+
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = "#chapterContentTitle",
@@ -76,6 +103,16 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         }
     }
 
+    override suspend fun getMangaDetailsRequest(
+        manga: MangaInfo,
+        commands: List<Command<*>>
+    ): Document {
+        return deps.httpClients.browser.fetch(
+            manga.key,
+            selector = detailFetcher.nameSelector
+        ).responseBody.asJsoup()
+    }
+
 
     private fun clientBuilder(): HeadersBuilder.() -> Unit = {
 //        append("host", "https://www.wnmtl.org")
@@ -85,6 +122,13 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
 //        append("accept", "application/json, text/plain, */*")
 //        append("user-agent", "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
 
+    }
+
+    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
+        return client to HttpRequestBuilder().apply {
+            url(url)
+            headersBuilder()
+        }
     }
 
 
@@ -175,51 +219,55 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         )
     }
 
+
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        val bookId = Regex("[0-9]+").findAll(manga.key)
-            .map(MatchResult::value)
-            .toList().firstOrNull() ?: throw Exception("failed to find bookId")
+        if (commands.isEmpty()) {
+            val bookId = manga.key.substringAfter("/book/").substringBefore("-")
+            var page = 1
+            var maxPage = 2
+            val chapters = mutableListOf<ChapterInfo>()
+            while (page < maxPage) {
+                client.get("https://api.mystorywave.com/story-wave-backend/api/v1/content/chapters/page?sortDirection=ASC&bookId=${bookId}&pageNumber=$page&pageSize=100") {
+                    headers(clientBuilder())
+                }.body<ChapterDTO>().also {
+                    maxPage = it.data.totalPages
+                    page++
+                }.data.list.map {
+                    ChapterInfo(
+                        key = "https://www.wnmtl.org/chapter/${it.id}-${
+                            it.title.replace(
+                                " ",
+                                "-"
+                            )
+                        }",
+                        name = it.title,
+                        dateUpload = it.updateTime,
+                        number = it.chapterOrder.toFloat()
+                    )
+                }.let {
+                    chapters.addAll(it)
+                }
+                delay(200)
+            }
 
-        Log.error { "bookId $bookId" }
-//        val bookId = Regex.fromLiteral(manga.key).find("/(d*)-")?.groupValues?.firstOrNull()
-//                ?: throw Exception("failed to find bookId")
-        val chapters: ChapterDTO =
-            client.get("https://api.mystorywave.com/story-wave-backend/api/v1/content/chapters/page?sortDirection=ASC&bookId=${bookId}&pageNumber=1&pageSize=10000") {
-                headers(clientBuilder())
-            }.body()
-        return chapters.data.list.map {
-            ChapterInfo(
-                key = "https://www.wnmtl.org/chapter/${it.id}-${it.title.replace(" ", "-")}",
-                name = it.title,
-                dateUpload = it.updateTime,
-                number = it.chapterOrder.toFloat()
-            )
+            return chapters
         }
+        return super.getChapterList(manga, commands)
+
     }
 
-    override suspend fun getContentRequest(
+    override suspend fun getContents(
         chapter: ChapterInfo,
         commands: List<Command<*>>
-    ): Document {
-        return deps.httpClients.browser.fetch(chapter.key, "#chapterContent").responseBody.asJsoup()
-        //return client.get(chapter.key, block = {headers(clientBuilder())}).asJsoup()
+    ): List<String> {
+        val chapterId = chapter.key.substringAfter("/chapter/").substringBefore("-")
+        val data: ContentDTO = client.get(
+            "https://api.mystorywave.com/story-wave-backend/api/v1/content/chapters/$chapterId",
+            block = { headers(clientBuilder()) }).body()
+        return listOf(data.data.title) + data.data.content.split("\\n\\n")
     }
-
-    override fun pageContentParse(document: Document): List<String> {
-        document.select(contentFetcher.pageContentSelector!!).html().split("<br>")
-        val par = document.select(contentFetcher.pageContentSelector!!).html().split("<br>")
-            .map { Jsoup.parse(it).text() }
-        val head = selectorReturnerStringType(
-            document,
-            selector = contentFetcher.pageTitleSelector,
-            contentFetcher.pageTitleAtt
-        )
-
-        return listOf(head) + par
-    }
-
 
 }
