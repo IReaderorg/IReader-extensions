@@ -22,6 +22,17 @@
     "nsfw": false
   },
   {
+    "pkg": "ireader.armtl.en",
+    "apk": "ireader-en-armtl-v1.1.apk",
+    "name": "ArMtl",
+    "id": 1677587228740043493,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false
+  },
+  {
     "pkg": "ireader.boxnovel.en",
     "apk": "ireader-en-boxnovel-v1.4.apk",
     "name": "BoxNovel",
@@ -183,6 +194,17 @@
     "lang": "en",
     "code": 8,
     "version": "1.8",
+    "description": "",
+    "nsfw": false
+  },
+  {
+    "pkg": "ireader.neosekaitranslations.en",
+    "apk": "ireader-en-neosekaitranslations-v1.1.apk",
+    "name": "Neosekaitranslations",
+    "id": 3148538527760704097,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
     "description": "",
     "nsfw": false
   },
