@@ -4,9 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import org.ireader.app.BOOK_NAME
 import org.ireader.app.BOOK_URL
 import org.ireader.app.extension
-import org.ireader.app.mock_components.FakeHttpClients
-import org.ireader.app.mock_components.FakePreferencesStore
-import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.model.ChapterInfo
 import org.ireader.core_api.source.model.MangaInfo
 import org.junit.Before
@@ -17,14 +14,14 @@ class ChapterChecker {
     @Before
     fun setup() {
         kotlinx.coroutines.runBlocking {
-            chepters =  extension.getChapterList(MangaInfo(key = BOOK_URL, title = BOOK_NAME), emptyList())
+            chepters = extension.getChapterList(MangaInfo(key = BOOK_URL, title = BOOK_NAME), emptyList())
             print(chepters)
         }
     }
 
     @Test
     fun `check  whether chapter list is empty `() {
-            assertThat(chepters.isNotEmpty()).isTrue()
+        assertThat(chepters.isNotEmpty()).isTrue()
     }
     @Test
     fun `check  whether chapters has name `() {

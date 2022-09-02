@@ -1,29 +1,31 @@
 package ireader.pandanovel
 
-
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.url
+import io.ktor.serialization.kotlinx.json.json
 import ireader.pandanovel.chapter.ChapterDTO
+import ireader.sourcefactory.SourceFactory
 import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.Page
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
-import java.util.*
-
+import java.util.Locale
 
 @Extension
 abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
@@ -52,12 +54,14 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
     @OptIn(ExperimentalSerializationApi::class)
     override val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                allowSpecialFloatingPointValues = true
-                allowStructuredMapKeys = true
-                explicitNulls = true
-            })
+            json(
+                Json {
+                    ignoreUnknownKeys = true
+                    allowSpecialFloatingPointValues = true
+                    allowStructuredMapKeys = true
+                    explicitNulls = true
+                }
+            )
         }
     }
 
@@ -78,7 +82,7 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
                 nextPageValue = "..."
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -131,7 +135,8 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
             baseUrl + baseExploreFetcher.endpoint?.replace(
                 "{page}",
                 page.toString()
-            )?.replace("{query}", query.replace(" ", "+")), baseExploreFetcher.selector,
+            )?.replace("{query}", query.replace(" ", "+")),
+            baseExploreFetcher.selector,
             timeout = 50000
         ).responseBody.asJsoup()
     }
@@ -156,10 +161,8 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
         ).responseBody.asJsoup()
     }
 
-
     private val jsonFormatter = Json {
         ignoreUnknownKeys = true
-
     }
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
@@ -180,19 +183,16 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
 
             for (page in 1..chapter.data.pages) {
                 val json2: String = deps.httpClients.browser.fetch(
-                    "https://www.panda-novel.com/api/book/chapters/$bookId/${page}?_=$time",
+                    "https://www.panda-novel.com/api/book/chapters/$bookId/$page?_=$time",
                     detailFetcher.nameSelector,
                 ).responseBody.asJsoup().text().replace(" ", "")
                 val chapter2: ChapterDTO = jacksonObjectMapper().readValue<ChapterDTO>(json2)
                 chapters.addAll(chapter2.parseChapters())
             }
 
-
-
             return chapters
         }
         return super.getChapterList(manga, commands).reversed()
-
     }
 
     fun ChapterDTO.parseChapters(): List<ChapterInfo> {
@@ -218,8 +218,7 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
         ).responseBody.asJsoup()
     }
 
-
-    override fun pageContentParse(document: Document): List<String> {
+    override fun pageContentParse(document: Document): List<Page> {
         val par = document.select(contentFetcher.pageContentSelector).html().split("<br>")
             .map { it.asJsoup().text() }
         val head = selectorReturnerStringType(
@@ -230,7 +229,6 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
             contentFetcher.onTitle(it)
         }
 
-        return listOf(head) + par
+        return listOf(head.toPage()) + par.map { it.toPage() }
     }
-
 }

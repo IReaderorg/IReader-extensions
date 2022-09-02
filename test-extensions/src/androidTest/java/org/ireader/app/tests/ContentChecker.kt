@@ -17,7 +17,7 @@ class ContentChecker {
     @Before
     fun setup() {
         kotlinx.coroutines.runBlocking {
-            page =  extension.getPageList(ChapterInfo(key = CHAPTER_URL, name = CHAPTER_NAME), emptyList())
+            page = extension.getPageList(ChapterInfo(key = CHAPTER_URL, name = CHAPTER_NAME), emptyList())
             print(page)
         }
     }
@@ -27,4 +27,3 @@ class ContentChecker {
         assertThat(page.isNotEmpty()).isTrue()
     }
 }
-

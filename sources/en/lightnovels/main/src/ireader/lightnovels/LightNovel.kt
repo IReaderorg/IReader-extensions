@@ -1,16 +1,24 @@
 package ireader.lightnovels
 
 import com.google.gson.Gson
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.cookies.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.gson.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.BrowserUserAgent
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.cookies.ConstantCookiesStorage
+import io.ktor.client.plugins.cookies.HttpCookies
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.headers
+import io.ktor.client.request.invoke
+import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import io.ktor.serialization.gson.gson
 import ireader.lightnovels.books_dto.BookListDTO
 import ireader.lightnovels.books_dto.Result
 import ireader.lightnovels.chapter_dto.ChapterDTO
@@ -28,20 +36,26 @@ import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.HttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
+import org.ireader.core_api.source.model.Page
+import org.ireader.core_api.source.model.Text
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @Extension
 abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
 
-
     override val name = "LightNovel.me"
-
 
     override val id: Long
         get() = 6
@@ -76,7 +90,8 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     val sorts = Filter.Sort(
-        "Sort By:", arrayOf(
+        "Sort By:",
+        arrayOf(
             "Latest Release",
             "Hot Novel",
             "Complete Novel",
@@ -100,7 +115,6 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         } else {
             getNovels(page, sort = sort)
         }
-
     }
 
     private suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
@@ -135,7 +149,6 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         )
     }
 
-
     private fun handleStatue(s: String): Int {
         return when (s) {
             "Ongoing" -> MangaInfo.ONGOING
@@ -161,7 +174,6 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
             }
         }
 
-
         return MangasPageInfo(books, false)
     }
 
@@ -175,7 +187,6 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         return MangaInfo(title = name, cover = img, key = url)
     }
 
-
     fun HeadersBuilder.applyHeader() {
         append(
             "User-Agent",
@@ -183,7 +194,6 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         )
         append("cache-control", " max-age=0")
         append("referer", baseUrl)
-
     }
 
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
@@ -199,7 +209,6 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
             }
         }
     }
-
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getNovels(page, sort = sorts.value)
@@ -290,8 +299,8 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
             val json = mainDoc.select("#__NEXT_DATA__").html()
             val detail = Gson().fromJson(json, NovelDetail::class.java)
             val novelId = detail.props.pageProps.novelInfo.novel_id
-            //val maxPage = parseMaxPage(manga)
-            //val list = mutableListOf<Deferred<List<ChapterInfo>>>()
+            // val maxPage = parseMaxPage(manga)
+            // val list = mutableListOf<Deferred<List<ChapterInfo>>>()
             val chapters = chaptersParse(
                 Gson().fromJson(
                     client.get(
@@ -299,7 +308,8 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
                             novelId = novelId,
                             index = 0
                         )
-                    ).asJsoup().body().text(), ChapterDTO::class.java
+                    ).asJsoup().body().text(),
+                    ChapterDTO::class.java
                 )
             )
 //            for (i in 0..maxPage) {
@@ -319,7 +329,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
 //            }
             //  val request = client.get(chaptersRequest(book = book))
 
-            //return@withContext list.awaitAll().flatten()
+            // return@withContext list.awaitAll().flatten()
             return@withContext chapters
         }
     }
@@ -405,5 +415,4 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
             }
         }
     }
-
 }

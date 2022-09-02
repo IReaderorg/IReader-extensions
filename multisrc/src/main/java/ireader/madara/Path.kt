@@ -1,4 +1,4 @@
-package ireader.Madara
+package ireader.madara
 
 data class Path(
     val novel: String,

@@ -1,25 +1,38 @@
-package ireader.wuxiaworldsiteco
+package ireader.wuxiaworldsite
 
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.ireader.core_api.http.okhttp
-import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
+import org.ireader.core_api.source.model.Page
+import org.ireader.core_api.source.model.Text
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
-import java.util.*
-
+import java.util.Calendar
+import java.util.Locale
 
 @Extension
 abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -36,7 +49,8 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                     "Popular"
                 )
@@ -102,7 +116,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         ) { searchFromElement(it) }
     }
 
-
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
@@ -113,6 +126,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             append(HttpHeaders.Referrer, baseUrl)
         }
     }
+
     override fun getCommands(): CommandList {
         return listOf(
             Command.Chapter.Fetch(),
@@ -130,7 +144,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     fun popularNextPageSelector() = "div.nav-previous>a"
 
-
     fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("h3.h5 a").text()
         val url = element.select("h3.h5 a").attr("href")
@@ -139,14 +152,12 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-
     fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.post-title h3.h4 a").text()
         val url = element.select("div.post-title h3.h4 a").attr("href")
         val thumbnailUrl = element.select("img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
 
     // manga details
 
@@ -161,7 +172,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         val category = document.select("div.genres-content a").eachText()
         val rating = document.select("div.post-rating span.score").text()
         val status = document.select("div.post-status div.summary-content").text()
-
 
         return MangaInfo(
             title = title,
@@ -205,11 +215,10 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         commands.findInstance<Command.Detail.Fetch>()?.let {
-           return detailParse(Jsoup.parse(it.html)).copy(key = it.url)
+            return detailParse(Jsoup.parse(it.html)).copy(key = it.url)
         }
         return super.getMangaDetails(manga, commands)
     }
-
 
     override fun chapterFromElement(element: Element): ChapterInfo {
         val link = baseUrl + element.select("a").attr("href").substringAfter(baseUrl)
@@ -265,7 +274,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let {
-           return chaptersParse(Jsoup.parse(it.html)).reversed()
+            return chaptersParse(Jsoup.parse(it.html)).reversed()
         }
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
@@ -280,7 +289,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             }
         }.getOrThrow()
     }
-
 
     override fun pageContentParse(document: Document): List<String> {
         val par = document.select("div.read-container .reading-content p").eachText()
@@ -297,14 +305,12 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return super.getPageList(chapter, commands)
     }
 
-
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
 
         return pageContentParse(
             client.get(contentRequest(chapter)).asJsoup()
         ).map { it.replace("Come and read on our website wuxia worldsite. Thanks", "") }
     }
-
 
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -323,5 +329,4 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             append(HttpHeaders.Referrer, "https://wuxiaworld.site/")
         }
     }
-
 }

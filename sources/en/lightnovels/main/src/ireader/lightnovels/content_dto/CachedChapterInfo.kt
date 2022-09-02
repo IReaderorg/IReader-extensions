@@ -1,6 +1,5 @@
 package ireader.lightnovels.content_dto
 
-
 data class CachedChapterInfo(
     val chapter_id: Int,
     val chapter_index: Int,

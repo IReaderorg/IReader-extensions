@@ -1,9 +1,23 @@
 package ireader.aixdzs
 
-import io.ktor.client.request.*
-import io.ktor.http.*
-import org.ireader.core_api.source.*
-import org.ireader.core_api.source.model.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.ParsedHttpSource
+import ireader.sourcefactory.SourceFactory
+import org.ireader.core_api.source.asJsoup
+import org.ireader.core_api.source.findInstance
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -14,19 +28,18 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "Aixdzs"
 
-
     override val id: Long
         get() = 33
     override val baseUrl = "https://m.aixdzs.com"
 
     override val lang = "cn"
 
-
     override fun getFilters(): FilterList {
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                     "Popular"
                 )
@@ -85,13 +98,11 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
         ) { searchFromElement(it) }
     }
 
-
     fun fetchLatestEndpoint(page: Int): String? =
         "/new/?page=$page"
 
     fun fetchPopularEndpoint(page: Int): String? =
         "/hot/?page=$page"
-
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
@@ -103,7 +114,6 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
             append(HttpHeaders.Referrer, baseUrl)
         }
     }
-
 
     fun popularSelector() = ".ix-list.ix-border-t li"
 
@@ -133,14 +143,11 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
 
     fun latestSelector(): String = popularSelector()
 
-
     fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
 
     fun latestNextPageSelector() = popularNextPageSelector()
 
-
     fun searchNextPageSelector(): String? = popularNextPageSelector()
-
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
@@ -161,9 +168,6 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
             .replace("Status：", "")
             .handleStatus()
 
-
-
-
         return MangaInfo(
             title = title,
             cover = cover,
@@ -181,7 +185,6 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
             "Complete" -> MangaInfo.COMPLETED
             else -> MangaInfo.ONGOING
         }
-
     }
 
     // chapters
@@ -224,7 +227,6 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
         return maxPage.toInt()
     }
 
-
     override fun pageContentParse(document: Document): List<String> {
         return document.select("article.page-content").html().split("<br>", "<p>")
             .map { Jsoup.parse(it).text() }
@@ -234,13 +236,10 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
-
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
             headers { headers }
         }
     }
-
-
 }

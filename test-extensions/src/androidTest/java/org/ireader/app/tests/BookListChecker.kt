@@ -15,7 +15,7 @@ class BookListChecker {
     @Before
     fun setup() {
         kotlinx.coroutines.runBlocking {
-            books =  extension.getMangaList(LatestListing(), 1)
+            books = extension.getMangaList(LatestListing(), 1)
             print(books)
         }
     }

@@ -1,7 +1,5 @@
 package ireader.lightnovels.detail_dto
 
-import ireader.lightnovels.detail_dto.Author
-
 data class PageProps(
     val authors: List<Author>,
     val cachedChapterResults: String,

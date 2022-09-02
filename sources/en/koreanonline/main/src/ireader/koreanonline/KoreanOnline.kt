@@ -1,13 +1,22 @@
-package ireader.koreanonline.ireader.koreanonline
+package ireader.koreanonline
 
-import io.ktor.client.request.*
-import io.ktor.http.*
-
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
@@ -16,7 +25,6 @@ import tachiyomix.annotations.Extension
 abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "KoreanMtl.Online"
-
 
     override val id: Long
         get() = 5
@@ -36,7 +44,8 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                 )
             ),
@@ -69,7 +78,6 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
         return bookListParse(client.get(res).asJsoup(), "ul.a li.b", null) { latestFromElement(it) }
     }
 
-
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
@@ -81,14 +89,12 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
         }
     }
 
-
     fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("a").text()
         val url = element.select("a").attr("href")
 
         return MangaInfo(key = url, title = title)
     }
-
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
@@ -100,7 +106,6 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
             description = description,
         )
     }
-
 
     // chapters
     override fun chaptersRequest(book: MangaInfo): HttpRequestBuilder {
@@ -119,7 +124,6 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
         return ChapterInfo(name = name, key = link)
     }
 
-
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
@@ -127,7 +131,6 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
         val request = client.get(chaptersRequest(manga)).asJsoup()
         return chaptersParse(request)
     }
-
 
     override fun pageContentParse(document: Document): List<String> {
         return document.select("h1,p").eachText()
@@ -137,13 +140,10 @@ abstract class KoreanOnline(deps: Dependencies) : ParsedHttpSource(deps) {
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
-
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
             headers { headers }
         }
     }
-
-
 }

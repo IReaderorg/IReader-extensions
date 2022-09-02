@@ -1,19 +1,31 @@
 package ireader.realwebnovel
 
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 
 @Extension
 abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -30,7 +42,8 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                     "Popular"
                 )
@@ -42,7 +55,6 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         return listOf(LatestListing())
     }
 
-
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
     }
@@ -51,38 +63,36 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return getSearch(page,query)
+            return getSearch(page, query)
         }
-        return when(sorts) {
+        return when (sorts) {
             0 -> getLatest(page)
             1 -> getPopular(page)
             else -> getLatest(page)
         }
     }
 
-    suspend fun getLatest(page: Int) : MangasPageInfo {
+    suspend fun getLatest(page: Int): MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
-        return bookListParse(client.get(res).asJsoup(),latestSelector(),latestNextPageSelector()) { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), latestSelector(), latestNextPageSelector()) { latestFromElement(it) }
     }
-    suspend fun getPopular(page: Int) : MangasPageInfo {
+    suspend fun getPopular(page: Int): MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
-        return bookListParse(client.get(res).asJsoup(),popularSelector(),popularNextPageSelector()) { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), popularSelector(), popularNextPageSelector()) { popularFromElement(it) }
     }
-    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
-        val res = requestBuilder(baseUrl + fetchSearchEndpoint(page,query))
-        return bookListParse(client.get(res).asJsoup(),searchSelector(),searchNextPageSelector()) { searchFromElement(it) }
+    suspend fun getSearch(page: Int, query: String): MangasPageInfo {
+        val res = requestBuilder(baseUrl + fetchSearchEndpoint(page, query))
+        return bookListParse(client.get(res).asJsoup(), searchSelector(), searchNextPageSelector()) { searchFromElement(it) }
     }
 
-     fun fetchLatestEndpoint(page: Int): String? =
-        "/manga-2/page/${page}/?m_orderby=latest"
+    fun fetchLatestEndpoint(page: Int): String? =
+        "/manga-2/page/$page/?m_orderby=latest"
 
-     fun fetchPopularEndpoint(page: Int): String? =
-        "/manga-2/page/${page}/?m_orderby=trending"
+    fun fetchPopularEndpoint(page: Int): String? =
+        "/manga-2/page/$page/?m_orderby=trending"
 
-     fun fetchSearchEndpoint(page: Int, query: String): String? =
-        "/?s=${query}&post_type=wp-manga&op=&author=&artist=&release=&adult="
-
-
+    fun fetchSearchEndpoint(page: Int, query: String): String? =
+        "/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult="
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
@@ -92,43 +102,40 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         }
     }
 
-
     // popular
-     fun popularRequest(page: Int): HttpRequestBuilder {
+    fun popularRequest(page: Int): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(baseUrl + fetchPopularEndpoint(page = page))
         }
     }
 
-     fun popularSelector() = "div.page-item-detail"
+    fun popularSelector() = "div.page-item-detail"
 
-     fun popularFromElement(element: Element): MangaInfo {
+    fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("a").attr("title")
         val url = element.select("a").attr("href")
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-     fun popularNextPageSelector() = "div.nav-previous>a"
+    fun popularNextPageSelector() = "div.nav-previous>a"
 
-     fun latestSelector(): String = popularSelector()
+    fun latestSelector(): String = popularSelector()
 
+    fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
 
-     fun latestFromElement(element: Element): MangaInfo =popularFromElement(element)
+    fun latestNextPageSelector() = popularNextPageSelector()
 
-     fun latestNextPageSelector() = popularNextPageSelector()
+    fun searchSelector() = "div.c-tabs-item__content"
 
-     fun searchSelector() = "div.c-tabs-item__content"
-
-     fun searchFromElement(element: Element): MangaInfo {
+    fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("h3.h4 a").text()
         val url = element.select("div.tab-thumb a").attr("href")
         val thumbnailUrl = element.select("div.tab-thumb a img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-     fun searchNextPageSelector(): String? = null
-
+    fun searchNextPageSelector(): String? = null
 
     // manga details
 
@@ -143,7 +150,6 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         val category = document.select("div.genres-content a").eachText()
         val rating = document.select("div.post-rating span.score").text()
         val status = document.select("div.post-status div.summary-content").text()
-
 
         return MangaInfo(
             title = title,
@@ -250,16 +256,13 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         }.getOrThrow()
     }
 
-
     override fun pageContentParse(document: Document): List<String> {
         return document.select("div.read-container h3,p").eachText()
     }
 
-
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
-
 
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -267,6 +270,4 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
             headers { headers }
         }
     }
-
-
 }

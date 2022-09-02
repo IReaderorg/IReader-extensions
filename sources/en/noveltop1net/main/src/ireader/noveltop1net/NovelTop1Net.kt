@@ -1,13 +1,16 @@
 package ireader.noveltop1net
 
-import io.ktor.client.request.*
+import io.ktor.client.request.get
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
@@ -69,7 +72,7 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
                 type = SourceFactory.Type.Search
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -104,7 +107,6 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
             pageContentSelector = "#chr-content p",
         )
 
-
     override suspend fun getChapterListRequest(
         manga: MangaInfo,
         commands: List<Command<*>>
@@ -114,6 +116,4 @@ abstract class NovelTop1Net(private val deps: Dependencies) : SourceFactory(
         val url = "$baseUrl/ajax/chapter-archive?novelId=$novelId"
         return client.get(url).asJsoup()
     }
-
-
 }

@@ -1,21 +1,27 @@
 package ireader.wuxiaworld
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.utils.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.BrowserUserAgent
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.serialization.kotlinx.json.json
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.Jsoup
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class Wuxiaworld(deps: Dependencies) : SourceFactory(
@@ -80,37 +86,37 @@ abstract class Wuxiaworld(deps: Dependencies) : SourceFactory(
             pageContentSelector = ".max-w-none p",
         )
 
-
-    suspend fun getPopular() : MangasPageInfo {
+    suspend fun getPopular(): MangasPageInfo {
         val books: PopularDTO = client.get(requestBuilder("$baseUrl/api/novels")).body()
 
         return parseBooks(books)
     }
 
-    fun parseBooks(books: PopularDTO) : MangasPageInfo {
-        return MangasPageInfo(books.items.map { book ->
-            MangaInfo(
-                key = "https://www.wuxiaworld.com/novel/${book.slug}",
-                title = book.name,
-                author = book.authorName?:"",
-                description = book.synopsis.let { Jsoup.parse(it?:"").text() },
-                status = if (book.description.contains(
-                        "Complete",
-                        true
-                    )
-                ) MangaInfo.COMPLETED else MangaInfo.ONGOING,
-                cover = book.coverUrl,
-                genres = book.genres
-            )
-        }, hasNextPage = false)
+    fun parseBooks(books: PopularDTO): MangasPageInfo {
+        return MangasPageInfo(
+            books.items.map { book ->
+                MangaInfo(
+                    key = "https://www.wuxiaworld.com/novel/${book.slug}",
+                    title = book.name,
+                    author = book.authorName ?: "",
+                    description = book.synopsis.let { Jsoup.parse(it ?: "").text() },
+                    status = if (book.description.contains(
+                            "Complete",
+                            true
+                        )
+                    ) MangaInfo.COMPLETED else MangaInfo.ONGOING,
+                    cover = book.coverUrl,
+                    genres = book.genres
+                )
+            },
+            hasNextPage = false
+        )
     }
 
-    suspend fun getSearch(searchQuery:String) : MangasPageInfo {
+    suspend fun getSearch(searchQuery: String): MangasPageInfo {
         val books: PopularDTO = client.get(requestBuilder("https://www.wuxiaworld.com/api/novels/search?query=$searchQuery")).body()
         return parseBooks(books)
     }
-
-
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getPopular()
@@ -126,7 +132,6 @@ abstract class Wuxiaworld(deps: Dependencies) : SourceFactory(
         return getPopular()
     }
 
-
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
@@ -138,6 +143,4 @@ abstract class Wuxiaworld(deps: Dependencies) : SourceFactory(
         }
         return super.getChapterList(manga, commands)
     }
-
-
 }

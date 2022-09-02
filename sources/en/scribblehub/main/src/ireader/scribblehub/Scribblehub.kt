@@ -1,14 +1,17 @@
 package ireader.scribblehub
 
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-import org.ireader.core_api.log.Log
+import io.ktor.client.request.forms.submitForm
+import io.ktor.http.Parameters
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class Scribblehub(private val deps: Dependencies) : SourceFactory(
@@ -95,12 +98,11 @@ abstract class Scribblehub(private val deps: Dependencies) : SourceFactory(
             pageContentSelector = "div.chp_raw p",
         )
 
-
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        val bookId =  manga.key.substringAfter("/series/").substringBefore("/")
+        val bookId = manga.key.substringAfter("/series/").substringBefore("/")
         val chapters = chaptersParse(
             client.submitForm(
                 url = "https://www.scribblehub.com/wp-admin/admin-ajax.php",
@@ -108,10 +110,9 @@ abstract class Scribblehub(private val deps: Dependencies) : SourceFactory(
                     append("action", "wi_getreleases_pagination")
                     append("pagenum", "-1")
                     append("mypostid", bookId)
-                }).asJsoup(),
+                }
+            ).asJsoup(),
         )
         return chapters.reversed()
     }
-
-
 }

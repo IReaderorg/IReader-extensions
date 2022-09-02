@@ -1,24 +1,34 @@
 package ireader.wuxiaworldsiteco
 
 import android.util.Log
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import io.ktor.http.Parameters
 import org.ireader.core_api.http.okhttp
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
-import java.util.*
-
+import java.util.Calendar
+import java.util.Locale
 
 @Extension
 abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -35,7 +45,8 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                     "Popular"
                 )
@@ -72,7 +83,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             else -> getLatest(page)
         }
     }
-
 
     suspend fun getLatest(page: Int): MangasPageInfo {
         val res = client.submitForm(
@@ -127,7 +137,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return bookListParse(client.get(res).asJsoup(), ".item", null) { latestFromElement(it) }
     }
 
-
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
@@ -139,9 +148,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         }
     }
 
-
     fun popularNextPageSelector() = ".paging_section"
-
 
     fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("a").attr("title")
@@ -149,7 +156,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         val thumbnailUrl = baseUrl + element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
 
     // manga details
 
@@ -163,7 +169,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
                 .joinToString("\n\n")
         val category = document.select(".tags a").eachText()
         val status = document.select(".a_tag_item:last-child").text()
-
 
         return MangaInfo(
             title = title,
@@ -205,7 +210,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         }
     }
 
-
     override fun chapterFromElement(element: Element): ChapterInfo {
         val link = baseUrl + element.select("a").attr("href")
         val name = element.select("a:not(i)").text()
@@ -221,7 +225,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             } catch (e: Exception) {
                 ChapterInfo("", "")
             }
-
         }
     }
 
@@ -281,17 +284,14 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return parser
     }
 
-
     override fun pageContentParse(document: Document): List<String> {
         val par = document.select(".content-story p").eachText()
         return par.drop(1)
     }
 
-
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
-
 
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -299,5 +299,4 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
             headers { headers }
         }
     }
-
 }

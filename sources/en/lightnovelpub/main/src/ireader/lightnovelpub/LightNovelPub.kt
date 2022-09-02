@@ -1,30 +1,33 @@
 package ireader.lightnovelpub
 
-import com.google.gson.Gson
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.client.statement.*
-import io.ktor.client.utils.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.json.Json
-import org.ireader.core_api.log.Log
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.BrowserUserAgent
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.get
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.Parameters
+import io.ktor.serialization.kotlinx.json.json
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
-import org.jsoup.nodes.Document
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 import kotlin.math.ceil
-
 
 @Extension
 abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
@@ -66,7 +69,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
                 nextPageSelector = ".pagination li",
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -137,7 +140,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             pageTitleSelector = "#chapter-article > section.page-in.content-wrap > div.titles > h1 > span.chapter-title",
             pageContentSelector = "#chapter-container p",
             onContent = { content ->
-                content.filter {  !it.contains("lightnovelpub",true) || !it.contains("no_vel_read_ing") }
+                content.filter { !it.contains("lightnovelpub", true) || !it.contains("no_vel_read_ing") }
             }
         )
 
@@ -159,9 +162,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             "user-agent",
             "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
         )
-
     }
-
 
     override suspend fun getChapterList(
         manga: MangaInfo,
@@ -175,12 +176,11 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
                     .text().trim().let {
                         ceil(it.toDouble() / 100).toInt()
                     }
-
             }
             val chapters = mutableListOf<ChapterInfo>()
             for (page in 1..lastPage) {
                 val html =
-                    client.get(requestBuilder(manga.key + "/chapters/page-${page}")).asJsoup()
+                    client.get(requestBuilder(manga.key + "/chapters/page-$page")).asJsoup()
                 chapters.addAll(chaptersParse(html))
             }
             return chapters
@@ -193,9 +193,12 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
 
         if (query != null) {
             val response: SearchResponse =
-                client.submitForm("https://www.lightnovelpub.com/lnsearchlive", formParameters = Parameters.build {
-                    append("inputContent",query)
-                }) { headersBuilder() }.body<SearchResponse>()
+                client.submitForm(
+                    "https://www.lightnovelpub.com/lnsearchlive",
+                    formParameters = Parameters.build {
+                        append("inputContent", query)
+                    }
+                ) { headersBuilder() }.body<SearchResponse>()
             val mangas = response.resultview.asJsoup().select(".novel-item").map { html ->
                 val name = html.select("h4.novel-title").text().trim()
                 val cover = html.select("img").attr("src")
@@ -221,5 +224,4 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             headersBuilder()
         }
     }
-
 }

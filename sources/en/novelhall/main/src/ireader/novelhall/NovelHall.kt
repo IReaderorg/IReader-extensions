@@ -1,9 +1,23 @@
 package ireader.novelhall
 
-import io.ktor.client.request.*
-import io.ktor.http.*
-import org.ireader.core_api.source.*
-import org.ireader.core_api.source.model.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.ParsedHttpSource
+import ireader.sourcefactory.SourceFactory
+import org.ireader.core_api.source.asJsoup
+import org.ireader.core_api.source.findInstance
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -14,19 +28,18 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "NovelHall"
 
-
     override val id: Long
         get() = 27
     override val baseUrl = "https://www.novelhall.com"
 
     override val lang = "en"
 
-
     override fun getFilters(): FilterList {
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                     "Popular"
                 )
@@ -85,13 +98,11 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
         ) { searchFromElement(it) }
     }
 
-
     fun fetchLatestEndpoint(page: Int): String? =
         "/all-$page.html"
 
     fun fetchPopularEndpoint(page: Int): String? =
         "/all-$page.html"
-
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
@@ -103,7 +114,6 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
             append(HttpHeaders.Referrer, baseUrl)
         }
     }
-
 
     fun popularSelector() = ".type li.btm"
 
@@ -133,14 +143,11 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
 
     fun latestSelector(): String = popularSelector()
 
-
     fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
 
     fun latestNextPageSelector() = popularNextPageSelector()
 
-
     fun searchNextPageSelector(): String? = popularNextPageSelector()
-
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
@@ -151,7 +158,7 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
         val cover = document.select(".book-img.hidden-xs img").attr("src")
         val description = document.select("span.js-close-wrap").eachText().joinToString("\n")
             .replace("back<<", "")
-        //not sure why its not working.
+        // not sure why its not working.
         val category = document.select("a.red")
             .eachText()
 
@@ -161,9 +168,6 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
             .replace("Status：Active", "OnGoing")
             .replace("Status：", "")
             .handleStatus()
-
-
-
 
         return MangaInfo(
             title = title,
@@ -182,7 +186,6 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
             "Complete" -> MangaInfo.COMPLETED
             else -> MangaInfo.ONGOING
         }
-
     }
 
     // chapters
@@ -225,7 +228,6 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
         return maxPage.toInt()
     }
 
-
     override fun pageContentParse(document: Document): List<String> {
         return document.select("div#htmlContent").html().split("<br>", "<p>")
             .map { Jsoup.parse(it).text() }
@@ -235,13 +237,10 @@ abstract class NovelHall(deps: Dependencies) : ParsedHttpSource(deps) {
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
-
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
             headers { headers }
         }
     }
-
-
 }

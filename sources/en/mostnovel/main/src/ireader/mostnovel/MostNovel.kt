@@ -1,16 +1,12 @@
 package ireader.mostnovel
 
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
-import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.*
-import org.ireader.core_api.util.replace
-import org.jsoup.nodes.Document
+import ireader.sourcefactory.SourceFactory
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class MostNovel(private val deps: Dependencies) : SourceFactory(
@@ -35,7 +31,8 @@ abstract class MostNovel(private val deps: Dependencies) : SourceFactory(
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
         Filter.Sort(
-            "Sort By:", arrayOf(
+            "Sort By:",
+            arrayOf(
                 "Latest",
                 "Popular",
                 "New",
@@ -126,7 +123,7 @@ abstract class MostNovel(private val deps: Dependencies) : SourceFactory(
                 nextPageValue = "Older Posts"
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -152,6 +149,4 @@ abstract class MostNovel(private val deps: Dependencies) : SourceFactory(
             pageContentSelector = ".reading-content div.text-left  p",
             pageTitleSelector = ".reading-content div.text-left  h3",
         )
-
-
 }

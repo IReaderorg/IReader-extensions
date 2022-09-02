@@ -3,7 +3,7 @@ package org.ireader.app.mock_components
 import org.ireader.core_api.prefs.Preference
 import org.ireader.core_api.prefs.PreferenceStore
 
-class FakePreferencesStore:  PreferenceStore  {
+class FakePreferencesStore : PreferenceStore {
     override fun getString(key: String, defaultValue: String): Preference<String> {
         throw Exception()
     }

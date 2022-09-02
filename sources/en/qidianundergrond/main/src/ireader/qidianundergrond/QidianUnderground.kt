@@ -1,14 +1,19 @@
 package ireader.qidianundergrond
 
 import com.google.gson.Gson
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import org.ireader.core_api.http.impl.Result
@@ -17,7 +22,15 @@ import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.HttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
+import org.ireader.core_api.source.model.Page
+import org.ireader.core_api.source.model.Text
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
@@ -28,7 +41,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
 
     override val name = "Qidian Underground"
 
-
     override val id: Long
         get() = 12
     override val baseUrl = "https://toc.qidianunderground.org"
@@ -38,10 +50,11 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
             preconfigured = clientBuilder()
         }
         install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-            })
-
+            json(
+                Json {
+                    ignoreUnknownKeys = true
+                }
+            )
         }
     }
     class LatestListing() : Listing("Latest")
@@ -65,7 +78,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         )
     }
 
-
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
     }
@@ -77,7 +89,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         } else {
             getLatest(page)
         }
-
     }
 
     suspend fun getLatest(page: Int): MangasPageInfo {
@@ -89,7 +100,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
                 QUGroup::class.java
             )
         )
-
     }
 
     fun requestBuilder(
@@ -138,7 +148,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         return MangasPageInfo(books.filter { it.title.contains(query, true) }, false)
     }
 
-
     fun HttpRequestBuilder.headersBuilder() {
         headers {
             append(
@@ -161,7 +170,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         )
     }
 
-
     // chapters
     fun chaptersRequest(book: MangaInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -169,7 +177,6 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
             headers { headers }
         }
     }
-
 
     override suspend fun getChapterList(
         manga: MangaInfo,
@@ -180,17 +187,16 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         return chapters.map { ChapterInfo(key = it.Href, name = it.Text) }
     }
 
-
     fun pageContentParse(document: Document): List<String> {
         return document.select("div > p,h2").eachText().map { Jsoup.parse(it).text() }
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
-        var html : Result ?= null
+        var html: Result ? = null
         withContext(Dispatchers.Main) {
             html = deps.httpClients.browser.fetch(chapter.key, selector = ".well")
         }
-        return pageContentParse(Jsoup.parse(html?.responseBody?:"")).map { Text(it) }
+        return pageContentParse(Jsoup.parse(html?.responseBody ?: "")).map { Text(it) }
     }
 
     suspend fun getContents(chapter: ChapterInfo): List<String> {
@@ -198,14 +204,10 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         return pageContentParse(html)
     }
 
-
     fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
             headers { headers }
         }
     }
-
-
 }
-

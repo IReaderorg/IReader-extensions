@@ -1,14 +1,27 @@
 package ireader.freewebnovel
 
-
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.coroutines.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
@@ -26,12 +39,14 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override fun getFilters(): FilterList {
         return listOf(
-                Filter.Title(),
-                Filter.Sort(
-                        "Sort By:",arrayOf(
-                        "Latest",
-                        "Popular"
-                )),
+            Filter.Title(),
+            Filter.Sort(
+                "Sort By:",
+                arrayOf(
+                    "Latest",
+                    "Popular"
+                )
+            ),
         )
     }
 
@@ -49,30 +64,27 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return getSearch(page,query)
+            return getSearch(page, query)
         }
-        return when(sorts) {
+        return when (sorts) {
             0 -> getLatest(page)
             1 -> getPopular(page)
             else -> getLatest(page)
         }
     }
 
-    suspend fun getLatest(page: Int) : MangasPageInfo {
+    suspend fun getLatest(page: Int): MangasPageInfo {
         val res = requestBuilder("$baseUrl/latest-release-novel/$page/")
-        return bookListParse(client.get(res).asJsoup(),"div.ul-list1 div.li","div.ul-list1") { latestFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), "div.ul-list1 div.li", "div.ul-list1") { latestFromElement(it) }
     }
-    suspend fun getPopular(page: Int) : MangasPageInfo {
+    suspend fun getPopular(page: Int): MangasPageInfo {
         val res = requestBuilder("$baseUrl/most-popular-novel/")
-        return bookListParse(client.get(res).asJsoup(),"div.ul-list1 div.li-row",null) { popularFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), "div.ul-list1 div.li-row", null) { popularFromElement(it) }
     }
-    suspend fun getSearch(page: Int,query: String) : MangasPageInfo {
+    suspend fun getSearch(page: Int, query: String): MangasPageInfo {
         val res = requestBuilder("$baseUrl/search/?searchkey=$query")
-        return bookListParse(client.get(res).asJsoup(),"div.ul-list1 div.li-row",null) { searchFromElement(it) }
+        return bookListParse(client.get(res).asJsoup(), "div.ul-list1 div.li-row", null) { searchFromElement(it) }
     }
-
-
-
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
@@ -82,14 +94,12 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         }
     }
 
-
     private fun popularFromElement(element: Element): MangaInfo {
         val url = baseUrl + element.select("a").attr("href")
         val title = element.select("a").attr("title")
         val thumbnailUrl = element.select("img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
 
     private fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
@@ -98,15 +108,12 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-
-
     private fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
         val url = baseUrl + element.select("div.txt a").attr("href")
         val thumbnailUrl = element.select("div.pic img").attr("src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
@@ -115,7 +122,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
         val authorBookSelector = document.select("div.right a.a1").attr("title")
         val description = document.select("div.inner p").eachText().joinToString("\n")
-        //not sure why its not working.
+        // not sure why its not working.
         val category = document.select("[title=Genre]")
             .next()
             .text()
@@ -127,9 +134,6 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
             .replace("/[\t\n]/g", "")
             .handleStatus()
 
-
-
-
         return MangaInfo(
             title = title,
             cover = cover,
@@ -140,13 +144,12 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
             status = status
         )
     }
-    private fun String.handleStatus() : Int {
-        return when(this){
-            "OnGoing"-> MangaInfo.ONGOING
-            "Complete"-> MangaInfo.COMPLETED
+    private fun String.handleStatus(): Int {
+        return when (this) {
+            "OnGoing" -> MangaInfo.ONGOING
+            "Complete" -> MangaInfo.COMPLETED
             else -> MangaInfo.ONGOING
         }
-
     }
 
     // chapters
@@ -210,7 +213,6 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return maxPage
     }
 
-
     override fun pageContentParse(document: Document): List<String> {
         return document.select("div.txt h4,p").eachText()
     }
@@ -219,14 +221,10 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
-
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
             headers { headers }
         }
     }
-
-
-
 }

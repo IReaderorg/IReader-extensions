@@ -1,10 +1,12 @@
 package ireader.fastnovel
 
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
-import org.ireader.core_api.source.model.*
+import ireader.sourcefactory.SourceFactory
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class FastNovel(private val deps: Dependencies) : SourceFactory(
@@ -59,7 +61,7 @@ abstract class FastNovel(private val deps: Dependencies) : SourceFactory(
                 type = SourceFactory.Type.Search
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -79,12 +81,11 @@ abstract class FastNovel(private val deps: Dependencies) : SourceFactory(
             linkSelector = ".chapter",
             linkAtt = "href",
             addBaseUrlToLink = true
-            )
+        )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = ".episode-name",
             pageContentSelector = "#chapter-body p",
         )
-
 }

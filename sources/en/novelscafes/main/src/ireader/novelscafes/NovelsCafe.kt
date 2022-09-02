@@ -1,19 +1,12 @@
 package ireader.novelscafes
 
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
-import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import ireader.sourcefactory.SourceFactory
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class NovelsCafe(private val deps: Dependencies) : SourceFactory(
@@ -69,7 +62,7 @@ abstract class NovelsCafe(private val deps: Dependencies) : SourceFactory(
                 type = SourceFactory.Type.Search
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -90,13 +83,11 @@ abstract class NovelsCafe(private val deps: Dependencies) : SourceFactory(
             linkAtt = "href",
             addBaseUrlToLink = true
 
-            )
+        )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = "h1",
             pageContentSelector = "#chapter-content",
         )
-
-
 }

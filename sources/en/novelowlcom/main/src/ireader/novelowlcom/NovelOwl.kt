@@ -1,25 +1,34 @@
 package ireader.novelowlcom
 
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.ireader.core_api.http.okhttp
-import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
-import java.util.*
-
+import java.util.Calendar
+import java.util.Locale
 
 @Extension
 abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -36,7 +45,8 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                     "Popular"
                 )
@@ -102,8 +112,6 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         ) { searchFromElement(it) }
     }
 
-
-
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
@@ -115,9 +123,7 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         }
     }
 
-
     fun popularNextPageSelector() = ".wp-pagenavi .last"
-
 
     fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("a").attr("title")
@@ -127,14 +133,12 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-
     fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.post-title h3.h4 a").text()
         val url = element.select("div.post-title h3.h4 a").attr("href")
         val thumbnailUrl = element.select("img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
 
     // manga details
 
@@ -149,7 +153,6 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         val category = document.select("div.genres-content a").eachText()
         val rating = document.select("div.post-rating span.score").text()
         val status = document.select("div.post-status div.summary-content").text()
-
 
         return MangaInfo(
             title = title,
@@ -191,9 +194,8 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         }
     }
 
-
     override fun chapterFromElement(element: Element): ChapterInfo {
-        val link =  element.select("a").attr("href")
+        val link = element.select("a").attr("href")
         val name = element.select("a").text()
         val dateUploaded = element.select("i").text()
 
@@ -259,7 +261,6 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         }.getOrThrow()
     }
 
-
     override fun pageContentParse(document: Document): List<String> {
         val par = document.select("div.read-container .reading-content p").eachText()
             .map { it.replace("Read latest Chapters at Wuxia World . Site Only", "") }
@@ -268,13 +269,11 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         return listOf(head) + par
     }
 
-
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
         return pageContentParse(
             client.get(contentRequest(chapter)).asJsoup()
         ).map { it.replace("Come and read on our website wuxia worldsite. Thanks", "") }
     }
-
 
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -293,5 +292,4 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
             append(HttpHeaders.Referrer, "https://wuxiaworld.site/")
         }
     }
-
 }

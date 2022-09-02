@@ -1,16 +1,22 @@
 package ireader.mylovenovel
 
-import io.ktor.client.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import kotlinx.coroutines.*
-
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
@@ -20,28 +26,28 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "MyLoveNovel"
 
-
     override val id: Long
         get() = 9
     override val baseUrl = "https://m.novelhold.com"
 
     override val lang = "en"
 
-
     override fun getFilters(): FilterList {
         return listOf(
-                Filter.Title(),
-                Filter.Sort(
-                        "Sort By:", arrayOf(
-                        "Latest",
-                        "Popular",
-                )),
+            Filter.Title(),
+            Filter.Sort(
+                "Sort By:",
+                arrayOf(
+                    "Latest",
+                    "Popular",
+                )
+            ),
         )
     }
 
     override fun getListings(): List<Listing> {
         return listOf(
-                LatestListing()
+            LatestListing()
         )
     }
     class LatestListing() : Listing("Latest")
@@ -63,20 +69,19 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/lastupdate-${page}.html")
+        val res = requestBuilder("$baseUrl/lastupdate-$page.html")
         return bookListParse(client.get(res).asJsoup(), latestSelector(), latestNextPageSelector()) { latestFromElement(it) }
     }
 
     suspend fun getPopular(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/monthvisit-${page}.html")
+        val res = requestBuilder("$baseUrl/monthvisit-$page.html")
         return bookListParse(client.get(res).asJsoup(), popularSelector(), popularNextPageSelector()) { popularFromElement(it) }
     }
 
     suspend fun getSearch(page: Int, query: String): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/index.php?s=so&module=book&keyword=${query}")
+        val res = requestBuilder("$baseUrl/index.php?s=so&module=book&keyword=$query")
         return bookListParse(client.get(res).asJsoup(), searchSelector(), searchNextPageSelector()) { searchFromElement(it) }
     }
-
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
 
@@ -98,9 +103,7 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     fun popularNextPageSelector() = "div.pagelist>a"
 
-
     fun latestSelector(): String = popularSelector()
-
 
     fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
 
@@ -112,7 +115,6 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     fun searchNextPageSelector(): String? = popularNextPageSelector()
 
-
     // manga details
     override fun detailParse(document: Document): MangaInfo {
         val title = document.select("div.detail img").attr("alt")
@@ -120,29 +122,26 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
         val authorBookSelector = document.select("#info > div.main > div.detail > p:nth-child(3)").text().replace("Author：", "")
         val description = document.select("div.intro").eachText().joinToString("\n")
-        //not sure why its not working.
+        // not sure why its not working.
         val category = document.select("div.detail p.line a")
-                .next()
-                .text()
-                .split(",")
+            .next()
+            .text()
+            .split(",")
 
         val status = document.select("div.detail > p:nth-child(6)")
-                .next()
-                .text()
-                .replace("/[\t\n]/g", "")
-                .handleStatus()
-
-
-
+            .next()
+            .text()
+            .replace("/[\t\n]/g", "")
+            .handleStatus()
 
         return MangaInfo(
-                title = title,
-                cover = cover,
-                description = description,
-                author = authorBookSelector,
-                genres = category,
-                key = "",
-                status = status
+            title = title,
+            cover = cover,
+            description = description,
+            author = authorBookSelector,
+            genres = category,
+            key = "",
+            status = status
         )
     }
 
@@ -152,7 +151,6 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
             "Complete" -> MangaInfo.COMPLETED
             else -> MangaInfo.ONGOING
         }
-
     }
 
     // chapters
@@ -191,7 +189,6 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
-
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
@@ -206,6 +203,4 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val request = client.get(chaptersRequest(manga)).asJsoup()
         return chaptersParse(request)
     }
-
-
 }

@@ -1,13 +1,18 @@
 package ireader.riwyat
 
-import io.ktor.client.request.*
+import io.ktor.client.request.post
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.Page
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
@@ -113,7 +118,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
                 nextPageValue = "Older Posts"
             ),
 
-            )
+        )
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
             nameSelector = ".manga-title h1",
@@ -144,8 +149,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
             pageContentSelector = "p",
         )
 
-
-    override fun pageContentParse(document: Document): List<String> {
+    override fun pageContentParse(document: Document): List<Page> {
         val par = document.select(contentFetcher.pageContentSelector!!).eachText().dropLast(15)
         val head = selectorReturnerStringType(
             document,
@@ -153,7 +157,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
             contentFetcher.pageTitleAtt
         )
 
-        return listOf(head) + par
+        return listOf(head.toPage()) + par.map { it.toPage() }
     }
 
     override suspend fun getChapterList(
@@ -167,6 +171,4 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
         }
         return super.getChapterList(manga, commands)
     }
-
-
 }

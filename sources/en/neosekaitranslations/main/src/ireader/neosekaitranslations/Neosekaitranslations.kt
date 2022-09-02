@@ -1,9 +1,8 @@
 package ireader.neosekaitranslations
 
-import ireader.Madara.Madara
+import ireader.madara.Madara
 import org.ireader.core_api.source.Dependencies
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class Neosekaitranslations(val deps: Dependencies) : Madara(
@@ -12,6 +11,4 @@ abstract class Neosekaitranslations(val deps: Dependencies) : Madara(
     sourceName = "Neosekaitranslations",
     sourceId = 45,
     language = "en"
-) {
-
- }
+)

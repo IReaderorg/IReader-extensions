@@ -1,13 +1,16 @@
 package ireader.novelfullme
 
-import io.ktor.client.request.*
+import io.ktor.client.request.get
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class NovelFullMe(private val deps: Dependencies) : SourceFactory(
@@ -67,7 +70,7 @@ abstract class NovelFullMe(private val deps: Dependencies) : SourceFactory(
                 type = SourceFactory.Type.Search
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -90,14 +93,13 @@ abstract class NovelFullMe(private val deps: Dependencies) : SourceFactory(
             linkSelector = "a",
             linkAtt = "href",
             addBaseUrlToLink = true
-            )
+        )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = "#chapter__content > h1",
             pageContentSelector = ".chapter__content p",
         )
-
 
     override suspend fun getChapterListRequest(
         manga: MangaInfo,
@@ -109,8 +111,4 @@ abstract class NovelFullMe(private val deps: Dependencies) : SourceFactory(
         ) + "/chapters?source=detail"
         return client.get(requestBuilder(url)).asJsoup()
     }
-
-
-
-
 }

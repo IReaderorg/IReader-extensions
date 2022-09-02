@@ -1,11 +1,13 @@
 package ireader.comrademao
 
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import kotlinx.coroutines.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.Url
 import okhttp3.Headers
 import okhttp3.OkHttpClient
 import org.ireader.core_api.http.okhttp
@@ -13,28 +15,33 @@ import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.HttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
+import org.ireader.core_api.source.model.Page
+import org.ireader.core_api.source.model.Text
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
-import java.net.URL
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @Extension
 abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
 
-
     override val name = "Comrademao"
-
 
     override val id: Long
         get() = 3
     override val baseUrl = "https://comrademao.com"
 
     override val lang = "en"
-
 
     override fun getFilters(): FilterList {
         return listOf(
@@ -44,7 +51,8 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     val sorts = Filter.Sort(
-        "Sort By:", arrayOf(
+        "Sort By:",
+        arrayOf(
             "Chinese",
             "Japanese",
             "Korean",
@@ -70,7 +78,6 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         } else {
             return getNovels(page, sort = sort)
         }
-
     }
 
     suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
@@ -201,12 +208,11 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
             else -> MangaInfo.ONGOING
         }
 
-
         return MangaInfo(
             title = name,
             cover = img,
             key = "",
-            description = summary?:"",
+            description = summary ?: "",
             genres = genre,
             author = author ?: "",
             status = fStatus
@@ -222,7 +228,6 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         return chaptersParse(body.asJsoup()).reversed()
     }
 
-
     private fun uniqueChaptersRequest(book: MangaInfo, page: Int): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(
@@ -235,8 +240,6 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     private fun chaptersParse(document: Document): List<ChapterInfo> {
         return document.select(chaptersSelector()).map { chapterFromElement(it) }
     }
-
-
 
     fun chaptersRequest(book: MangaInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -312,5 +315,4 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
             headers { headers }
         }
     }
-
 }

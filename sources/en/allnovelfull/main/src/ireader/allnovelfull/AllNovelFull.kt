@@ -1,19 +1,16 @@
 package ireader.allnovelfull
 
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import io.ktor.client.request.get
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
-import org.jsoup.Jsoup
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class AllNovelFull(private val deps: Dependencies) : SourceFactory(
@@ -70,7 +67,7 @@ abstract class AllNovelFull(private val deps: Dependencies) : SourceFactory(
                 type = SourceFactory.Type.Search
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -94,13 +91,12 @@ abstract class AllNovelFull(private val deps: Dependencies) : SourceFactory(
             reverseChapterList = true,
             addBaseUrlToLink = true
 
-            )
+        )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageContentSelector = "#chapter-content p",
         )
-
 
     override suspend fun getChapterListRequest(
         manga: MangaInfo,
@@ -110,8 +106,4 @@ abstract class AllNovelFull(private val deps: Dependencies) : SourceFactory(
         val url = "$baseUrl/ajax/chapter-option?novelId=$novelId"
         return client.get(requestBuilder(url)).asJsoup()
     }
-
-
-
-
 }

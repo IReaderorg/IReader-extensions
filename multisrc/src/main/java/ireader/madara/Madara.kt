@@ -1,19 +1,34 @@
-package ireader.Madara
+package ireader.madara
 
-import io.ktor.client.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
+import io.ktor.client.HttpClient
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import io.ktor.http.Parameters
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.HttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
+import org.ireader.core_api.source.model.Page
+import org.ireader.core_api.source.model.Text
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 
 abstract class Madara(
     private val deps: Dependencies,
@@ -26,13 +41,11 @@ abstract class Madara(
 
     override val name = sourceName
 
-
     override val id: Long
         get() = sourceId
     override val baseUrl = key
 
     override val lang = language
-
 
     override fun getFilters(): FilterList {
         return listOf(
@@ -49,9 +62,9 @@ abstract class Madara(
         )
     }
 
-
     val sorts = Filter.Sort(
-        "Sort By:", arrayOf(
+        "Sort By:",
+        arrayOf(
             "Latest",
             "A-Z",
             "Rating",
@@ -78,13 +91,12 @@ abstract class Madara(
         } else {
             getNovels(page, sort = sort)
         }
-
     }
 
     private suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
 
         return bookListParse(
-            client.get("$baseUrl/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult="){
+            client.get("$baseUrl/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult=") {
                 headersBuilder()
             }.asJsoup(),
             "div.c-tabs-item__content",
@@ -98,7 +110,6 @@ abstract class Madara(
         val thumbnailUrl = element.select("img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
 
     private fun bookListParse(
         document: Document,
@@ -127,9 +138,8 @@ abstract class Madara(
         headers(block)
     }
 
-
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
-        return client to HttpRequestBuilder(url).apply {
+        return client to HttpRequestBuilder().apply {
             url(url)
             headers {
                 append(
@@ -152,7 +162,7 @@ abstract class Madara(
             2 -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=raing"
             3 -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=trending"
             4 -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=views"
-            else  -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=latest"
+            else -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=latest"
         }
         val request = client.get(requestBuilder(req)).asJsoup()
 
@@ -184,7 +194,6 @@ abstract class Madara(
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         commands.findInstance<Command.Detail.Fetch>()?.let {
             return detailParse(Jsoup.parse(it.html)).copy(key = it.url)
@@ -192,7 +201,6 @@ abstract class Madara(
 
         return detailParse(client.get(detailRequest(manga)).asJsoup())
     }
-
 
     private fun detailParse(document: Document): MangaInfo {
         val title = document.select("div.post-title>h1").text()
@@ -214,7 +222,6 @@ abstract class Madara(
         val category = document.select("div.genres-content a").eachText()
         val rating = document.select("div.post-rating span.score").text()
         val status = document.select("div.post-status div.summary-content").text()
-
 
         return MangaInfo(
             title = title,
@@ -243,7 +250,6 @@ abstract class Madara(
         }
     }
 
-
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
@@ -254,14 +260,14 @@ abstract class Madara(
         val html = client.get(requestBuilder(manga.key)).asJsoup()
         val bookId = html.select(".rating-post-id").attr("value")
 
-
         val chapters = chaptersParse(
             client.submitForm(
-                url = "${baseUrl}/wp-admin/admin-ajax.php",
+                url = "$baseUrl/wp-admin/admin-ajax.php",
                 formParameters = Parameters.build {
                     append("action", "manga_get_chapters")
                     append("manga", bookId)
-                }) {
+                }
+            ) {
                 headersBuilder()
             }.asJsoup(),
         )
@@ -351,14 +357,12 @@ abstract class Madara(
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
-
     private fun pageContentParse(document: Document): List<String> {
         val par = document.select(".text-left p, .text-right p").eachText()
             .map { it.replace("Read latest Chapters at", "") }
         var head = document.select(".text-center").text()
         if (head.isBlank()) {
             head = document.select("#chapter-heading").text()
-
         }
 
         return listOf(head) + par
@@ -370,6 +374,4 @@ abstract class Madara(
             headersBuilder()
         }
     }
-
-
 }

@@ -1,28 +1,23 @@
 package ireader.lightnovelreader
 
-import android.util.Log
-import com.google.gson.Gson
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.forms.submitForm
+import io.ktor.http.Parameters
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.ireader.core_api.http.okhttp
-import org.ireader.core_api.source.*
-import org.ireader.core_api.source.model.*
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
+import org.ireader.core_api.source.Dependencies
+import ireader.sourcefactory.SourceFactory
+import org.ireader.core_api.source.findInstance
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.*
-
 
 @Extension
 abstract class LightNovelReader(deps: Dependencies) : SourceFactory(
@@ -108,16 +103,19 @@ abstract class LightNovelReader(deps: Dependencies) : SourceFactory(
 
     override val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-            })
+            json(
+                Json {
+                    ignoreUnknownKeys = true
+                }
+            )
         }
     }
 
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
         val query = filters.findInstance<Filter.Title>()?.value
         if (query != null) {
-            client.submitForm(url = "$baseUrl/detailed-search-lnr",
+            client.submitForm(
+                url = "$baseUrl/detailed-search-lnr",
                 formParameters = Parameters.build {
                     append("keyword", query)
                 }
@@ -136,6 +134,4 @@ abstract class LightNovelReader(deps: Dependencies) : SourceFactory(
         }
         return super.getMangaList(filters, page)
     }
-
-
 }

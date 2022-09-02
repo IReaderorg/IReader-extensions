@@ -1,21 +1,33 @@
 package ireader.ranobes
 
 import com.google.gson.Gson
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.*
-import io.ktor.client.plugins.cookies.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import kotlinx.coroutines.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.BrowserUserAgent
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.ireader.core_api.http.okhttp
-import org.ireader.core_api.log.Log
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
+import org.ireader.core_api.source.model.Page
+import org.ireader.core_api.source.model.Text
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -26,7 +38,6 @@ import java.util.concurrent.TimeUnit
 abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "Ranobes"
-
 
     override val id: Long
         get() = 13
@@ -45,7 +56,8 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                     "Popular"
                 )
@@ -61,7 +73,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
-
 
     override fun getListings(): List<Listing> {
         return listOf(
@@ -129,7 +140,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         ) { popularFromElement(it) }
     }
 
-
     fun fetchSearchEndpoint(page: Int, query: String): String? =
         "/index.php?do=search&subaction=search&search_start=0&full_search=0&result_from=1&story=$query"
 
@@ -153,7 +163,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         ) { searchFromElement(it) }
     }
 
-
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
@@ -167,13 +176,11 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         }
     }
 
-
     fun fetchLatestEndpoint(page: Int): String? =
         "/novels/page/$page/"
 
     fun fetchPopularEndpoint(page: Int): String? =
         "/cstart=$page&ajax=true"
-
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
@@ -185,7 +192,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
             append(HttpHeaders.Referrer, baseUrl)
         }
     }
-
 
     fun popularSelector() = ".rank-story"
 
@@ -207,7 +213,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     fun popularLastPageSelector() = ".ranking__empty"
 
     fun latestSelector(): String = ".short-cont"
-
 
     fun latestFromElement(element: Element): MangaInfo {
         val url = element.select("a").attr("href")
@@ -240,7 +245,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
     fun searchNextPageSelector(): String? = popularLastPageSelector()
 
-
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         var response = ""
 
@@ -272,9 +276,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
             ?.replace("/[\t\n]/g", "")
             ?.handleStatus()!!
 
-
-
-
         return MangaInfo(
             title = title ?: "",
             cover = cover,
@@ -292,7 +293,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
             "Completed" -> MangaInfo.COMPLETED
             else -> MangaInfo.ONGOING
         }
-
     }
 
     // chapters
@@ -303,7 +303,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         }
     }
 
-
     override fun chaptersSelector() = ".cat_line"
 
     override fun chapterFromElement(element: Element): ChapterInfo {
@@ -312,7 +311,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
         return ChapterInfo(name = name, key = link)
     }
-
 
     override suspend fun getChapterList(
         manga: MangaInfo,
@@ -338,7 +336,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
             return chaptersParse(chapters)
         }
-
 
         val chapters = mutableListOf<ChapterInfo>()
         var currentPage = 1
@@ -367,10 +364,11 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
                 val json2 = Gson().fromJson(response, ChapterDTO::class.java)
 
-
-                list.addAll(chaptersParse(
-                    json2
-                ))
+                list.addAll(
+                    chaptersParse(
+                        json2
+                    )
+                )
             }
         }
         return list.reversed()
@@ -418,13 +416,10 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         return emptyList()
     }
 
-
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
             headers { headers }
         }
     }
-
-
 }

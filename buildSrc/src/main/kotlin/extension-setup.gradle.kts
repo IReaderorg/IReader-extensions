@@ -126,9 +126,9 @@ dependencies {
             add("${extension.flavor}Implementation", project(Proj.deeplink))
         }
         if (extension.type != ExtensionType.Custom) {
-            implementation(project(":multisrc"))
         }
     }
+            implementation(project(":multisrc"))
 }
 
 ksp {

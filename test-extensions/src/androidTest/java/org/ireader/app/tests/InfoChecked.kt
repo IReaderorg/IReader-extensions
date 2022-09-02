@@ -2,7 +2,6 @@ package org.ireader.app.tests
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-
 import org.ireader.app.BOOK_NAME
 import org.ireader.app.BOOK_URL
 import org.ireader.app.extension
@@ -49,5 +48,4 @@ class InfoChecked {
     fun checkBookStatus() {
         assertThat(book.status != MangaInfo.UNKNOWN).isTrue()
     }
-
 }

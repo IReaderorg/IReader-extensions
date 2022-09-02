@@ -5,10 +5,10 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import org.ireader.core_api.http.AcceptAllCookiesStorage
-import org.ireader.core_api.http.impl.BrowseEngineImpl
-import org.ireader.core_api.http.impl.HttpClientsImpl
 import org.ireader.core_api.http.WebViewCookieJar
 import org.ireader.core_api.http.WebViewManger
+import org.ireader.core_api.http.impl.BrowseEngineImpl
+import org.ireader.core_api.http.impl.HttpClientsImpl
 import org.ireader.core_api.log.Log
 import org.ireader.core_api.prefs.AndroidPreferenceStore
 import org.ireader.core_api.source.Dependencies
@@ -26,22 +26,20 @@ class ExtensionTests {
 
     lateinit var source: Source
 
-
     @Before
     fun prepare() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val cookie = AcceptAllCookiesStorage()
         val cookieJar = WebViewCookieJar(cookie)
-        val httpClients = HttpClientsImpl(context, BrowseEngineImpl(WebViewManger(context), cookieJar),cookie,cookieJar)
+        val httpClients = HttpClientsImpl(context, BrowseEngineImpl(WebViewManger(context), cookieJar), cookie, cookieJar)
         val androidPreferenceStore = AndroidPreferenceStore(context, "test-preferences")
         val deps = Dependencies(httpClients, androidPreferenceStore)
-
     }
     @Test
     fun getBooks() {
         runBlocking {
             val httpSource = source as? HttpSource ?: return@runBlocking
-            val books = httpSource.getMangaList(httpSource.getListings().first(),1)
+            val books = httpSource.getMangaList(httpSource.getListings().first(), 1)
             Log.error { "TEST $books" }
             assertThat(books.mangas.isNotEmpty()).isTrue()
         }
@@ -58,12 +56,11 @@ class ExtensionTests {
     @Test
     fun getChapterInfo() {
         runBlocking {
-            val chapters = source.getChapterList(MangaInfo(key =BOOK_URL, title = BOOK_TITLE), emptyList())
+            val chapters = source.getChapterList(MangaInfo(key = BOOK_URL, title = BOOK_TITLE), emptyList())
             Log.error { "TEST $chapters" }
             assertThat(chapters.isNotEmpty()).isTrue()
         }
     }
-
 
     @Test
     fun getContent() {

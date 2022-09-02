@@ -1,15 +1,19 @@
 package ireader.readwncom
 
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.get
+import io.ktor.http.Parameters
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
@@ -67,7 +71,7 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
                 type = SourceFactory.Type.Search
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -81,13 +85,11 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
             statusSelector = "div.header-stats > spa",
         )
 
-
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = ".titles > h2",
             pageContentSelector = ".chapter-content p",
         )
-
 
     override suspend fun getChapterList(
         manga: MangaInfo,
@@ -96,14 +98,13 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
         if (commands.isEmpty()) {
             val lastChapterNo = client.get(manga.key).asJsoup().select(".header-stats span > strong").first()?.text()?.toIntOrNull() ?: 0
             val chapters = mutableListOf<ChapterInfo>()
-            val novelId = manga.key.replace(".html", "");
+            val novelId = manga.key.replace(".html", "")
             for (i in 1..lastChapterNo) {
                 val chapterName = "Chapter $i"
                 val url = "${novelId}_$i.html"
-                chapters.add(ChapterInfo(key = url,name = chapterName, number = i.toFloat()))
+                chapters.add(ChapterInfo(key = url, name = chapterName, number = i.toFloat()))
             }
             return chapters
-
         }
         return super.getChapterList(manga, commands)
     }
@@ -114,22 +115,23 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
         query: String
     ): Document {
         if (baseExploreFetcher.key == "Search") {
-            return client.submitForm(url = "https://www.readwn.com/e/search/index.php", formParameters = Parameters.build {
-                append("show","title")
-                append("tempid","1")
-                append("tbname","news")
-                append("keyboard",query)
-            }) {
+            return client.submitForm(
+                url = "https://www.readwn.com/e/search/index.php",
+                formParameters = Parameters.build {
+                    append("show", "title")
+                    append("tempid", "1")
+                    append("tbname", "news")
+                    append("keyboard", query)
+                }
+            ) {
                 headersBuilder {
-                    append("Content-Type","application/x-www-form-urlencoded")
-                    append("Referer","${baseUrl}/search.html")
-                    append("Origin",baseUrl)
-                    append("user-agent","Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36")
+                    append("Content-Type", "application/x-www-form-urlencoded")
+                    append("Referer", "$baseUrl/search.html")
+                    append("Origin", baseUrl)
+                    append("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36")
                 }
             }.asJsoup()
         }
         return super.getListRequest(baseExploreFetcher, page, query)
     }
-
-
 }

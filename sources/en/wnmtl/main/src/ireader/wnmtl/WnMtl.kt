@@ -1,25 +1,35 @@
 package ireader.wnmtl
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.serialization.kotlinx.json.json
+import ireader.sourcefactory.SourceFactory
 import ireader.wnmtl.chapter.ChapterDTO
 import ireader.wnmtl.content.ContentDTO
 import ireader.wnmtl.explore.ExploreDTO
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
+import org.ireader.core_api.source.model.Page
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
@@ -43,7 +53,7 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         Command.Content.Fetch(),
         Command.Chapter.Fetch(),
 
-        )
+    )
 
     override fun getUserAgent(): String {
         return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"
@@ -94,12 +104,13 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
             pageContentSelector = "#chapterContent",
         )
 
-
     override val client = HttpClient(OkHttp) {
         install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-            })
+            json(
+                Json {
+                    ignoreUnknownKeys = true
+                }
+            )
         }
     }
 
@@ -113,7 +124,6 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         ).responseBody.asJsoup()
     }
 
-
     private fun clientBuilder(): HeadersBuilder.() -> Unit = {
 //        append("host", "https://www.wnmtl.org")
 //        append("referer", "https://www.wnmtl.org/")
@@ -121,7 +131,6 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         append("site-domain", "www.wnmtl.org")
 //        append("accept", "application/json, text/plain, */*")
 //        append("user-agent", "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
-
     }
 
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
@@ -131,10 +140,9 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         }
     }
 
-
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         val books =
-            client.get("https://api.mystorywave.com/story-wave-backend/api/v1/content/books?pageNumber=${page}&pageSize=20") {
+            client.get("https://api.mystorywave.com/story-wave-backend/api/v1/content/books?pageNumber=$page&pageSize=20") {
                 headers(clientBuilder())
             }.body<ExploreDTO>()
 
@@ -164,11 +172,11 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         if (query != null) {
             val books: ExploreDTO = client.get(
                 "https://api.mystorywave.com/story-wave-backend/api/v1/content/books/search?keyWord=${
-                    query.replace(
-                        " ",
-                        "+"
-                    )
-                }&pageNumber=${page}&pageSize=50"
+                query.replace(
+                    " ",
+                    "+"
+                )
+                }&pageNumber=$page&pageSize=50"
             ) {
                 headers(clientBuilder())
             }.body()
@@ -176,10 +184,10 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
                 mangas = books.data.list.map { data ->
                     MangaInfo(
                         key = "https://www.wnmtl.org/book/${data.id}-${
-                            data.title.replace(
-                                " ",
-                                "-"
-                            )
+                        data.title.replace(
+                            " ",
+                            "-"
+                        )
                         }",
                         title = data.title,
                         author = data.authorPseudonym,
@@ -219,7 +227,6 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
         )
     }
 
-
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
@@ -230,7 +237,7 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
             var maxPage = 2
             val chapters = mutableListOf<ChapterInfo>()
             while (page < maxPage) {
-                client.get("https://api.mystorywave.com/story-wave-backend/api/v1/content/chapters/page?sortDirection=ASC&bookId=${bookId}&pageNumber=$page&pageSize=100") {
+                client.get("https://api.mystorywave.com/story-wave-backend/api/v1/content/chapters/page?sortDirection=ASC&bookId=$bookId&pageNumber=$page&pageSize=100") {
                     headers(clientBuilder())
                 }.body<ChapterDTO>().also {
                     maxPage = it.data.totalPages
@@ -238,10 +245,10 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
                 }.data.list.map {
                     ChapterInfo(
                         key = "https://www.wnmtl.org/chapter/${it.id}-${
-                            it.title.replace(
-                                " ",
-                                "-"
-                            )
+                        it.title.replace(
+                            " ",
+                            "-"
+                        )
                         }",
                         name = it.title,
                         dateUpload = it.updateTime,
@@ -256,18 +263,17 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
             return chapters
         }
         return super.getChapterList(manga, commands)
-
     }
 
     override suspend fun getContents(
         chapter: ChapterInfo,
         commands: List<Command<*>>
-    ): List<String> {
+    ): List<Page> {
         val chapterId = chapter.key.substringAfter("/chapter/").substringBefore("-")
         val data: ContentDTO = client.get(
             "https://api.mystorywave.com/story-wave-backend/api/v1/content/chapters/$chapterId",
-            block = { headers(clientBuilder()) }).body()
-        return listOf(data.data.title) + data.data.content.split("\\n\\n")
+            block = { headers(clientBuilder()) }
+        ).body()
+        return listOf(data.data.title.toPage()) + data.data.content.split("\\n\\n").map { it.toPage() }
     }
-
 }

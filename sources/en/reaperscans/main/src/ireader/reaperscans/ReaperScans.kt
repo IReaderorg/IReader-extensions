@@ -1,20 +1,27 @@
 package ireader.reaperscans
 
-import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
-import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import io.ktor.http.Parameters
 import org.ireader.core_api.source.Dependencies
 import org.ireader.core_api.source.ParsedHttpSource
 import org.ireader.core_api.source.asJsoup
 import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.*
 
 @Extension
 abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -30,7 +37,8 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         return listOf(
             Filter.Title(),
             Filter.Sort(
-                "Sort By:", arrayOf(
+                "Sort By:",
+                arrayOf(
                     "Latest",
                     "Popular"
                 )
@@ -43,7 +51,6 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
     override fun getListings(): List<Listing> {
         return listOf(LatestListing())
     }
-
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
@@ -77,8 +84,8 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
                 append("vars[post_type]", "wp-manga")
                 append("vars[sidebar]", "full")
                 append("vars[template]", "archive")
-
-            })
+            }
+        )
         val books = bookListParse(
             response.asJsoup(), latestSelector(),
             null
@@ -91,10 +98,8 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         return bookListParse(response.asJsoup(), searchSelector(), null) { searchFromElement(it) }
     }
 
-
     fun fetchPopularEndpoint(page: Int): String? =
         "/all-series/novels/"
-
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
@@ -107,7 +112,6 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         }
     }
 
-
     fun latestSelector() = ".page-item-detail"
 
     fun latestFromElement(element: Element): MangaInfo {
@@ -117,7 +121,6 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-
     fun searchSelector() = "div.c-tabs-item__content"
 
     fun searchFromElement(element: Element): MangaInfo {
@@ -126,7 +129,6 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         val thumbnailUrl = element.select("div.tab-thumb a img").attr("data-src")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
-
 
     override fun detailParse(document: Document): MangaInfo {
         val title = document.select("div.post-title h1").text()
@@ -138,7 +140,6 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         val category = document.select("div.genres-content a").eachText()
         val rating = document.select("div.post-rating span.score").text()
         val status = document.select("div.post-status div.summary-content").last()?.text()
-
 
         return MangaInfo(
             title = title,
@@ -175,9 +176,7 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         val name = element.select(".chapter-manhwa-title").text()
 
         return ChapterInfo(name = name, key = link)
-
     }
-
 
     override suspend fun getChapterList(
         manga: MangaInfo,
@@ -188,16 +187,13 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
         return chaptersParse(response.asJsoup()).reversed()
     }
 
-
     override fun pageContentParse(document: Document): List<String> {
         return document.select(".reading-content p").eachText()
     }
 
-
     override suspend fun getContents(chapter: ChapterInfo): List<String> {
         return pageContentParse(client.get(requestBuilder(chapter.key)).asJsoup())
     }
-
 
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
@@ -205,6 +201,4 @@ abstract class ReaperScans(private val deps: Dependencies) : ParsedHttpSource(de
             headers { headers }
         }
     }
-
-
 }

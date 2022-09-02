@@ -1,12 +1,17 @@
 package ireader.kolnovel
 
-import io.ktor.client.request.*
-import io.ktor.http.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.headers
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import ireader.sourcefactory.SourceFactory
 import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.SourceFactory
-import org.ireader.core_api.source.model.*
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
 import tachiyomix.annotations.Extension
-
 
 @Extension
 abstract class KolNovel(deps: Dependencies) : SourceFactory(
@@ -24,7 +29,8 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
         Filter.Sort(
-            "Sort By:", arrayOf(
+            "Sort By:",
+            arrayOf(
                 "Latest",
                 "Popular",
                 "New",
@@ -90,7 +96,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 nextPageSelector = "a.rs"
             ),
 
-            )
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -121,14 +127,13 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
         }
     }
 
-
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
             selector = "li[data-id]",
             nameSelector = "a div.epl-num ,a div.epl-title",
             linkSelector = "a",
             linkAtt = "href",
-            //reverseChapterList = true,
+            // reverseChapterList = true,
         )
 
     override val contentFetcher: Content
@@ -136,7 +141,4 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
             pageTitleSelector = ".epheader",
             pageContentSelector = "div.entry-content p:not([style~=opacity]), div.entry-content ol li",
         )
-
-
-
 }

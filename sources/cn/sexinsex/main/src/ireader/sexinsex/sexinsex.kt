@@ -1,9 +1,23 @@
 package ireader.sexinsex
 
-import io.ktor.client.request.*
-import io.ktor.http.*
-import org.ireader.core_api.source.*
-import org.ireader.core_api.source.model.*
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.get
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.ParsedHttpSource
+import ireader.sourcefactory.SourceFactory
+import org.ireader.core_api.source.asJsoup
+import org.ireader.core_api.source.findInstance
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.Listing
+import org.ireader.core_api.source.model.MangaInfo
+import org.ireader.core_api.source.model.MangasPageInfo
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -13,7 +27,6 @@ import tachiyomix.annotations.Extension
 abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "sexinsex"
-
 
     override val id: Long
         get() = 39
@@ -51,12 +64,12 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
         }
     }
 
-
     override fun getFilters(): FilterList {
         return listOf(
 
             Filter.Sort(
-                "分类", arrayOf(
+                "分类",
+                arrayOf(
                     "最新",
                     "玄学幻想",
                     "魔法奇幻",
@@ -99,7 +112,7 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
         return listOf(
             SourceFactory.LatestListing(),
 
-            )
+        )
     }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
@@ -110,7 +123,6 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
         val sorts = filters.findInstance<Filter.Sort>()?.value!!.index
 
         return getLatest(page, sorts)
-
     }
 
     suspend fun getLatest(page: Int, genreIndex: Int): MangasPageInfo {
@@ -127,13 +139,11 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
         throw Error("not supported")
     }
 
-
     fun fetchLatestEndpoint(page: Int): String? =
         "luntan/forum-383-$page.html"
 
     fun fetchPopularEndpoint(page: Int): String? =
         "luntan/forumdisplay.php?fid=383&filter=digest&page=$page"
-
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
@@ -145,7 +155,6 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
             append(HttpHeaders.Referrer, baseUrl)
         }
     }
-
 
     fun popularSelector() =
         ".Item:matches((玄学幻想|魔法奇幻|修真仙侠|侠骨柔情|科幻未来|同人衍生|穿越架空|催眠控制|历史古香|都市情缘|青葱校园|乡土田园|唯美纯爱|绿意盎然|凌辱虐情|禁忌之恋|星梦奇缘|玉足恋物|秀色冰恋|强奸迷奸|其它|军事战争|另类小众|女警英雌))"
@@ -178,14 +187,11 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
 
     fun latestSelector(): String = popularSelector()
 
-
     fun latestFromElement(element: Element): MangaInfo = popularFromElement(element)
 
     fun latestNextPageSelector() = popularNextPageSelector()
 
-
     fun searchNextPageSelector(): String? = popularNextPageSelector()
-
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
@@ -203,8 +209,6 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
 
         val status = MangaInfo.COMPLETED
 
-
-
         return MangaInfo(
             title = title,
             cover = cover,
@@ -215,7 +219,6 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
             status = status
         )
     }
-
 
     // chapters
     override fun chaptersRequest(book: MangaInfo): HttpRequestBuilder {
@@ -255,7 +258,6 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
         return maxPage.toInt()
     }
 
-
     override fun pageContentParse(document: Document): List<String> {
         return document.select(".t_msgfont.noSelect").html().split("<br>", "<p>")
             .map { Jsoup.parse(it).text() }
@@ -265,13 +267,10 @@ abstract class sexinsex(deps: Dependencies) : ParsedHttpSource(deps) {
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
-
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
         return HttpRequestBuilder().apply {
             url(chapter.key)
             headers { headers }
         }
     }
-
-
 }

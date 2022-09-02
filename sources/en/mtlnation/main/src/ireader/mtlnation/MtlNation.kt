@@ -1,9 +1,17 @@
 package ireader.mtlnation
 
-import io.ktor.client.*
-import io.ktor.client.request.*
-import org.ireader.core_api.source.*
-import org.ireader.core_api.source.model.*
+import io.ktor.client.HttpClient
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.url
+import org.ireader.core_api.source.Dependencies
+import ireader.sourcefactory.SourceFactory
+import org.ireader.core_api.source.asJsoup
+import org.ireader.core_api.source.model.ChapterInfo
+import org.ireader.core_api.source.model.Command
+import org.ireader.core_api.source.model.CommandList
+import org.ireader.core_api.source.model.Filter
+import org.ireader.core_api.source.model.FilterList
+import org.ireader.core_api.source.model.MangaInfo
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
@@ -24,7 +32,8 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
         Filter.Sort(
-            "Sort By:", arrayOf(
+            "Sort By:",
+            arrayOf(
                 "Latest",
             )
         ),
@@ -64,8 +73,7 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
                 type = Type.Search
             ),
 
-            )
-
+        )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -81,10 +89,8 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
                     "Completed" -> MangaInfo.COMPLETED
                     else -> MangaInfo.ONGOING
                 }
-
             }
         )
-
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
@@ -105,7 +111,6 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
             }
         )
 
-
     override suspend fun getMangaDetailsRequest(
         manga: MangaInfo,
         commands: List<Command<*>>
@@ -115,7 +120,6 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
             "section.content-novel-mobile h1",
             timeout = 50000
         ).responseBody.asJsoup()
-
     }
 
     override suspend fun getChapterListRequest(
@@ -133,28 +137,29 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
         page: Int,
         query: String
     ): Document {
-        when(baseExploreFetcher.key) {
+        when (baseExploreFetcher.key) {
             "Search" -> {
-                return  deps.httpClients.browser.fetch(
+                return deps.httpClients.browser.fetch(
                     baseUrl + baseExploreFetcher.endpoint?.replace(
                         "{page}",
                         page.toString()
-                    )?.replace("{query}", query.replace(" ", "+")), "div:nth-child(1) > div.row > div.col-9 > div > a",
+                    )?.replace("{query}", query.replace(" ", "+")),
+                    "div:nth-child(1) > div.row > div.col-9 > div > a",
                     timeout = 50000
                 ).responseBody.asJsoup()
             }
-            else  -> {
-                return  deps.httpClients.browser.fetch(
+            else -> {
+                return deps.httpClients.browser.fetch(
                     baseUrl + baseExploreFetcher.endpoint?.replace(
                         "{page}",
                         page.toString()
-                    )?.replace("{query}", query.replace(" ", "+")), "div:nth-child(1) > div.content > h3 > a",
+                    )?.replace("{query}", query.replace(" ", "+")),
+                    "div:nth-child(1) > div.content > h3 > a",
                     timeout = 50000
                 ).responseBody.asJsoup()
             }
         }
     }
-
 
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
         return deps.httpClients.cloudflareClient to HttpRequestBuilder().apply {
@@ -173,6 +178,4 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
             timeout = 50000
         ).responseBody.asJsoup()
     }
-
-
 }

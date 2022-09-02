@@ -1,6 +1,23 @@
 package ireader
 
-const val _BOOK_URL = "https://ar-mtl.club/novel/astral-pet-store/"
-const val _BOOK_NAME = "Astral Pet Store"
-const val _CHAPTER_NAME = "Astral Pet Store novel - Chapter 1193"
-const val _CHAPTER_URL = "https://ar-mtl.club/novel/astral-pet-store/chapter-1193/"
+import ireader.armtl.ArMtl
+import ireader.utility.TestConstants
+import org.ireader.core_api.source.Dependencies
+import org.ireader.core_api.source.HttpSource
+
+object Constants : TestConstants {
+    override val bookUrl: String
+        get() = "https://ar-mtl.club/novel/astral-pet-store/"
+    override val bookName: String
+        get() = "Astral Pet Store"
+    override val chapterUrl: String
+        get() = "Astral Pet Store novel - Chapter 1193"
+    override val chapterName: String
+        get() = "https://ar-mtl.club/novel/astral-pet-store/chapter-1193/"
+
+    override fun getExtension(deps: Dependencies): HttpSource {
+        return object : ArMtl(deps) {
+
+        }
+    }
+}
