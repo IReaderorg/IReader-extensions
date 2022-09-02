@@ -22,7 +22,7 @@ abstract class WebNovelSite(deps: Dependencies) : SourceFactory(
     override val baseUrl: String
         get() = "https://webnovel.site"
     override val id: Long
-        get() = 20
+        get() = 44
     override val name: String
         get() = "Web Novel Site"
 

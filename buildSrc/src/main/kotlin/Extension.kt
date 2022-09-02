@@ -1,4 +1,5 @@
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.extra
 import java.security.MessageDigest
 
@@ -21,7 +22,8 @@ data class Extension(
   val sourceDir: String = "main",
   val sourceId: Long = generateSourceId(name, lang),
   val flavor: String = getFlavorName(sourceDir, lang),
-  val applicationId: String = generateApplicationId(name, flavor)
+  val applicationId: String = generateApplicationId(name, flavor),
+  val type: ExtensionType = ExtensionType.Custom
 )
 
 private val packageRegex = Regex("[^\\w\\d.]")
@@ -39,6 +41,7 @@ fun Project.register(extensions: List<Extension>) {
   apply {
     plugin("extension-setup")
   }
+
 }
 
 fun Project.register(vararg extensions: Extension) {
@@ -58,4 +61,9 @@ private fun generateSourceId(name: String, lang: String, versionId: Int = 1): Lo
 
 private fun generateApplicationId(name: String, flavor: String): String {
   return "ireader.$name.$flavor".toLowerCase().replace(packageRegex, ".")
+}
+
+enum class ExtensionType {
+  Custom,
+  Madara
 }

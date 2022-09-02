@@ -89,3 +89,4 @@ inline fun File.eachDir(block: (File) -> Unit) {
 
 
 include(":test-extensions")
+include(":multisrc")

@@ -12,6 +12,7 @@ android {
     defaultConfig {
         minSdk = Config.minSdk
         targetSdk = Config.targetSdk
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
         tasks.withType<KotlinJvmCompile> {
@@ -25,11 +26,13 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
 }
 
 dependencies {
     //change this name to your extension name
-    implementation(project(":extensions:individual:ar:novel4up"))
+    implementation(project(":extensions:individual:ar:armtl"))
+    implementation(project(":multisrc"))
 
     val kotlinLibs = project.extensions.getByType<VersionCatalogsExtension>()
         .named("kotlinLibs")

@@ -1,4 +1,4 @@
-package ireader.wnmtl
+package ireader
 
 
 const val _BOOK_URL = "https://novel4up.com/novel/soul-land-5/"

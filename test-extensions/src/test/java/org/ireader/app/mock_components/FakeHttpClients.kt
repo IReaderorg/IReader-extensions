@@ -9,7 +9,7 @@ import org.ireader.core_api.http.main.HttpClients
 
 class FakeHttpClients : HttpClients {
     override val browser: BrowseEngine
-        get() = throw Exception()
+        get() = throw Exception("This test need to be run on real app")
     override val default: HttpClient
         get()  = HttpClient(OkHttp) {
             BrowserUserAgent()
