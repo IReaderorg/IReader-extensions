@@ -178,7 +178,7 @@ open class RepoTask : DefaultTask() {
             include("**/assets/*.png")
             into(destDir)
             eachFile {
-                path = "${File(apkDir, icons[index].apk).nameWithoutExtension.substringBefore("-v")}.png"
+                path = "${File(apkDir, icons[index].apk).nameWithoutExtension}.png"
                 index++
             }
             includeEmptyDirs = false
