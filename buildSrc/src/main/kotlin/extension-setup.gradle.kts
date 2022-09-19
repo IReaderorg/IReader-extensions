@@ -154,11 +154,6 @@ fun BaseVariantImpl.currentExtension(): Extension {
 
 configurations.all {
     resolutionStrategy {
-
-        cacheChangingModulesFor(
-            0,
-            "seconds"
-        ) //comment this line if you found needing to connect internet annoying
         force("org.jsoup:jsoup:1.14.3")
     }
 }

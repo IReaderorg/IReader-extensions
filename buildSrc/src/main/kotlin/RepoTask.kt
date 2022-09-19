@@ -170,21 +170,7 @@ open class RepoTask : DefaultTask() {
     }
 
     private fun extractIcons(apkDir: File, destDir: File, badgings: List<RepoTask.Badging>) {
-        val icons = badgings.filter { it.iconPath == null }
-        var index = 0
         destDir.mkdirs()
-        project.copy {
-            from(project.subprojects.map { it.projectDir  })
-            include("**/assets/*.png")
-            into(destDir)
-            eachFile {
-                path = "${File(apkDir, icons[index].apk).nameWithoutExtension}.png"
-                index++
-            }
-            includeEmptyDirs = false
-            duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-        }
         badgings.forEach { badging ->
             val apkFile = File(apkDir, badging.apk)
             if (badging.iconPath != null) {
@@ -194,6 +180,19 @@ open class RepoTask : DefaultTask() {
                     zip.getInputStream(icon).use { input ->
                         dest.outputStream().use { input.copyTo(it) }
                     }
+                }
+            } else {
+                val packageName = badging.pkg.substringAfter(".").substringBefore(".")
+                project.copy {
+                    from("${project.rootDir}/sources/${badging.lang}/${packageName}/main/")
+                    include("**/assets/*.png")
+                    into(destDir)
+                    eachFile {
+                        path = "${apkFile.nameWithoutExtension}.png"
+                    }
+                    includeEmptyDirs = false
+                    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
                 }
             }
         }
