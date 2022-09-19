@@ -3,7 +3,7 @@ package ireader.skynovel
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.http.Parameters
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import ireader.core.source.Dependencies
 import ireader.core.source.asJsoup
 import ireader.core.source.model.ChapterInfo

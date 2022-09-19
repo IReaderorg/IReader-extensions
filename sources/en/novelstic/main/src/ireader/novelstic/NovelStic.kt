@@ -1,7 +1,7 @@
 package ireader.novelstic
 
 import ireader.core.source.Dependencies
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter

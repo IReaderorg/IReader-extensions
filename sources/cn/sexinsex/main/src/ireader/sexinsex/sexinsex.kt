@@ -8,7 +8,7 @@ import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
 import ireader.core.source.findInstance
 import ireader.core.source.model.ChapterInfo

@@ -1,4 +1,4 @@
-package ireader.sourcefactory
+package ireader.localsourcefactory
 
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
@@ -37,17 +37,17 @@ abstract class SourceFactory(
     /**
      * devs need to fill this if they wanted parse detail functionality
      */
-    open val detailFetcher: SourceFactory.Detail = SourceFactory.Detail()
+    open val detailFetcher: Detail = Detail()
 
     /**
      * devs need to fill this if they wanted parse chapters functionality
      */
-    open val chapterFetcher: SourceFactory.Chapters = SourceFactory.Chapters()
+    open val chapterFetcher: Chapters = Chapters()
 
     /**
      * devs need to fill this if they wanted parse content functionality
      */
-    open val contentFetcher: SourceFactory.Content = SourceFactory.Content()
+    open val contentFetcher: Content = Content()
 
     /**
      * devs need to fill this if they wanted parse explore functionality

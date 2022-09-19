@@ -8,7 +8,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.serialization.kotlinx.json.json
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import ireader.core.source.Dependencies
 import ireader.core.source.asJsoup
 import ireader.core.source.findInstance

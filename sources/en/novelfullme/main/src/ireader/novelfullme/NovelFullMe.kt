@@ -2,7 +2,7 @@ package ireader.novelfullme
 
 import io.ktor.client.request.get
 import ireader.core.source.Dependencies
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
 import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList

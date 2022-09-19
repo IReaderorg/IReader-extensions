@@ -11,4 +11,5 @@ object Proj {
     const val compiler = ":compiler"
     const val deeplink = ":deeplink"
     const val defaultRes = ":defaultRes"
+    const val multisrc = ":multisrc"
 }

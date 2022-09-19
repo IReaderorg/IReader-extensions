@@ -15,7 +15,7 @@ import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import kotlinx.serialization.json.Json
 import tachiyomix.annotations.Extension
 

@@ -10,7 +10,7 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.serialization.kotlinx.json.json
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import ireader.wnmtl.chapter.ChapterDTO
 import ireader.wnmtl.content.ContentDTO
 import ireader.wnmtl.explore.ExploreDTO

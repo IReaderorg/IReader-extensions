@@ -22,7 +22,7 @@ import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
 import java.text.SimpleDateFormat
 import java.util.Calendar

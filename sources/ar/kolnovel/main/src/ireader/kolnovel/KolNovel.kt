@@ -10,7 +10,7 @@ import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
 
 @Extension

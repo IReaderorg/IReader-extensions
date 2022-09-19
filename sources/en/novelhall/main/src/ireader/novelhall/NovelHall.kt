@@ -17,7 +17,7 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element

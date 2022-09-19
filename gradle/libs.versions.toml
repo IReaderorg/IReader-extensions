@@ -1,5 +1,5 @@
 [versions]
-ireader = "1.2.1"
+ireader = "1.2.2"
 ktor = "2.0.0"
 ktlint = "0.45.1"
 

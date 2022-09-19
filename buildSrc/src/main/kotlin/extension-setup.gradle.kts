@@ -101,7 +101,7 @@ android {
 
 
 dependencies {
-    // implementation(project(Proj.defaultRes))
+   //  implementation(project(Proj.defaultRes))
 
     // Version Catalog not available here, and that is why we manually import them here
     val kotlinLibs = project.extensions.getByType<VersionCatalogsExtension>()
@@ -131,9 +131,10 @@ dependencies {
             add("${extension.flavor}Implementation", project(Proj.deeplink))
         }
         if (extension.type == ExtensionType.MultiSrc) {
-            implementation(project(":multisrc"))
+            add("${extension.flavor}Implementation", project(Proj.multisrc))
         }
     }
+
 }
 
 ksp {

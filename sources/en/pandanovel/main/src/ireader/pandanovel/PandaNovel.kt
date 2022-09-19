@@ -9,7 +9,7 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.url
 import io.ktor.serialization.kotlinx.json.json
 import ireader.pandanovel.chapter.ChapterDTO
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json

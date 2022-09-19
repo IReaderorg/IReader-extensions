@@ -4,7 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.url
 import ireader.core.source.Dependencies
-import ireader.sourcefactory.SourceFactory
+import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
