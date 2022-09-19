@@ -22,7 +22,6 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import java.io.File
-import java.lang.Exception
 
 /*
     Copyright (C) 2018 The Tachiyomi Open Source Project
@@ -204,9 +203,9 @@ class ExtensionProcessor(
     )
 
     private companion object {
-        const val SOURCE_FQ_CLASS = "org.ireader.core_api.source.Source"
-        const val DEEPLINKSOURCE_FQ_CLASS = "org.ireader.core_api.source.DeepLinkSource"
-        const val DEPENDENCIES_FQ_CLASS = "org.ireader.core_api.source.Dependencies"
+        const val SOURCE_FQ_CLASS = "ireader.core.source.Source"
+        const val DEEPLINKSOURCE_FQ_CLASS = "ireader.core.source.DeepLinkSource"
+        const val DEPENDENCIES_FQ_CLASS = "ireader.core.source.Dependencies"
         const val EXTENSION_FQ_ANNOTATION = "tachiyomix.annotations.Extension"
         const val EXTENSION_PACKAGE = "tachiyomix.extension"
         const val EXTENSION_CLASS = "Extension"

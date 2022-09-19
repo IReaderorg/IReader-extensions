@@ -7,16 +7,16 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.forms.submitForm
 import io.ktor.http.Parameters
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
-import org.ireader.core_api.source.Dependencies
+import ireader.core.source.Dependencies
+import ireader.core.source.findInstance
+import ireader.core.source.model.Command
+import ireader.core.source.model.CommandList
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
+import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.MangasPageInfo
 import ireader.sourcefactory.SourceFactory
-import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.Command
-import org.ireader.core_api.source.model.CommandList
-import org.ireader.core_api.source.model.Filter
-import org.ireader.core_api.source.model.FilterList
-import org.ireader.core_api.source.model.MangaInfo
-import org.ireader.core_api.source.model.MangasPageInfo
+import kotlinx.serialization.json.Json
 import tachiyomix.annotations.Extension
 
 @Extension

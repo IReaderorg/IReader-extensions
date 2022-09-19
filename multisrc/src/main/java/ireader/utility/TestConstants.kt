@@ -1,7 +1,7 @@
 package ireader.utility
 
-import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.HttpSource
+import ireader.core.source.Dependencies
+import ireader.core.source.HttpSource
 
 interface TestConstants {
     val bookUrl:String

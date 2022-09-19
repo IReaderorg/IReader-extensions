@@ -1,15 +1,15 @@
 package ireader.daonovel
 
 import io.ktor.client.request.post
-import org.ireader.core_api.source.Dependencies
+import ireader.core.source.Dependencies
+import ireader.core.source.asJsoup
+import ireader.core.source.model.ChapterInfo
+import ireader.core.source.model.Command
+import ireader.core.source.model.CommandList
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
+import ireader.core.source.model.MangaInfo
 import ireader.sourcefactory.SourceFactory
-import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.model.ChapterInfo
-import org.ireader.core_api.source.model.Command
-import org.ireader.core_api.source.model.CommandList
-import org.ireader.core_api.source.model.Filter
-import org.ireader.core_api.source.model.FilterList
-import org.ireader.core_api.source.model.MangaInfo
 import tachiyomix.annotations.Extension
 
 @Extension

@@ -9,17 +9,17 @@ import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.ParsedHttpSource
-import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.ChapterInfo
-import org.ireader.core_api.source.model.Command
-import org.ireader.core_api.source.model.Filter
-import org.ireader.core_api.source.model.FilterList
-import org.ireader.core_api.source.model.Listing
-import org.ireader.core_api.source.model.MangaInfo
-import org.ireader.core_api.source.model.MangasPageInfo
+import ireader.core.source.Dependencies
+import ireader.core.source.ParsedHttpSource
+import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
+import ireader.core.source.model.ChapterInfo
+import ireader.core.source.model.Command
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
+import ireader.core.source.model.Listing
+import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.MangasPageInfo
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
@@ -162,7 +162,7 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         )
     }
 
-    private fun parseStatus(string: String): Int {
+    private fun parseStatus(string: String): Long {
         return when {
             "OnGoing" in string -> MangaInfo.ONGOING
             "Completed" in string -> MangaInfo.COMPLETED

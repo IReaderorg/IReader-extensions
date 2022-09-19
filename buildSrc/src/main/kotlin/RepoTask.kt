@@ -1,3 +1,4 @@
+
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.sdklib.BuildToolInfo
@@ -97,29 +98,35 @@ open class RepoTask : DefaultTask() {
         val (pkgName, vcode, vname) = PACKAGE.find(lines.first())!!.destructured
 
         val resourceIcon = appResources
-            .first { it.endsWith("type=PNG") && it.contains("xxxhdpi") }
-            .let { it ->
+            .firstOrNull { it.endsWith("type=PNG") && it.contains("xxxhdpi") }
+            ?.let { it ->
                 RESOURCE_ICON.find(it)?.groupValues.let {
                     it?.getOrNull(1)
                 }
             }
 
-        val iconPath = lines.last { it.startsWith("application-icon-") }
-            .let { it -> APPLICATION_ICON.find(it)!!.groupValues.let { it[1] } }
+        val iconPath = lines.lastOrNull { it.startsWith("application-icon-") }
+            ?.let { it -> APPLICATION_ICON.find(it)?.groupValues.let { it?.get(1) } }
 
         val metadata = lines
             .filter { it.startsWith("meta-data") }
-            .mapNotNull { METADATA.find(it)?.groupValues?.let { Metadata(it[1], it[2]) } }
+            .mapNotNull { line ->
+                METADATA.find(line)?.groupValues?.let { value ->
+                    Metadata(
+                        value[1],
+                        value[2]
+                    )
+                }
+            }
 
         val id = metadata.first { it.name == "source.id" }.value.drop(1).toLong()
         val sourceName = metadata.first { it.name == "source.name" }.value
         val lang = metadata.first { it.name == "source.lang" }.value
         val description = metadata.find { it.name == "source.description" }?.value.orEmpty()
         val nsfw = metadata.first { it.name == "source.nsfw" }.value == "1"
-
         return Badging(
             pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
-            nsfw, resourceIcon ?: iconPath
+            nsfw, iconPath = resourceIcon ?: iconPath
         )
     }
 
@@ -163,16 +170,30 @@ open class RepoTask : DefaultTask() {
     }
 
     private fun extractIcons(apkDir: File, destDir: File, badgings: List<RepoTask.Badging>) {
+        val icons = badgings.filter { it.iconPath == null }
+        var index = 0
         destDir.mkdirs()
+        project.copy {
+            from(project.subprojects.map { it.projectDir  })
+            include("**/assets/*.png")
+            into(destDir)
+            eachFile {
+                path = "${File(apkDir, icons[index].apk).nameWithoutExtension.substringBefore("-v")}.png"
+                index++
+            }
+            includeEmptyDirs = false
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
+        }
         badgings.forEach { badging ->
-
             val apkFile = File(apkDir, badging.apk)
-            ZipFile(apkFile).use { zip ->
-                val icon = zip.getEntry(badging.iconPath)
-                val dest = File(destDir, "${apkFile.nameWithoutExtension}.png")
-                zip.getInputStream(icon).use { input ->
-                    dest.outputStream().use { input.copyTo(it) }
+            if (badging.iconPath != null) {
+                ZipFile(apkFile).use { zip ->
+                    val icon = zip.getEntry(badging.iconPath)
+                    val dest = File(destDir, "${apkFile.nameWithoutExtension}.png")
+                    zip.getInputStream(icon).use { input ->
+                        dest.outputStream().use { input.copyTo(it) }
+                    }
                 }
             }
         }
@@ -200,7 +221,8 @@ open class RepoTask : DefaultTask() {
     }
 
     private companion object {
-        val PACKAGE = Regex("^package: name='([^']+)' versionCode='([0-9]*)' versionName='([^']*)'.*$")
+        val PACKAGE =
+            Regex("^package: name='([^']+)' versionCode='([0-9]*)' versionName='([^']*)'.*$")
         val METADATA = Regex("^meta-data: name='([^']*)' value='([^']*)")
         val APPLICATION_ICON = Regex("^application-icon-\\d+:'([^']*)'$")
         val RESOURCE_ICON = Regex("\\(xxxhdpi\\) \\(file\\) (res/[A-Z]*.png) type=PNG")
@@ -223,6 +245,7 @@ open class RepoTask : DefaultTask() {
         val description: String,
         val nsfw: Boolean,
         @Transient
-        val iconPath: String = "",
+        val iconPath: String? = null,
+
     )
 }

@@ -4,7 +4,7 @@
   <uses-feature android:name="ireader" />
 
   <application
-    android:icon="@mipmap/ic_launcher"
+
     android:label="${appName}">
 
     <meta-data
@@ -26,6 +26,10 @@
     <meta-data
       android:name="source.nsfw"
       android:value="${sourceNsfw}" />
+
+    <meta-data
+        android:name="source.icon"
+        android:value="${sourceIcon}" />
 
   </application>
 

@@ -21,16 +21,19 @@ android {
     }
     sourceSets {
         named("main") {
-            manifest.srcFile("$rootDir/extensions/AndroidManifest.xml")
+            manifest.srcFile("$rootDir/sources/AndroidManifest.xml")
             java.srcDirs("main/src")
-            res.srcDirs("main/res")
+           // res.srcDirs("main/res")
+
             resources.setSrcDirs(emptyList<Any>())
         }
         extensionList.forEach { extension ->
             val sourceDir = extension.sourceDir
             create(extension.flavor) {
                 java.srcDirs("${sourceDir}/src")
-                res.srcDirs("${sourceDir}/res")
+                if (!extension.icon.isAssetType()) {
+                    res.srcDirs("${sourceDir}/res")
+                }
             }
         }
     }
@@ -48,7 +51,9 @@ android {
                         "sourceName" to extension.name,
                         "sourceLang" to extension.lang,
                         "sourceDescription" to extension.description,
-                        "sourceNsfw" to if (extension.nsfw) 1 else 0
+                        "sourceNsfw" to if (extension.nsfw) 1 else 0,
+                        "sourceIcon" to if(extension.icon == DEFAULT_ICON)
+                            createExtensionIconLink(extension) else extension.icon
                     )
                 )
             }
@@ -96,7 +101,7 @@ android {
 
 
 dependencies {
-    implementation(project(Proj.defaultRes))
+    // implementation(project(Proj.defaultRes))
 
     // Version Catalog not available here, and that is why we manually import them here
     val kotlinLibs = project.extensions.getByType<VersionCatalogsExtension>()
@@ -125,10 +130,10 @@ dependencies {
         if (extension.deepLinks.isNotEmpty()) {
             add("${extension.flavor}Implementation", project(Proj.deeplink))
         }
-        if (extension.type != ExtensionType.Custom) {
+        if (extension.type == ExtensionType.MultiSrc) {
+            implementation(project(":multisrc"))
         }
     }
-            implementation(project(":multisrc"))
 }
 
 ksp {
@@ -150,10 +155,10 @@ fun BaseVariantImpl.currentExtension(): Extension {
 configurations.all {
     resolutionStrategy {
 
-//        cacheChangingModulesFor(
-//            0,
-//            "seconds"
-//        ) //comment this line if you found needing to connect internet annoying
+        cacheChangingModulesFor(
+            0,
+            "seconds"
+        ) //comment this line if you found needing to connect internet annoying
         force("org.jsoup:jsoup:1.14.3")
     }
 }

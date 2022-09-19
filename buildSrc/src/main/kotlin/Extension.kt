@@ -1,4 +1,6 @@
+
 import org.gradle.api.Project
+import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.kotlin.dsl.extra
 import java.security.MessageDigest
 
@@ -22,7 +24,9 @@ data class Extension(
     val sourceId: Long = generateSourceId(name, lang),
     val flavor: String = getFlavorName(sourceDir, lang),
     val applicationId: String = generateApplicationId(name, flavor),
-    val type: ExtensionType = ExtensionType.Custom
+    val type: ExtensionType = ExtensionType.Standard,
+    val icon :String = "",
+    val dependencies: (DependencyHandler) -> Unit = {}
 )
 
 private val packageRegex = Regex("[^\\w\\d.]")
@@ -62,6 +66,6 @@ private fun generateApplicationId(name: String, flavor: String): String {
 }
 
 enum class ExtensionType {
-    Custom,
-    Madara
+    Standard,
+    MultiSrc
 }

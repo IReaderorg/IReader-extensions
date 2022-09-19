@@ -6,5 +6,9 @@ listOf("en").map { lang ->
     lang = lang,
     description = "",
     nsfw = false,
+    icon = DEFAULT_ICON,
+    dependencies = {
+
+    }
   )
 }.also(::register)

@@ -1,7 +1,7 @@
 package ireader.armtl
 
+import ireader.core.source.Dependencies
 import ireader.madara.Madara
-import org.ireader.core_api.source.Dependencies
 import tachiyomix.annotations.Extension
 
 @Extension

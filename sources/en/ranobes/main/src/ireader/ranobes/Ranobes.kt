@@ -10,24 +10,24 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import ireader.core.http.okhttp
+import ireader.core.source.Dependencies
+import ireader.core.source.ParsedHttpSource
+import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
+import ireader.core.source.model.ChapterInfo
+import ireader.core.source.model.Command
+import ireader.core.source.model.CommandList
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
+import ireader.core.source.model.Listing
+import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.MangasPageInfo
+import ireader.core.source.model.Page
+import ireader.core.source.model.Text
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import org.ireader.core_api.http.okhttp
-import org.ireader.core_api.source.Dependencies
-import org.ireader.core_api.source.ParsedHttpSource
-import org.ireader.core_api.source.asJsoup
-import org.ireader.core_api.source.findInstance
-import org.ireader.core_api.source.model.ChapterInfo
-import org.ireader.core_api.source.model.Command
-import org.ireader.core_api.source.model.CommandList
-import org.ireader.core_api.source.model.Filter
-import org.ireader.core_api.source.model.FilterList
-import org.ireader.core_api.source.model.Listing
-import org.ireader.core_api.source.model.MangaInfo
-import org.ireader.core_api.source.model.MangasPageInfo
-import org.ireader.core_api.source.model.Page
-import org.ireader.core_api.source.model.Text
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -287,7 +287,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         )
     }
 
-    private fun String.handleStatus(): Int {
+    private fun String.handleStatus(): Long {
         return when (this) {
             "OnGoing" -> MangaInfo.ONGOING
             "Completed" -> MangaInfo.COMPLETED

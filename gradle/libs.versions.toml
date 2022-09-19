@@ -1,5 +1,5 @@
 [versions]
-ireader = "1.2-SNAPSHOT"
+ireader = "1.2.1"
 ktor = "2.0.0"
 ktlint = "0.45.1"
 
@@ -16,7 +16,7 @@ ktor-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 
 kotlinpoet = "com.squareup:kotlinpoet-ksp:1.10.2"
 
-ireader-core = { module = "io.github.kazemcodes:core-api", version.ref = "ireader" }
+ireader-core = { module = "io.github.kazemcodes:core-android", version.ref = "ireader" }
 
 
 

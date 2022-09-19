@@ -1,7 +1,7 @@
 package ireader.neosekaitranslations
 
 import ireader.madara.Madara
-import org.ireader.core_api.source.Dependencies
+import ireader.core.source.Dependencies
 import tachiyomix.annotations.Extension
 
 @Extension

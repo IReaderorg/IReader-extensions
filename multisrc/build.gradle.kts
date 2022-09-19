@@ -1,5 +1,4 @@
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     id("com.android.library")
@@ -8,18 +7,13 @@ plugins {
 
 android {
     compileSdk = Config.compileSdk
-    namespace = "org.ireader.test_extensions"
+    namespace = "ireader.test_extensions"
     defaultConfig {
         minSdk = Config.minSdk
         targetSdk = Config.targetSdk
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
-        tasks.withType<KotlinJvmCompile> {
-            kotlinOptions {
-                jvmTarget = "11"
-            }
-        }
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }

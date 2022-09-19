@@ -7,6 +7,7 @@ import groovy.xml.XmlNodePrinter
 import groovy.xml.XmlParser
 import org.gradle.api.GradleException
 import java.io.File
+import java.util.Locale
 
 /*
     Copyright (C) 2018 The Tachiyomi Open Source Project
@@ -40,6 +41,10 @@ private fun ManifestProcessorTask.processExtension(extension: Extension) {
 
     val app = (parser["application"] as NodeList).first() as Node
 
+    if (!extension.icon.isAssetType()) {
+        app.attributes().putIfAbsent("android:icon","@mipmap/ic_launcher")
+    }
+    
     // Add source class metadata
     Node(
         app, "meta-data",
@@ -89,4 +94,16 @@ private fun addDeepLinks(app: Node, deeplinks: List<DeepLink>) {
 
         Node(filter, "data", data)
     }
+}
+
+fun String.isAssetType() : Boolean {
+   return this.isNotBlank() || this == DEFAULT_ICON
+}
+const val DEFAULT_ICON = "default_icon"
+const val REPO_URL = "https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repo/icon"
+
+fun createExtensionIconLink( extension: Extension): String {
+    return "$REPO_URL/ireader-${extension.lang}-${
+        extension.name.toLowerCase(Locale.getDefault())
+    }-v${extension.libVersion}.${extension.versionCode}.png"
 }

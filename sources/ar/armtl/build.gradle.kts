@@ -6,6 +6,7 @@ listOf("en").map { lang ->
     lang = lang,
     description = "",
     nsfw = false,
-    type= ExtensionType.Madara
+    icon = DEFAULT_ICON,
+    type= ExtensionType.MultiSrc
   )
 }.also(::register)
