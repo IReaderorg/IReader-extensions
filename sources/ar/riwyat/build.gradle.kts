@@ -6,7 +6,6 @@ listOf("ar").map { lang ->
     lang = lang,
     description = "",
     nsfw = false,
-    icon = DEFAULT_ICON,
-    type = ExtensionType.MultiSrc
+    icon = DEFAULT_ICON
   )
 }.also(::register)

@@ -1,6 +1,6 @@
 
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.internal.scope.GlobalScope
+import com.android.build.gradle.internal.services.DslServices
 import com.android.sdklib.BuildToolInfo
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -209,13 +209,16 @@ open class RepoTask : DefaultTask() {
         }
     }
 
+
     private fun getAapt2Path(): String {
         val androidProject = project.subprojects.first { it.hasProperty("android") }
         val androidExtension = androidProject.properties["android"] as BaseExtension
-        val globalScope = BaseExtension::class.java.getDeclaredField("globalScope").apply {
+        val dslServices = BaseExtension::class.java.getDeclaredField("dslServices").apply {
             isAccessible = true
-        }.get(androidExtension) as GlobalScope
-        val buildToolInfo = globalScope.versionedSdkLoader.get().buildToolInfoProvider.get()
+        }.get(androidExtension) as DslServices
+
+        @Suppress("deprecation")
+        val buildToolInfo = dslServices.versionedSdkLoaderService.versionedSdkLoader.get().buildToolInfoProvider.get()
         return buildToolInfo.getPath(BuildToolInfo.PathId.AAPT2)
     }
 

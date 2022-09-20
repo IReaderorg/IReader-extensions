@@ -24,9 +24,8 @@ data class Extension(
     val sourceId: Long = generateSourceId(name, lang),
     val flavor: String = getFlavorName(sourceDir, lang),
     val applicationId: String = generateApplicationId(name, flavor),
-    val type: ExtensionType = ExtensionType.Standard,
     val icon :String = "",
-    val dependencies: (DependencyHandler) -> Unit = {}
+    val dependencies: (DependencyHandler, Extension) -> Unit = {_,_ ->}
 )
 
 private val packageRegex = Regex("[^\\w\\d.]")
@@ -63,9 +62,4 @@ private fun generateSourceId(name: String, lang: String, versionId: Int = 1): Lo
 
 private fun generateApplicationId(name: String, flavor: String): String {
     return "ireader.$name.$flavor".toLowerCase().replace(packageRegex, ".")
-}
-
-enum class ExtensionType {
-    Standard,
-    MultiSrc
 }

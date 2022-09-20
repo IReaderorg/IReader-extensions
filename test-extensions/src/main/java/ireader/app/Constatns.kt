@@ -1,6 +1,6 @@
 package ireader.app
 
-import ireader.Constants
+import ireader.constants.Constants
 
 val BOOK_URL = Constants.bookUrl
 val BOOK_NAME = Constants.bookName

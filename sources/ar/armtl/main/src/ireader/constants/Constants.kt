@@ -1,9 +1,9 @@
-package ireader
+package ireader.constants
 
 import ireader.armtl.ArMtl
-import ireader.utility.TestConstants
 import ireader.core.source.Dependencies
 import ireader.core.source.HttpSource
+import ireader.utility.TestConstants
 
 object Constants : TestConstants {
     override val bookUrl: String

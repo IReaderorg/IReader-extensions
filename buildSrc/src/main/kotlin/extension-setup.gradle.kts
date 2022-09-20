@@ -21,10 +21,9 @@ android {
     }
     sourceSets {
         named("main") {
-            manifest.srcFile("$rootDir/sources/AndroidManifest.xml")
+            manifest.srcFile("$rootDir/extensions/AndroidManifest.xml")
             java.srcDirs("main/src")
-           // res.srcDirs("main/res")
-
+            res.srcDirs("main/res")
             resources.setSrcDirs(emptyList<Any>())
         }
         extensionList.forEach { extension ->
@@ -60,13 +59,8 @@ android {
         }
     }
     compileOptions {
-        tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
-            kotlinOptions {
-                jvmTarget = "11"
-            }
-        }
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
     applicationVariants.all {
         this as ApplicationVariantImpl
@@ -109,7 +103,7 @@ dependencies {
     val libs = project.extensions.getByType<VersionCatalogsExtension>()
         .named("libs")
 
-    compileOnly(libs.findLibrary("ireader-core").get()) { isChanging = true }
+    compileOnly(libs.findLibrary("ireader-core").get())
 
     compileOnly(kotlinLibs.findLibrary("stdlib").get())
     compileOnly(libs.findLibrary("okhttp").get())
@@ -130,9 +124,7 @@ dependencies {
         if (extension.deepLinks.isNotEmpty()) {
             add("${extension.flavor}Implementation", project(Proj.deeplink))
         }
-        if (extension.type == ExtensionType.MultiSrc) {
-            add("${extension.flavor}Implementation", project(Proj.multisrc))
-        }
+        extension.dependencies(this,extension)
     }
 
 }
@@ -150,11 +142,4 @@ ksp {
 fun BaseVariantImpl.currentExtension(): Extension {
     val flavor = (productFlavors as List<ProductFlavor>).first()
     return extensionList.first { it.flavor == flavor.name }
-}
-
-
-configurations.all {
-    resolutionStrategy {
-        force("org.jsoup:jsoup:1.14.3")
-    }
 }

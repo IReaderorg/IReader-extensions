@@ -1,6 +1,6 @@
 package ireader.app
 
-import ireader.Constants
+import ireader.constants.Constants
 import ireader.app.mockcomponents.FakeHttpClients
 import ireader.app.mockcomponents.FakePreferencesStore
 import ireader.core.source.Dependencies

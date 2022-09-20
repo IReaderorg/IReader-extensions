@@ -21,7 +21,7 @@ kotlin {
 tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
   kotlinOptions {
     freeCompilerArgs += listOf(
-      "-Xopt-in=kotlin.RequiresOptIn"
+      "-opt-in=org.mylibrary.OptInAnnotation"
     )
   }
 }
