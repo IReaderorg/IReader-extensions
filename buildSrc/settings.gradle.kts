@@ -4,6 +4,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         google()
+        mavenCentral()
     }
 }
 
@@ -12,6 +13,10 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         google()
+        mavenCentral()
+        maven {
+            url = uri("https://plugins.gradle.org/m2/")
+        }
     }
     versionCatalogs {
         create("libs") {

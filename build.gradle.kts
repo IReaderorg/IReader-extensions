@@ -14,7 +14,6 @@ buildscript {
     classpath(libs.android.gradle)
     classpath(kotlinLibs.gradle)
     classpath(kotlinLibs.serialization.gradle)
-    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10")
   }
 }
 tasks.register("delete", Delete::class) {
