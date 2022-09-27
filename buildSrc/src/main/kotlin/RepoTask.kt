@@ -183,6 +183,7 @@ open class RepoTask : DefaultTask() {
                 }
             } else {
                 val packageName = badging.pkg.substringAfter(".").substringBefore(".")
+
                 project.copy {
                     from("${project.rootDir}/sources/${badging.lang}/${packageName}/main/")
                     include("**/assets/*.png")
@@ -194,6 +195,12 @@ open class RepoTask : DefaultTask() {
                     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
                 }
+                val iconFile = File("${project.buildDir}/repo/icon/${apkFile.nameWithoutExtension}.png")
+                if (!iconFile.exists()) {
+                    print("WARNING: There is no Icon for $packageName," +
+                        " Make sure that app has same name in build.gradle.kts as subproject name\n")
+                }
+
             }
         }
     }

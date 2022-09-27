@@ -1,6 +1,6 @@
 listOf("en").map { lang ->
   Extension(
-    name = "NovelOwl",
+    name = "NovelOwlCom",
     versionCode = 3,
     libVersion = "1",
     lang = lang,

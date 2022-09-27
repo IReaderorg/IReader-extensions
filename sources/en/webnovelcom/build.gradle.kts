@@ -1,6 +1,6 @@
 listOf("en").map { lang ->
   Extension(
-    name = "webnovel",
+    name = "WebNovelCom",
     versionCode = 6,
     libVersion = "1",
     lang = lang,

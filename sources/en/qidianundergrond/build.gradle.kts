@@ -1,6 +1,6 @@
 listOf("en").map { lang ->
   Extension(
-    name = "QidianUnderground",
+    name = "QidianUndergrond",
     versionCode = 4,
     libVersion = "1",
     lang = lang,

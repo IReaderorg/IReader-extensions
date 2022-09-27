@@ -1,6 +1,6 @@
-listOf("en").map { lang ->
+listOf("ar").map { lang ->
   Extension(
-    name = "ArMtl",
+    name = "Armtl",
     versionCode = 1,
     libVersion = "1",
     lang = lang,

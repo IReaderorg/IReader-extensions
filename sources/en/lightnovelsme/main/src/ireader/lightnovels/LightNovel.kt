@@ -1,4 +1,4 @@
-package ireader.lightnovels
+package ireader.lightnovelsme
 
 import com.google.gson.Gson
 import io.ktor.client.HttpClient
