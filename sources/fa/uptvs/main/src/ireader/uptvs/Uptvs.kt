@@ -1,16 +1,12 @@
 package ireader.uptvs
 
-import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
-import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
-import ireader.core.source.findInstance
 import ireader.core.source.model.*
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
 
 @Extension
