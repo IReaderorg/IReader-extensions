@@ -6,7 +6,7 @@ ktlint = "0.45.1"
 
 [libraries]
 
-android-sdklib = "com.android.tools:sdklib:30.0.4"
+android-sdklib = "com.android.tools:sdklib:30.3.1"
 android-gradle = "com.android.tools.build:gradle:7.3.0"
 
 
