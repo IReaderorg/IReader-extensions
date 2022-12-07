@@ -8,7 +8,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.allnovelfull.en",
@@ -19,10 +20,11 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
-    "pkg": "ireader.armtl.ar",
+    "pkg": "ireader.armtl.armtl.ar",
     "apk": "ireader-ar-armtl-v1.1.apk",
     "name": "Armtl",
     "id": 2849828800266938903,
@@ -30,7 +32,9 @@
     "code": 1,
     "version": "1.1",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "armtl",
+    "assetsDir": "multisrc/madara/armtl/assets"
   },
   {
     "pkg": "ireader.boxnovelcom.en",
@@ -41,7 +45,8 @@
     "code": 4,
     "version": "1.4",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.comrademao.en",
@@ -52,7 +57,8 @@
     "code": 7,
     "version": "1.7",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.daonovel.en",
@@ -63,7 +69,8 @@
     "code": 5,
     "version": "1.5",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.fastnovel.en",
@@ -74,7 +81,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.freewebnovel.en",
@@ -85,7 +93,8 @@
     "code": 7,
     "version": "1.7",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.kissnovellove.en",
@@ -96,7 +105,8 @@
     "code": 3,
     "version": "1.3",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.kolnovel.ar",
@@ -107,7 +117,8 @@
     "code": 3,
     "version": "1.3",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.koreanonline.en",
@@ -118,7 +129,8 @@
     "code": 7,
     "version": "1.7",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.lightnovelpub.en",
@@ -129,7 +141,8 @@
     "code": 3,
     "version": "1.3",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.lightnovelreader.en",
@@ -140,7 +153,8 @@
     "code": 4,
     "version": "1.4",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.lightnovelsme.en",
@@ -151,7 +165,8 @@
     "code": 5,
     "version": "1.5",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.mostnovel.en",
@@ -162,7 +177,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.mtlnation.en",
@@ -173,7 +189,8 @@
     "code": 9,
     "version": "1.9",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.mtlnovelcom.en",
@@ -184,7 +201,8 @@
     "code": 7,
     "version": "1.7",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.mylovenovel.en",
@@ -195,10 +213,11 @@
     "code": 8,
     "version": "1.8",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
-    "pkg": "ireader.neosekaitranslations.en",
+    "pkg": "ireader.neosekaitranslations.neosekaitranslations.en",
     "apk": "ireader-en-neosekaitranslations-v1.1.apk",
     "name": "Neosekaitranslations",
     "id": 3148538527760704097,
@@ -206,7 +225,9 @@
     "code": 1,
     "version": "1.1",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "neosekaitranslations",
+    "assetsDir": "multisrc/madara/neosekaitranslations/assets"
   },
   {
     "pkg": "ireader.novel4up.ar",
@@ -217,7 +238,8 @@
     "code": 1,
     "version": "1.1",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelfull.en",
@@ -228,7 +250,8 @@
     "code": 8,
     "version": "1.8",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelfullme.en",
@@ -239,7 +262,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelhall.en",
@@ -250,7 +274,8 @@
     "code": 5,
     "version": "1.5",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelowlcom.en",
@@ -261,7 +286,8 @@
     "code": 3,
     "version": "1.3",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelscafes.en",
@@ -272,7 +298,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelstic.en",
@@ -283,7 +310,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.noveltop1net.en",
@@ -294,7 +322,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelupdates.en",
@@ -305,7 +334,8 @@
     "code": 3,
     "version": "1.3",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.pandanovel.en",
@@ -316,7 +346,8 @@
     "code": 3,
     "version": "1.3",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.qidianundergrond.en",
@@ -327,7 +358,8 @@
     "code": 4,
     "version": "1.4",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.ranobes.en",
@@ -338,7 +370,8 @@
     "code": 4,
     "version": "1.4",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.readmtl.en",
@@ -349,7 +382,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.readwncom.en",
@@ -360,7 +394,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.realwebnovel.en",
@@ -371,7 +406,8 @@
     "code": 7,
     "version": "1.7",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.reaperscans.en",
@@ -382,7 +418,8 @@
     "code": 3,
     "version": "1.3",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.riwyat.ar",
@@ -393,7 +430,8 @@
     "code": 5,
     "version": "1.5",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.scribblehub.en",
@@ -404,7 +442,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.sexinsex.cn",
@@ -415,7 +454,8 @@
     "code": 2,
     "version": "1.2",
     "description": "",
-    "nsfw": true
+    "nsfw": true,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.skynovel.en",
@@ -426,7 +466,8 @@
     "code": 5,
     "version": "1.5",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.teamxnovel.ar",
@@ -437,7 +478,8 @@
     "code": 1,
     "version": "1.1",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.uptvs.fa",
@@ -448,7 +490,8 @@
     "code": 1,
     "version": "1.1",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.webnovelcom.en",
@@ -459,7 +502,21 @@
     "code": 6,
     "version": "1.6",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.webnovelpub.webnovelpub.en",
+    "apk": "ireader-en-webnovelpub-v1.1.apk",
+    "name": "WebNovelPub",
+    "id": 4705311755075887354,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "webnovelpub",
+    "assetsDir": "en/lightnovelpub/webnovelpub/assets"
   },
   {
     "pkg": "ireader.webnovelsite.en",
@@ -470,7 +527,8 @@
     "code": 1,
     "version": "1.1",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.wnmtl.en",
@@ -481,7 +539,8 @@
     "code": 5,
     "version": "1.5",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.wuxiaworld.en",
@@ -492,7 +551,8 @@
     "code": 3,
     "version": "1.3",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.wuxiaworldsite.en",
@@ -503,7 +563,8 @@
     "code": 9,
     "version": "1.9",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.wuxiaworldsiteco.en",
@@ -514,6 +575,7 @@
     "code": 7,
     "version": "1.0.7",
     "description": "",
-    "nsfw": false
+    "nsfw": false,
+    "sourceDir": "main"
   }
 ]
