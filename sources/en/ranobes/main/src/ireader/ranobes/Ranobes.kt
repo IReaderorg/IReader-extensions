@@ -177,7 +177,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     fun fetchLatestEndpoint(page: Int): String? =
-        "/novels/page/$page/"
+        "/novels1/page/$page/"
 
     fun fetchPopularEndpoint(page: Int): String? =
         "/cstart=$page&ajax=true"
