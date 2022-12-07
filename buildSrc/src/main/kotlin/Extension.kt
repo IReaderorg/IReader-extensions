@@ -1,6 +1,5 @@
 
 import org.gradle.api.Project
-import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.kotlin.dsl.extra
 import java.security.MessageDigest
 
@@ -25,7 +24,9 @@ data class Extension(
     val flavor: String = getFlavorName(sourceDir, lang),
     val applicationId: String = generateApplicationId(name, flavor),
     val icon :String = "",
-    val dependencies: (DependencyHandler, Extension) -> Unit = {_,_ ->}
+    val assetsDir :String = "",
+    val projectDependencies: Set<String> = emptySet(),
+    val remoteDependencies: Set<String> = emptySet(),
 )
 
 private val packageRegex = Regex("[^\\w\\d.]")

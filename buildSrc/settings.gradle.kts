@@ -22,8 +22,5 @@ dependencyResolutionManagement {
         create("libs") {
             from(files("../gradle/libs.versions.toml"))
         }
-        create("kotlinLibs") {
-            from(files("../gradle/kotlin.versions.toml"))
-        }
     }
 }

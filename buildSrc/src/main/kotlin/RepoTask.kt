@@ -1,4 +1,3 @@
-
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.services.DslServices
 import com.android.sdklib.BuildToolInfo
@@ -56,19 +55,23 @@ open class RepoTask : DefaultTask() {
 
         extractApks(apkDir)
 
-        val badgings = parseBadgings(apkDir)
+        val badgings = parseBadgings(apkDir) ?: return
         ensureValidState(badgings)
         extractIcons(apkDir, iconDir, badgings)
         generateRepo(repoDir, badgings)
     }
 
-    private fun parseBadgings(apkDir: File): List<Badging> {
+    private fun parseBadgings(apkDir: File): List<Badging>? {
+
         return apkDir.listFiles()
-            .filter { it.extension == "apk" }
-            .map { apk -> parseBadging(apk) }
+            ?.filter {
+                it.extension == "apk"
+            }
+            ?.map { apk -> parseBadging(apk) }
     }
 
     private fun parseBadging(apkFile: File): Badging {
+
         val lines = ByteArrayOutputStream().use { outStream ->
             project.exec {
                 commandLine(
@@ -124,9 +127,11 @@ open class RepoTask : DefaultTask() {
         val lang = metadata.first { it.name == "source.lang" }.value
         val description = metadata.find { it.name == "source.description" }?.value.orEmpty()
         val nsfw = metadata.first { it.name == "source.nsfw" }.value == "1"
+        val sourceDir = metadata.firstOrNull { it.name == "source.dir" }?.value
+        val assetsDir = metadata.firstOrNull { it.name == "source.assets" }?.value
         return Badging(
             pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
-            nsfw, iconPath = resourceIcon ?: iconPath
+            nsfw, iconResourcePath = resourceIcon ?: iconPath, sourceDir = sourceDir,assetsDir = assetsDir
         )
     }
 
@@ -138,7 +143,7 @@ open class RepoTask : DefaultTask() {
         if (samePkgs.isNotEmpty()) {
             throw GradleException(
                 "${samePkgs.joinToString()} have duplicate package names. Check your " +
-                    "build"
+                        "build"
             )
         }
 
@@ -164,7 +169,7 @@ open class RepoTask : DefaultTask() {
         if (destDir.listFiles().orEmpty().isEmpty()) {
             throw GradleException(
                 "The repo directory doesn't have any apk. Rerun this task after " +
-                    "executing the :assembleDebug or :assembleRelease tasks"
+                        "executing the :assembleDebug or :assembleRelease tasks"
             )
         }
     }
@@ -173,9 +178,9 @@ open class RepoTask : DefaultTask() {
         destDir.mkdirs()
         badgings.forEach { badging ->
             val apkFile = File(apkDir, badging.apk)
-            if (badging.iconPath != null) {
+            if (badging.iconResourcePath != null) {
                 ZipFile(apkFile).use { zip ->
-                    val icon = zip.getEntry(badging.iconPath)
+                    val icon = zip.getEntry(badging.iconResourcePath)
                     val dest = File(destDir, "${apkFile.nameWithoutExtension}.png")
                     zip.getInputStream(icon).use { input ->
                         dest.outputStream().use { input.copyTo(it) }
@@ -183,22 +188,39 @@ open class RepoTask : DefaultTask() {
                 }
             } else {
                 val packageName = badging.pkg.substringAfter(".").substringBefore(".")
+                if (badging.assetsDir.isNullOrBlank()) {
+                    project.copy {
+                        from("${project.rootDir}/sources/${badging.lang}/${packageName}/${badging.sourceDir}/")
+                        include("**/assets/*.png")
+                        into(destDir)
+                        eachFile {
+                            path = "${apkFile.nameWithoutExtension}.png"
+                        }
+                        includeEmptyDirs = false
+                        duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
-                project.copy {
-                    from("${project.rootDir}/sources/${badging.lang}/${packageName}/main/")
-                    include("**/assets/*.png")
-                    into(destDir)
-                    eachFile {
-                        path = "${apkFile.nameWithoutExtension}.png"
                     }
-                    includeEmptyDirs = false
-                    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+                } else {
+                    project.copy {
+                        from("${project.rootDir}/sources/${badging.assetsDir}")
+                        include("**/*.png")
+                        into(destDir)
+                        eachFile {
+                            path = "${apkFile.nameWithoutExtension}.png"
+                        }
+                        includeEmptyDirs = false
+                        duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
+                    }
                 }
-                val iconFile = File("${project.buildDir}/repo/icon/${apkFile.nameWithoutExtension}.png")
+
+                val iconFile =
+                    File("${project.buildDir}/repo/icon/${apkFile.nameWithoutExtension}.png")
                 if (!iconFile.exists()) {
-                    print("WARNING: There is no Icon for $packageName," +
-                        " Make sure that app has same name in build.gradle.kts as subproject name\n")
+                    print(
+                        "WARNING: There is no Icon for $packageName," +
+                                " Make sure that app has same name in build.gradle.kts as subproject name\n"
+                    )
                 }
 
             }
@@ -225,7 +247,8 @@ open class RepoTask : DefaultTask() {
         }.get(androidExtension) as DslServices
 
         @Suppress("deprecation")
-        val buildToolInfo = dslServices.versionedSdkLoaderService.versionedSdkLoader.get().buildToolInfoProvider.get()
+        val buildToolInfo =
+            dslServices.versionedSdkLoaderService.versionedSdkLoader.get().buildToolInfoProvider.get()
         return buildToolInfo.getPath(BuildToolInfo.PathId.AAPT2)
     }
 
@@ -254,7 +277,8 @@ open class RepoTask : DefaultTask() {
         val description: String,
         val nsfw: Boolean,
         @Transient
-        val iconPath: String? = null,
-
-    )
+        val iconResourcePath: String? = null,
+        val sourceDir: String? = null,
+        val assetsDir: String? = null,
+        )
 }

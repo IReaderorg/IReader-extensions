@@ -1,16 +1,16 @@
 plugins {
   `kotlin-dsl`
-  alias(kotlinLibs.plugins.serialization)
+  alias(libs.plugins.serialization)
 }
 
 dependencies {
   implementation(gradleApi())
-  implementation(kotlinLibs.gradle)
-  implementation(kotlinLibs.serialization.gradle)
-  implementation(kotlinLibs.serialization.json)
+  implementation(libs.gradle)
+  implementation(libs.serialization.gradle)
+  implementation(libs.serialization.json)
   implementation(libs.android.gradle)
   implementation(libs.android.sdklib)
-  implementation(kotlinLibs.ksp.gradle)
+  implementation(libs.ksp.gradle)
 }
 
 kotlin {

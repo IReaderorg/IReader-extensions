@@ -85,7 +85,7 @@ abstract class Uptvs(deps: Dependencies) : SourceFactory(
             selector = ".post-content-download-box a",
             nameSelector = "a span:nth-child(1)",
             onName = {
-                     it.replace("دانلود","")
+                     it.replace("دانلود","").replace("p","")
             },
             linkSelector = "a",
             linkAtt = "href",
@@ -96,7 +96,7 @@ abstract class Uptvs(deps: Dependencies) : SourceFactory(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        return super.getChapterList(manga, commands).map { it.copy(type = ChapterInfo.MOVIE) }
+        return super.getChapterList(manga, commands).map { it.copy(type = ChapterInfo.MOVIE) }.mapNotNull { it.takeIf { !it.name.contains("تماشا") } }
     }
 
     override suspend fun getContents(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {

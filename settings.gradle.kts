@@ -16,19 +16,30 @@ include(":defaultRes")
 
 
 File(rootDir, "sources").eachDir { dir ->
-    dir.eachDir { subDir ->
-        subDir.listFiles()?.forEach { file ->
+    if (dir.name != "multisrc") {
+        dir.eachDir { subDir ->
             if (File(subDir, "build.gradle.kts").exists()) {
                 val name = ":extensions:individual:${dir.name}:${subDir.name}"
                 include(name)
                 project(name).projectDir = File("sources/${dir.name}/${subDir.name}")
             }
         }
-
-
     }
-
 }
+
+File(rootDir, "sources/multisrc").eachDir { dir ->
+    if (File(dir, "build.gradle.kts").exists()) {
+        dir.eachDir { subDir ->
+            if (subDir.name !in listOf("build", "main")) {
+                val name = ":extensions:multisrc:${dir.name}:${subDir.name}"
+                include(name)
+                project(name).projectDir =
+                    File("${rootDir}/sources/multisrc/${dir.name}/")
+            }
+        }
+    }
+}
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -38,21 +49,13 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-    //    mavenLocal()
+        //  mavenLocal()
         mavenCentral()
         google()
         maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots/") }
         maven { setUrl("https://jitpack.io") }
         maven { setUrl("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2") }
         maven { setUrl("https://s01.oss.sonatype.org/content/repositories/snapshots/") }
-    }
-    versionCatalogs {
-        create("kotlinLibs") {
-            from(files("./gradle/kotlin.versions.toml"))
-        }
-        create("test") {
-            from(files("./gradle/testing.versions.toml"))
-        }
     }
 }
 inline fun File.eachDir(block: (File) -> Unit) {

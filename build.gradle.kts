@@ -12,8 +12,8 @@ buildscript {
   }
   dependencies {
     classpath(libs.android.gradle)
-    classpath(kotlinLibs.gradle)
-    classpath(kotlinLibs.serialization.gradle)
+    classpath(libs.gradle)
+    classpath(libs.serialization.gradle)
   }
 }
 tasks.register("delete", Delete::class) {

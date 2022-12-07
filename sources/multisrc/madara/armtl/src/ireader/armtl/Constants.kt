@@ -1,6 +1,5 @@
-package ireader.constants
+package ireader.madara
 
-import ireader.armtl.ArMtl
 import ireader.core.source.Dependencies
 import ireader.core.source.HttpSource
 import ireader.utility.TestConstants

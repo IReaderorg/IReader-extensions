@@ -119,7 +119,7 @@ class ExtensionProcessor(
     }
 
     private fun checkMatchesPkgName(source: KSClassDeclaration, buildDir: String) {
-        if ("/samples/" in buildDir) return // Disable pkgname checks for the samples
+        if ("/sources/multisrc" in buildDir) return // Disable pkgname checks for the multisrc
 
         val pkgName = source.packageName.asString()
 

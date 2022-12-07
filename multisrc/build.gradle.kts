@@ -24,14 +24,12 @@ android {
 }
 
 dependencies {
-    val kotlinLibs = project.extensions.getByType<VersionCatalogsExtension>()
-        .named("kotlinLibs")
     val libs = project.extensions.getByType<VersionCatalogsExtension>()
         .named("libs")
 
     compileOnly(libs.findLibrary("ireader-core").get()) { isChanging = true}
 
-    compileOnly(kotlinLibs.findLibrary("stdlib").get())
+    compileOnly(libs.findLibrary("stdlib").get())
     compileOnly(libs.findLibrary("okhttp").get())
     compileOnly(libs.findLibrary("jsoup").get())
     compileOnly(libs.findLibrary("ktor-core").get())

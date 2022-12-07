@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import ireader.armtl.ArMtl
+import ireader.madara.ar.armtl.src.ArMtl
 import ireader.app.BOOK_NAME
 import ireader.app.BOOK_URL
 import ireader.core.http.AcceptAllCookiesStorage

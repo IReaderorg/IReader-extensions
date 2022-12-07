@@ -12,7 +12,7 @@ plugins {
 
 dependencies {
   implementation(libs.kotlinpoet)
-  implementation(kotlinLibs.ksp.api)
+  implementation(libs.ksp.api)
 
   implementation(project(Proj.annotation))
 }

@@ -5,7 +5,7 @@ import com.android.builder.model.ProductFlavor
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    kotlin("android")
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
 }
@@ -51,8 +51,10 @@ android {
                         "sourceLang" to extension.lang,
                         "sourceDescription" to extension.description,
                         "sourceNsfw" to if (extension.nsfw) 1 else 0,
-                        "sourceIcon" to if(extension.icon == DEFAULT_ICON)
-                            createExtensionIconLink(extension) else extension.icon
+                        "sourceIcon" to if (extension.icon == DEFAULT_ICON)
+                            createExtensionIconLink(extension) else extension.icon,
+                        "sourceDir" to extension.sourceDir,
+                        "assetsDir" to extension.assetsDir
                     )
                 )
             }
@@ -95,17 +97,15 @@ android {
 
 
 dependencies {
-   //  implementation(project(Proj.defaultRes))
+    //  implementation(project(Proj.defaultRes))
 
     // Version Catalog not available here, and that is why we manually import them here
-    val kotlinLibs = project.extensions.getByType<VersionCatalogsExtension>()
-        .named("kotlinLibs")
     val libs = project.extensions.getByType<VersionCatalogsExtension>()
         .named("libs")
 
     compileOnly(libs.findLibrary("ireader-core").get())
 
-    compileOnly(kotlinLibs.findLibrary("stdlib").get())
+    compileOnly(libs.findLibrary("stdlib").get())
     compileOnly(libs.findLibrary("okhttp").get())
     compileOnly(libs.findLibrary("jsoup").get())
     compileOnly(libs.findLibrary("ktor-core").get())
@@ -118,13 +118,19 @@ dependencies {
     compileOnly(libs.findLibrary("ktor-okhttp").get())
 
     compileOnly(project(Proj.annotation))
+    compileOnly(project(Proj.multisrc))
     ksp(project(Proj.compiler))
 
     extensionList.forEach { extension ->
         if (extension.deepLinks.isNotEmpty()) {
             add("${extension.flavor}Implementation", project(Proj.deeplink))
         }
-        extension.dependencies(this,extension)
+        extension.projectDependencies.forEach { dependency ->
+            add("${extension.flavor}Implementation", project(dependency))
+        }
+        extension.remoteDependencies.forEach { dependency ->
+            add("${extension.flavor}Implementation", dependency)
+        }
     }
 
 }

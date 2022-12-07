@@ -31,6 +31,13 @@
         android:name="source.icon"
         android:value="${sourceIcon}" />
 
+    <meta-data
+        android:name="source.dir"
+        android:value="${sourceDir}" />
+    <meta-data
+        android:name="source.assets"
+        android:value="${assetsDir}" />
+
   </application>
 
 </manifest>

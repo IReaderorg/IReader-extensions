@@ -25,31 +25,10 @@ android {
 
 dependencies {
     //change this name to your extension name
-    implementation(project(":extensions:individual:ar:armtl"))
-    implementation(project(":multisrc"))
-
-    val kotlinLibs = project.extensions.getByType<VersionCatalogsExtension>()
-        .named("kotlinLibs")
-    val libs = project.extensions.getByType<VersionCatalogsExtension>()
-        .named("libs")
-
-
-    implementation(test.bundles.common)
+//    implementation(project(":extensions:individual:ar:armtl"))
+    implementation(libs.bundles.common)
+    implementation(libs.bundles.commonTesting)
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.8.2")
-    implementation(libs.findLibrary("ireader-core").get()) { isChanging = true}
-
-    implementation(kotlinLibs.findLibrary("stdlib").get())
-    implementation(libs.findLibrary("okhttp").get())
-    implementation(libs.findLibrary("jsoup").get())
-    implementation(libs.findLibrary("ktor-core").get())
-    implementation(libs.findLibrary("ktor-cio").get())
-    implementation(libs.findLibrary("ktor-android").get())
-    implementation(libs.findLibrary("ktor-okhttp").get())
-    implementation(libs.findLibrary("ktor-contentNegotiation").get())
-    implementation(libs.findLibrary("ktor-serialization").get())
-    implementation(libs.findLibrary("ktor-gson").get())
-    implementation(libs.findLibrary("ktor-jackson").get())
-
     implementation(project(Proj.annotation))
     implementation(project(Proj.compiler))
 }
