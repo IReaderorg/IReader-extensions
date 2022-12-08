@@ -1,4 +1,4 @@
-package ireader.neosekaitranslations
+package neosekaitranslations
 
 const val _BOOK_URL = "https://www.neosekaitranslations.com/novel/i-quit-the-going-home-club-for-a-girl-with-a-venomous-tongue/"
 const val _BOOK_NAME = "I Can Level Up By Staying Idle"

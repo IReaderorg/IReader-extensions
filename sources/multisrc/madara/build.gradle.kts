@@ -1,4 +1,4 @@
-register(
+listOf(
     Extension(
         name = "Neosekaitranslations",
         versionCode = 1,
@@ -21,4 +21,4 @@ register(
         assetsDir = "multisrc/madara/armtl/assets",
         sourceDir = "armtl",
     ),
-)
+).also(::register)

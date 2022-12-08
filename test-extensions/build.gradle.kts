@@ -25,7 +25,8 @@ android {
 
 dependencies {
     //change this name to your extension name
-//    implementation(project(":extensions:individual:ar:armtl"))
+    implementation(project(":extensions:individual:en:mylovenovel"))
+    implementation(project(":multisrc"))
     implementation(libs.bundles.common)
     implementation(libs.bundles.commonTesting)
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.8.2")

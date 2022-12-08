@@ -1,6 +1,6 @@
 1- first step you need to change the name of your extension module in [build.gradle.kts](../../../../../../build.gradle.kts) inside test-extensions module
 
-2- second step change the value  of your extension inside [Constants](../../../../../main/java/ireader/app/Constatns.kt) 
+2- second step change the value  of your extension inside [ireader.madara.Constants](../../../../../main/java/ireader/app/Constatns.kt) 
 
 3- IMPORTANT PLEASE DO NOT USE 
 ```kotlin

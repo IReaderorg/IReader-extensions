@@ -29,16 +29,13 @@ File(rootDir, "sources").eachDir { dir ->
 
 File(rootDir, "sources/multisrc").eachDir { dir ->
     if (File(dir, "build.gradle.kts").exists()) {
-        dir.eachDir { subDir ->
-            if (subDir.name !in listOf("build", "main")) {
-                val name = ":extensions:multisrc:${dir.name}:${subDir.name}"
-                include(name)
-                project(name).projectDir =
-                    File("${rootDir}/sources/multisrc/${dir.name}/")
-            }
-        }
+        val dirName = ":extensions:multisrc:${dir.name}"
+        include(dirName)
+        project(dirName).projectDir =
+            File("sources/multisrc/${dir.name}")
     }
 }
+
 
 pluginManagement {
     repositories {
