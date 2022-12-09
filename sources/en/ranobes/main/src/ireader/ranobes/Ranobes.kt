@@ -11,6 +11,7 @@ import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import ireader.core.http.okhttp
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -95,7 +96,10 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
                     "Last 25 Chapter"
                 ),
                 value = 0
-            )
+            ),
+            Command.Chapter.Fetch(),
+            Command.Content.Fetch(),
+            Command.Detail.Fetch(),
         )
     }
 
@@ -104,15 +108,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
         val html = client.get(requestBuilder(baseUrl + fetchLatestEndpoint(page)))
         response = html.asJsoup().html()
-//        withContext(Dispatchers.Main) {
-//            response = deps.httpClients.browser.fetch(
-//                url = baseUrl + fetchLatestEndpoint(page),
-//                selector = latestSelector(),
-//                userAgent = agent,
-//                timeout = maxTimeout
-//            ).responseBody
-//        }
-
         return bookListParse(
             Jsoup.parse(response),
             latestSelector(),
@@ -127,12 +122,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         val html = client.get(requestBuilder("https://ranobes.net/ranking/cstart=$page&ajax=true"))
         response = html.asJsoup().html()
 
-//        response = deps.httpClients.browser.fetch(
-//            url = "https://ranobes.net/ranking/cstart=$page&ajax=true",
-//            selector = ".rank-story a",
-//            userAgent = agent,
-//            timeout = maxTimeout
-//        ).responseBody
         return bookListParse(
             response.asJsoup(),
             popularSelector(),
@@ -150,12 +139,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         val html = client.get(requestBuilder(baseUrl + fetchSearchEndpoint(page, query)))
         response = html.asJsoup().html()
 
-//        response = deps.httpClients.browser.fetch(
-//            url = baseUrl + fetchSearchEndpoint(page, query),
-//            selector = searchSelector(),
-//            userAgent = agent,
-//            timeout = maxTimeout
-//        ).responseBody
         return bookListParse(
             response.asJsoup(),
             searchSelector(),
@@ -177,7 +160,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     fun fetchLatestEndpoint(page: Int): String? =
-        "/novels/page/$page/"
+        "/novels1/page/$page/"
 
     fun fetchPopularEndpoint(page: Int): String? =
         "/cstart=$page&ajax=true"
@@ -246,6 +229,10 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     fun searchNextPageSelector(): String? = popularLastPageSelector()
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
+        val fetcher = commands.findInstance<Command.Detail.Fetch>()
+        if (fetcher != null) {
+            return detailParse(fetcher.html.asJsoup())
+        }
         var response = ""
 
         val html = client.get(manga.key)
@@ -316,15 +303,19 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
+        val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
+        if (chapterFetch != null) {
+            return chaptersParse(chapterFetch.html.asJsoup()).reversed().map { it.copy(key = it.key.substringAfter(baseUrl)) }
+        }
         val command = commands.findInstance<Command.Chapter.Select>()
         val bookId = Regex("[0-9]+").findAll(manga.key)
             .map(MatchResult::value)
-            .toList()
+            .toList()[1]
         if (command != null) {
             var response = ""
 
             val html =
-                client.get(requestBuilder("https://ranobes.net/chapters/${bookId.first()}/page/1/"))
+                client.get(requestBuilder("https://ranobes.net/chapters/${bookId}/page/1/"))
             response = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
                 .substringBefore("</script>")
             val chapters = Gson().fromJson(response, ChapterDTO::class.java)
@@ -341,7 +332,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         var currentPage = 1
         var res = ""
         val html =
-            client.get(requestBuilder("https://ranobes.net/chapters/${bookId.first()}/page/1/"))
+            client.get(requestBuilder("https://ranobes.net/chapters/${bookId}/page/1/"))
         res = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
             .substringBefore("</script>")
         val json1 = Gson().fromJson(res, ChapterDTO::class.java)
@@ -392,6 +383,10 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+        val fetcher = commands.findInstance<Command.Content.Fetch>()
+        if (fetcher != null) {
+            return pageContentParse(fetcher.html.asJsoup()).map { Text(it) }
+        }
         var response = ""
 
         val htmlPage = client.get(chapter.key)
