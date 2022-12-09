@@ -11,6 +11,8 @@ Extension sources can be downloaded, installed, and uninstalled via the main IRe
 
 Contributions are welcome!
 
+To get started with development, see [CONTRIBUTING.md](./tutorial/CONTRIBUTING.md).
+
 Check out the repo's [sample](https://github.com/kazemcodes/IReader-extensions/tree/master/sources/en).
 
 
