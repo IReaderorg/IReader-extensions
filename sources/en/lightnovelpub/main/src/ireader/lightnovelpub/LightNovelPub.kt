@@ -75,7 +75,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Detail(
             nameSelector = "h1.novel-title",
             coverSelector = "figure.cover img",
-            coverAtt = "src",
+            coverAtt = "data-src",
             categorySelector = "div.categories > ul > li",
             statusSelector = "div.header-stats > span",
             onStatus = { status ->
@@ -98,40 +98,6 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             linkAtt = "href",
             numberSelector = ".chapter-no",
             uploadDateSelector = ".chapter-update",
-            uploadDateParser = { date ->
-                if (date.contains("ago")) {
-                    val value = date.split(' ')[0].toInt()
-                    when {
-                        "min" in date -> Calendar.getInstance().apply {
-                            add(Calendar.MINUTE, value * -1)
-                        }.timeInMillis
-                        "hour" in date -> Calendar.getInstance().apply {
-                            add(Calendar.HOUR_OF_DAY, value * -1)
-                        }.timeInMillis
-                        "day" in date -> Calendar.getInstance().apply {
-                            add(Calendar.DATE, value * -1)
-                        }.timeInMillis
-                        "week" in date -> Calendar.getInstance().apply {
-                            add(Calendar.DATE, value * 7 * -1)
-                        }.timeInMillis
-                        "month" in date -> Calendar.getInstance().apply {
-                            add(Calendar.MONTH, value * -1)
-                        }.timeInMillis
-                        "year" in date -> Calendar.getInstance().apply {
-                            add(Calendar.YEAR, value * -1)
-                        }.timeInMillis
-                        else -> {
-                            0L
-                        }
-                    }
-                } else {
-                    try {
-                        dateFormatter.parse(date)?.time ?: 0
-                    } catch (_: Exception) {
-                        0L
-                    }
-                }
-            },
             addBaseUrlToLink = true
         )
 
@@ -185,7 +151,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             }
             return chapters
         }
-        return super.getChapterList(manga, commands).reversed()
+        return super.getChapterList(manga, commands)
     }
 
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
