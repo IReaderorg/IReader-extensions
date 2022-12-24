@@ -55,7 +55,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "a img",
-                coverAtt = "src",
+                coverAtt = "data-src",
                 nextPageSelector = "a.r"
             ),
             BaseExploreFetcher(
@@ -67,7 +67,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "a img",
-                coverAtt = "src",
+                coverAtt = "data-src",
                 nextPageSelector = "a.next",
                 type = SourceFactory.Type.Search
             ),
@@ -80,7 +80,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "a img",
-                coverAtt = "src",
+                coverAtt = "data-src",
                 nextPageSelector = "a.r"
             ),
             BaseExploreFetcher(
@@ -92,7 +92,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "a img",
-                coverAtt = "src",
+                coverAtt = "data-src",
                 nextPageSelector = "a.rs"
             ),
 
@@ -102,7 +102,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Detail(
             nameSelector = "h1.entry-title",
             coverSelector = "div.sertothumb img",
-            coverAtt = "src",
+            coverAtt = "data-src",
             descriptionSelector = "div.entry-content[itemprop=description] p",
             authorBookSelector = "div.serl:contains(الكاتب) span a",
             categorySelector = "div.sertogenre a",
