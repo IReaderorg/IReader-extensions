@@ -104,12 +104,13 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     suspend fun getLatest(page: Int): MangasPageInfo {
-        var response = ""
+        var response: Document
 
         val html = client.get(requestBuilder(baseUrl + fetchLatestEndpoint(page)))
-        response = html.asJsoup().html()
+        response = html.asJsoup()
+
         return bookListParse(
-            Jsoup.parse(response),
+            response,
             latestSelector(),
             latestNextPageSelector()
         ) { latestFromElement(it) }
@@ -160,7 +161,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     fun fetchLatestEndpoint(page: Int): String? =
-        "/novels1/page/$page/"
+        "/novels/page/$page/"
 
     fun fetchPopularEndpoint(page: Int): String? =
         "/cstart=$page&ajax=true"
@@ -200,10 +201,11 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     fun latestFromElement(element: Element): MangaInfo {
         val url = element.select("a").attr("href")
         val title = element.select(".title").text()
-        val thumbnailUrl =
-            element.select("figure").attr("style").substringAfter("background-image: url(")
-                .substringBefore(");")
-
+        val thumbnailUrl = element
+            .select("figure")
+            .attr("style")
+            .substringAfter("background-image: url(")
+            .substringBefore(");")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
@@ -233,18 +235,12 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         if (fetcher != null) {
             return detailParse(fetcher.html.asJsoup())
         }
-        var response = ""
 
+        var response: Document;
         val html = client.get(manga.key)
-        response = html.asJsoup().html()
+        response = html.asJsoup();
 
-//        response = deps.httpClients.browser.fetch(
-//            manga.key,
-//            selector = "h1.title",
-//            userAgent = agent,
-//            timeout = maxTimeout
-//        ).responseBody
-        return detailParse(Jsoup.parse(response))
+        return detailParse(response)
     }
 
     // manga details
@@ -253,9 +249,9 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         val authorBookSelector = document.select(".tag_list a").text()
         val cover = document.select(".r-fullstory-poster a").attr("href")
         val description =
-            document.select(".cont-in .showcont-h[itemprop=\"description\"] .moreless__full").text()
+            document.select(".cont-in .showcont-h .moreless__full").text()
 
-        val category = document.select(".links[itemprop=\"genre\"] a")
+        val category = document.select("#mc-fs-genre .links a")
             .eachText()
 
         val status = document.select(".r-fullstory-spec .grey").first()
@@ -305,12 +301,14 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     ): List<ChapterInfo> {
         val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
         if (chapterFetch != null) {
-            return chaptersParse(chapterFetch.html.asJsoup()).reversed().map { it.copy(key = it.key.substringAfter(baseUrl)) }
+            return chaptersParse(chapterFetch.html.asJsoup()).reversed()
+                .map { it.copy(key = it.key.substringAfter(baseUrl)) }
         }
+
         val command = commands.findInstance<Command.Chapter.Select>()
-        val bookId = Regex("[0-9]+").findAll(manga.key)
-            .map(MatchResult::value)
-            .toList()[1]
+
+        val bookId = Regex("[0-9]+").find(manga.key)?.value
+
         if (command != null) {
             var response = ""
 
