@@ -363,12 +363,12 @@
   },
   {
     "pkg": "ireader.ranobes.en",
-    "apk": "ireader-en-ranobes-v1.5.apk",
+    "apk": "ireader-en-ranobes-v1.6.apk",
     "name": "Ranobes",
     "id": 7992304614005451099,
     "lang": "en",
-    "code": 5,
-    "version": "1.5",
+    "code": 6,
+    "version": "1.6",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
