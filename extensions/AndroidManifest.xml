@@ -1,43 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="ireader.extension">
 
   <uses-feature android:name="ireader" />
 
   <application
-
     android:label="${appName}">
-
     <meta-data
       android:name="source.id"
       android:value="${sourceId}" />
-
     <meta-data
       android:name="source.name"
       android:value="${sourceName}" />
-
     <meta-data
       android:name="source.lang"
       android:value="${sourceLang}" />
-
     <meta-data
       android:name="source.description"
       android:value="${sourceDescription}" />
-
     <meta-data
       android:name="source.nsfw"
       android:value="${sourceNsfw}" />
-
     <meta-data
         android:name="source.icon"
         android:value="${sourceIcon}" />
-
     <meta-data
         android:name="source.dir"
         android:value="${sourceDir}" />
     <meta-data
         android:name="source.assets"
         android:value="${assetsDir}" />
-
   </application>
-
 </manifest>

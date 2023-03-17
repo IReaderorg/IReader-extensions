@@ -57,7 +57,7 @@ jobs:
 #          gradle-version: 7.5
           build-root-directory: master
 #          wrapper-directory: master
-          arguments: assembleRelease repo
+          arguments: build repo
 #          wrapper-cache-enabled: true
 #          dependencies-cache-enabled: true
 #          configuration-cache-enabled: true

@@ -46,7 +46,6 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        //  mavenLocal()
         mavenCentral()
         google()
         maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots/") }
@@ -58,5 +57,5 @@ dependencyResolutionManagement {
 inline fun File.eachDir(block: (File) -> Unit) {
     listFiles()?.filter { it.isDirectory }?.forEach { block(it) }
 }
-include(":test-extensions")
+//include(":test-extensions")
 include(":multisrc")

@@ -49,6 +49,7 @@ open class RepoTask : DefaultTask() {
         val repoDir = File(project.buildDir, "repo")
         val apkDir = File(repoDir, "apk")
         val iconDir = File(repoDir, "icon")
+        val jarDir = File(repoDir, "jar")
 
         repoDir.deleteRecursively()
         repoDir.mkdirs()
@@ -56,6 +57,7 @@ open class RepoTask : DefaultTask() {
         extractApks(apkDir)
 
         val badgings = parseBadgings(apkDir) ?: return
+        extractJars(apkDir= apkDir, destDir = jarDir, badgings = badgings)
         ensureValidState(badgings)
         extractIcons(apkDir, iconDir, badgings)
         generateRepo(repoDir, badgings)
@@ -155,11 +157,33 @@ open class RepoTask : DefaultTask() {
             throw GradleException("${sameIdPkgs.joinToString()} have duplicate ids. Check your build")
         }
     }
+    private fun extractJars(apkDir: File,destDir: File,badgings: List<RepoTask.Badging>) {
+        badgings.forEach { badging ->
+            val apkFile = File(apkDir, badging.apk)
+            val packageName = badging.pkg.substringAfter(".").substringBefore(".")
+            project.copy {
+                from("${project.rootDir}/sources/${badging.lang}/${packageName}/build/")
+                include("**/compile_app_classes_jar/enRelease/*.jar")
+                into(destDir)
+                eachFile {
+                    path = "${apkFile.nameWithoutExtension}.jar"
+                }
+                includeEmptyDirs = false
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
+            }
+        }
+        if (destDir.listFiles().orEmpty().isEmpty()) {
+            throw GradleException(
+                "The repo directory doesn't have any jars. Rerun this task after " +
+                        "executing the :assembleDebug or :assembleRelease tasks"
+            )
+        }
+    }
     private fun extractApks(destDir: File) {
         project.copy {
             from(project.subprojects.map { it.buildDir })
-            include("**/*.apk")
+            include("**/outputs/**/debug/*.apk")
             into(destDir)
             eachFile { path = name }
             includeEmptyDirs = false

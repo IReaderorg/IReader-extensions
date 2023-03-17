@@ -25,7 +25,7 @@ android {
 
 dependencies {
     //change this name to your extension name
-    implementation(project(":extensions:individual:en:mylovenovel"))
+    //implementation(project(":extensions:individual:en:mylovenovel"))
     implementation(project(":multisrc"))
     implementation(libs.bundles.common)
     implementation(libs.bundles.commonTesting)

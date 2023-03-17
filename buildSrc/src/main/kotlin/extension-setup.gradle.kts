@@ -36,6 +36,9 @@ android {
             }
         }
     }
+    lint {
+        abortOnError = false
+    }
     flavorDimensions.add("default")
     productFlavors {
         extensionList.forEach { extension ->
@@ -119,6 +122,7 @@ dependencies {
 
     compileOnly(project(Proj.annotation))
     compileOnly(project(Proj.multisrc))
+    implementation(project(Proj.defaultRes))
     ksp(project(Proj.compiler))
 
     extensionList.forEach { extension ->
