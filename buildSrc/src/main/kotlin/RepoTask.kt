@@ -183,7 +183,7 @@ open class RepoTask : DefaultTask() {
     private fun extractApks(destDir: File) {
         project.copy {
             from(project.subprojects.map { it.buildDir })
-            include("**/outputs/**/debug/*.apk")
+            include("**/outputs/**/release/*.apk")
             into(destDir)
             eachFile { path = name }
             includeEmptyDirs = false
