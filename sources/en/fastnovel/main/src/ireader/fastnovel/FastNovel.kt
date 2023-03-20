@@ -50,7 +50,7 @@ abstract class FastNovel(private val deps: Dependencies) : SourceFactory(
                 linkAtt = "href",
                 maxPage = 39,
                 addBaseUrlToLink = false,
-                onCover = { url, _ -> url.replace(Regex("/novel[\\s\\S]*/"), "/novel/")}
+                onCover = { url, _ -> url.replace(Regex("/novel[\\s\\S]*/"), "/novel/") }
             ),
             BaseExploreFetcher(
                 "Search",
@@ -71,10 +71,20 @@ abstract class FastNovel(private val deps: Dependencies) : SourceFactory(
             nameSelector = ".info-holder .title",
             coverSelector = ".book > img",
             coverAtt = "src",
-            authorBookSelector = ".info > li:nth-child(2) a",
-            categorySelector = ".info > li:nth-child(2) a",
+            // We are using nth-last-child(x) because there are some
+            // novels which can have alternative names that is added
+            // on top of this .info list
+            authorBookSelector = ".info > li:nth-last-child(4) a",
+            categorySelector = ".info > li:nth-last-child(3) a",
             descriptionSelector = ".desc-text",
-            statusSelector = ".info > li:nth-child(5) a",
+            statusSelector = ".info > li:nth-last-child(1) a",
+            onStatus = { str ->
+                when (str) {
+                    "Completed" -> MangaInfo.COMPLETED
+                    "Ongoing" -> MangaInfo.ONGOING
+                    else -> MangaInfo.UNKNOWN
+                }
+            }
         )
 
     override val chapterFetcher: Chapters
@@ -88,7 +98,7 @@ abstract class FastNovel(private val deps: Dependencies) : SourceFactory(
             addBaseUrlToLink = false,
             numberSelector = "a",
             numberAtt = "title",
-            onNumber = { str -> str.substringAfter("Chapter ").substringBefore(" ")}
+            onNumber = { str -> str.substringAfter("Chapter ").substringBefore(" ") }
         )
 
     override val contentFetcher: Content
@@ -105,12 +115,6 @@ abstract class FastNovel(private val deps: Dependencies) : SourceFactory(
         val updatedManga = MangaInfo(
             key = "https://fastnovel.org/ajax/chapter-archive?novelId=$id",
             title = manga.title,
-            artist = manga.artist,
-            author = manga.author,
-            description = manga.description,
-            genres = manga.genres,
-            status = manga.status,
-            cover = manga.cover
         )
         return super.getChapterListRequest(updatedManga, commands)
     }
