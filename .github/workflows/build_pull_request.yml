@@ -38,7 +38,7 @@ jobs:
       - name: Build extensions and create repo artifacts
         uses: gradle/gradle-command-action@v2
         with:
-          arguments: build repo
+          arguments: assembleRelease repo
           wrapper-cache-enabled: true
           dependencies-cache-enabled: true
           configuration-cache-enabled: true

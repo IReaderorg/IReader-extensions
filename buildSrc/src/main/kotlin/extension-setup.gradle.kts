@@ -36,9 +36,6 @@ android {
             }
         }
     }
-    lint {
-        abortOnError = false
-    }
     flavorDimensions.add("default")
     productFlavors {
         extensionList.forEach { extension ->
@@ -62,6 +59,9 @@ android {
                 )
             }
         }
+    }
+    lint {
+        abortOnError = false
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -100,7 +100,7 @@ android {
 
 
 dependencies {
-    //  implementation(project(Proj.defaultRes))
+      implementation(project(Proj.defaultRes))
 
     // Version Catalog not available here, and that is why we manually import them here
     val libs = project.extensions.getByType<VersionCatalogsExtension>()
@@ -122,7 +122,6 @@ dependencies {
 
     compileOnly(project(Proj.annotation))
     compileOnly(project(Proj.multisrc))
-    implementation(project(Proj.defaultRes))
     ksp(project(Proj.compiler))
 
     extensionList.forEach { extension ->

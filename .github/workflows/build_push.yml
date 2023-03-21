@@ -54,13 +54,13 @@ jobs:
           KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         with:
-#          gradle-version: 7.5
+          #          gradle-version: 7.5
           build-root-directory: master
-#          wrapper-directory: master
-          arguments: build repo
-#          wrapper-cache-enabled: true
-#          dependencies-cache-enabled: true
-#          configuration-cache-enabled: true
+          #          wrapper-directory: master
+          arguments: assembleRelease repo
+      #          wrapper-cache-enabled: true
+      #          dependencies-cache-enabled: true
+      #          configuration-cache-enabled: true
 
       - name: Sign APKs
         if: github.event_name == 'push' && github.repository == 'IReaderorg/IReader-extensions'
