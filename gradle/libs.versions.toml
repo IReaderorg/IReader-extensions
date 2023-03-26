@@ -7,6 +7,7 @@ serialization = "1.4.0"
 ksp = "1.7.10-1.0.6"
 serializationkotlinVersion = "1.7.10"
 junitAndroidExtVersion = "1.1.4-alpha03"
+dex2jar = "v59"
 [libraries]
 
 android-sdklib = "com.android.tools:sdklib:30.3.1"
@@ -55,6 +56,11 @@ ksp-gradle = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin
 
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 serialization-gradle = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+
+# Asm modificiation
+asm = "org.ow2.asm:asm:9.4" # version locked by Dex2Jar
+dex2jar-translator = { module = "com.github.ThexXTURBOXx.dex2jar:dex-translator", version.ref = "dex2jar" }
+dex2jar-tools = { module = "com.github.ThexXTURBOXx.dex2jar:dex-tools", version.ref = "dex2jar" }
 
 
 [bundles]

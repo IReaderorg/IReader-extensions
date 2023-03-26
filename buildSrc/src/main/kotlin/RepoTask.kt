@@ -1,6 +1,9 @@
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.services.DslServices
 import com.android.sdklib.BuildToolInfo
+import com.googlecode.d2j.dex.Dex2jar
+import com.googlecode.d2j.reader.MultiDexFileReader
+import com.googlecode.dex2jar.tools.BaksmaliBaseDexExceptionHandler
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -54,10 +57,11 @@ open class RepoTask : DefaultTask() {
         repoDir.mkdirs()
 
         extractApks(apkDir)
-
+        generateJars(apkDir,repoDir)
         val badgings = parseBadgings(apkDir) ?: return
         ensureValidState(badgings)
         extractIcons(apkDir, iconDir, badgings)
+
         generateRepo(repoDir, badgings)
     }
 
@@ -238,6 +242,41 @@ open class RepoTask : DefaultTask() {
         }
     }
 
+    fun generateJars(apkDir: File,repoDir: File) {
+        val jarDir = File(repoDir,"jar/")
+        jarDir.mkdirs()
+        apkDir.listFiles()
+            ?.forEach { apk ->
+                print(apk.name)
+                val jarFile = File(jarDir,apk.name.replace(".apk",".jar"))
+                dex2jar(apk,jarFile,apk.name)
+            }
+    }
+
+    @Suppress("NewApi")
+    fun dex2jar(dexFile: File, jarFile: File, fileNameWithoutType: String) {
+        // adopted from com.googlecode.dex2jar.tools.Dex2jarCmd.doCommandLine
+        // source at: https://github.com/DexPatcher/dex2jar/tree/v2.1-20190905-lanchon/dex-tools/src/main/java/com/googlecode/dex2jar/tools/Dex2jarCmd.java
+        try {
+            val jarFilePath = jarFile.toPath()
+            val reader = MultiDexFileReader.open(dexFile.inputStream())
+            val handler = BaksmaliBaseDexExceptionHandler()
+            Dex2jar
+                .from(reader)
+                .withExceptionHandler(handler)
+                .reUseReg(false)
+                .topoLogicalSort()
+                .skipDebug(true)
+                .optimizeSynchronized(false)
+                .printIR(false)
+                .noCode(false)
+                .skipExceptions(false)
+                .to(jarFilePath)
+        } catch (e: Exception) {
+            print(e)
+        }
+
+    }
 
     private fun getAapt2Path(): String {
         val androidProject = project.subprojects.first { it.hasProperty("android") }

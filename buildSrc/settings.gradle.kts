@@ -17,6 +17,7 @@ dependencyResolutionManagement {
         maven {
             url = uri("https://plugins.gradle.org/m2/")
         }
+        maven(url = "https://jitpack.io")
     }
     versionCatalogs {
         create("libs") {

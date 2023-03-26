@@ -11,6 +11,8 @@ dependencies {
   implementation(libs.android.gradle)
   implementation(libs.android.sdklib)
   implementation(libs.ksp.gradle)
+  implementation(libs.dex2jar.translator)
+  implementation(libs.dex2jar.tools)
 }
 
 kotlin {
