@@ -1,31 +1,16 @@
 package ireader.pandanovel
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.HttpRequestBuilder
-import io.ktor.client.request.url
-import io.ktor.serialization.kotlinx.json.json
-import ireader.pandanovel.chapter.ChapterDTO
-import ireader.core.source.SourceFactory
-import kotlinx.datetime.Clock
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
+import android.util.Log
 import ireader.core.source.Dependencies
+import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
-import ireader.core.source.model.ChapterInfo
-import ireader.core.source.model.Command
-import ireader.core.source.model.CommandList
-import ireader.core.source.model.Filter
-import ireader.core.source.model.FilterList
-import ireader.core.source.model.MangaInfo
-import ireader.core.source.model.Page
+import ireader.core.source.findInstance
+import ireader.core.source.model.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 @Extension
 abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
@@ -51,20 +36,6 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
         Command.Chapter.Fetch(),
     )
 
-    @OptIn(ExperimentalSerializationApi::class)
-    override val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                    allowSpecialFloatingPointValues = true
-                    allowStructuredMapKeys = true
-                    explicitNulls = true
-                }
-            )
-        }
-    }
-
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
@@ -82,153 +53,109 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
                 nextPageValue = "..."
             ),
 
-        )
+            )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
             nameSelector = ".novel-desc h1",
-            coverSelector = ".novel-cover i",
-            onCover = {
-                it.substringAfter("background-image: url(\"").substringBefore("\");")
-            },
-            coverAtt = "style",
-            authorBookSelector = ".novel-attr a",
-            categorySelector = ".novel-labels a",
-            descriptionSelector = ".synopsis-body .synopsis-content",
-        )
-
-    override val chapterFetcher: Chapters
-        get() = SourceFactory.Chapters(
-            selector = ".chapter-list li a",
-            nameSelector = "span",
-            onName = {
-                it.substringAfter(";")
-            },
-            linkSelector = "a",
-            linkAtt = "href",
-            addBaseUrlToLink = true,
-            reverseChapterList = true
-        )
-
-    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
-        return deps.httpClients.cloudflareClient to HttpRequestBuilder().apply {
-            url(url)
-            headersBuilder()
-        }
-    }
-
-    override val contentFetcher: Content
-        get() = SourceFactory.Content(
-            pageTitleSelector = ".novel-content h2",
-            pageContentSelector = "#novelArticle1",
-            onContent = { contents ->
-                contents.joinToString("\n").split("\n")
+            coverSelector = ".header-content > .novel-cover > i",
+            coverAtt = "data-src",
+            authorBookSelector = ".icon-user + a",
+            categorySelector = ".tags-list a",
+            descriptionSelector = "#detailsApp > div:nth-child(4) p",
+            statusSelector = ".novel-attr li:last-child strong",
+            onStatus = fun (status): Long {
+                Log.d("PandaNovel", status)
+                return when(status) {
+                    "Ongoing" -> MangaInfo.ONGOING
+                    "Completed" -> MangaInfo.COMPLETED
+                    else -> MangaInfo.UNKNOWN
+                }
             }
         )
 
-    override suspend fun getListRequest(
-        baseExploreFetcher: BaseExploreFetcher,
-        page: Int,
-        query: String
-    ): Document {
-        return deps.httpClients.browser.fetch(
-            baseUrl + baseExploreFetcher.endpoint?.replace(
-                "{page}",
-                page.toString()
-            )?.replace("{query}", query.replace(" ", "+")),
-            baseExploreFetcher.selector,
-            timeout = 50000
-        ).responseBody.asJsoup()
-    }
+    override val chapterFetcher: Chapters
+        get() = Chapters(
+            selector = ".chapter-list > ul:first-child li",
+            nameSelector = "span",
+            linkSelector = "a",
+            linkAtt = "href",
+            addBaseUrlToLink = true,
+        )
 
-    override suspend fun getChapterListRequest(
-        manga: MangaInfo,
-        commands: List<Command<*>>
-    ): Document {
-        return deps.httpClients.browser.fetch(
-            manga.key,
-            chapterFetcher.nameSelector,
-        ).responseBody.asJsoup()
+    private fun isCloudflareProtection(page: String): Boolean {
+        return page.contains("challenges.cloudflare.com")
     }
 
     override suspend fun getMangaDetailsRequest(
-        manga: MangaInfo,
-        commands: List<Command<*>>
+        manga: MangaInfo, commands: List<Command<*>>
     ): Document {
-        return deps.httpClients.browser.fetch(
-            manga.key,
-            detailFetcher.nameSelector,
-        ).responseBody.asJsoup()
+        val resp = deps.httpClients.browser.fetch(
+            manga.key
+        ).responseBody
+        if (isCloudflareProtection(resp)) {
+            throw Exception("CloudFlare protection detected, Use Webview to Fetch Chapter List")
+        }
+        val doc = resp.asJsoup()
+        val text = doc.text()
+        if (text == "" || text == " " || text == "null") {
+            throw Exception("CloudFlare protection detected, Use Webview to Fetch Chapter List")
+        }
+
+        return doc
     }
 
-    private val jsonFormatter = Json {
-        ignoreUnknownKeys = true
+    override suspend fun getChapterListRequest(
+        manga: MangaInfo, commands: List<Command<*>>
+    ): Document {
+        val url = manga.key + "/chapters"
+        val resp = deps.httpClients.browser.fetch(url).responseBody
+
+        if (isCloudflareProtection(resp)) {
+            throw Exception("CloudFlare protection detected, Use Webview to Fetch Chapter List")
+        }
+        val doc = resp.asJsoup()
+        val text = doc.text()
+        if (text == "" || text == " " || text == "null") {
+            throw Exception("CloudFlare protection detected, Use Webview to Fetch Chapter List")
+        }
+        return doc
     }
-    private val dateFormat: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        if (commands.isEmpty()) {
-            val bookId = manga.key.substringAfterLast("-")
-            val time = Clock.System.now().toEpochMilliseconds()
-            val chapters = mutableListOf<ChapterInfo>()
-            val json: String = deps.httpClients.browser.fetch(
-                "https://www.panda-novel.com/api/book/chapters/$bookId/1?_=$time",
-                detailFetcher.nameSelector,
-            ).responseBody.asJsoup().text().replace(" ", "")
-            val chapter: ChapterDTO = jacksonObjectMapper().readValue<ChapterDTO>(json)
-            chapters.addAll(chapter.parseChapters())
-
-            for (page in 1..chapter.data.pages) {
-                val json2: String = deps.httpClients.browser.fetch(
-                    "https://www.panda-novel.com/api/book/chapters/$bookId/$page?_=$time",
-                    detailFetcher.nameSelector,
-                ).responseBody.asJsoup().text().replace(" ", "")
-                val chapter2: ChapterDTO = jacksonObjectMapper().readValue<ChapterDTO>(json2)
-                chapters.addAll(chapter2.parseChapters())
+        commands.findInstance<Command.Chapter.Fetch>()?.let { command ->
+            return chaptersParse(Jsoup.parse(command.html))
+        }
+        return kotlin.runCatching {
+            return@runCatching withContext(Dispatchers.IO) {
+                return@withContext chaptersParse(
+                    getChapterListRequest(manga, commands),
+                )
             }
-
-            return chapters
-        }
-        return super.getChapterList(manga, commands).reversed()
+        }.getOrThrow()
     }
 
-    fun ChapterDTO.parseChapters(): List<ChapterInfo> {
-        return this.data.list.mapIndexed { index, info ->
-            ChapterInfo(
-                key = baseUrl + info.chapterUrl,
-                name = info.name,
-                dateUpload = dateFormat.parse(info.updatedAt)?.time ?: -1,
-                number = (index + 1).toFloat(),
-            )
-        }
-    }
+    override val contentFetcher: Content
+        get() = Content(
+            pageTitleSelector = ".novel-content h2", pageContentSelector = "#novelArticle2 > p"
+        )
 
     override suspend fun getContentRequest(
-        chapter: ChapterInfo,
-        commands: List<Command<*>>
+        chapter: ChapterInfo, commands: List<Command<*>>
     ): Document {
+        var response = deps.httpClients.browser.fetch(
+            chapter.key, timeout = 50000
+        ).responseBody
 
-        return deps.httpClients.browser.fetch(
-            chapter.key,
-            selector = "#novelArticle1",
-            timeout = 50000
-        ).responseBody.asJsoup()
-    }
-
-    override fun pageContentParse(document: Document): List<Page> {
-        val par = document.select(contentFetcher.pageContentSelector).html().split("<br>")
-            .map { it.asJsoup().text() }
-        val head = selectorReturnerStringType(
-            document,
-            selector = contentFetcher.pageTitleSelector,
-            contentFetcher.pageTitleAtt
-        ).let {
-            contentFetcher.onTitle(it)
+        if (isCloudflareProtection(response)) {
+            response =
+                """<div id="novelArticle2"><p>Cloudflare Issue, Open in Webview and Fetch Chapter 
+                |from context menu or Complete Couldflare challenge and refetch chapter</p></div>""".trimMargin()
         }
 
-        return listOf(head.toPage()) + par.map { it.toPage() }
+        return response.asJsoup()
     }
 }
