@@ -97,6 +97,8 @@ android {
     }
 }
 
+    tasks.register("export",DeployTask::class.java)
+
 
 
 dependencies {

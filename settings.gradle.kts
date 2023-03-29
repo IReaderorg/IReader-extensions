@@ -8,7 +8,7 @@
 
 
 enableFeaturePreview("VERSION_CATALOGS")
-
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 include(":annotations")
 include(":compiler")
 include(":deeplink")

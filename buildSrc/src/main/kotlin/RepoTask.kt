@@ -253,30 +253,7 @@ open class RepoTask : DefaultTask() {
             }
     }
 
-    @Suppress("NewApi")
-    fun dex2jar(dexFile: File, jarFile: File, fileNameWithoutType: String) {
-        // adopted from com.googlecode.dex2jar.tools.Dex2jarCmd.doCommandLine
-        // source at: https://github.com/DexPatcher/dex2jar/tree/v2.1-20190905-lanchon/dex-tools/src/main/java/com/googlecode/dex2jar/tools/Dex2jarCmd.java
-        try {
-            val jarFilePath = jarFile.toPath()
-            val reader = MultiDexFileReader.open(dexFile.inputStream())
-            val handler = BaksmaliBaseDexExceptionHandler()
-            Dex2jar
-                .from(reader)
-                .withExceptionHandler(handler)
-                .reUseReg(false)
-                .topoLogicalSort()
-                .skipDebug(true)
-                .optimizeSynchronized(false)
-                .printIR(false)
-                .noCode(false)
-                .skipExceptions(false)
-                .to(jarFilePath)
-        } catch (e: Exception) {
-            print(e)
-        }
 
-    }
 
     private fun getAapt2Path(): String {
         val androidProject = project.subprojects.first { it.hasProperty("android") }
@@ -291,12 +268,37 @@ open class RepoTask : DefaultTask() {
         return buildToolInfo.getPath(BuildToolInfo.PathId.AAPT2)
     }
 
-    private companion object {
+    companion object {
         val PACKAGE =
             Regex("^package: name='([^']+)' versionCode='([0-9]*)' versionName='([^']*)'.*$")
         val METADATA = Regex("^meta-data: name='([^']*)' value='([^']*)")
         val APPLICATION_ICON = Regex("^application-icon-\\d+:'([^']*)'$")
         val RESOURCE_ICON = Regex("\\(xxxhdpi\\) \\(file\\) (res/[A-Z]*.png) type=PNG")
+
+        @Suppress("NewApi")
+        fun dex2jar(dexFile: File, jarFile: File, fileNameWithoutType: String) {
+            // adopted from com.googlecode.dex2jar.tools.Dex2jarCmd.doCommandLine
+            // source at: https://github.com/DexPatcher/dex2jar/tree/v2.1-20190905-lanchon/dex-tools/src/main/java/com/googlecode/dex2jar/tools/Dex2jarCmd.java
+            try {
+                val jarFilePath = jarFile.toPath()
+                val reader = MultiDexFileReader.open(dexFile.inputStream())
+                val handler = BaksmaliBaseDexExceptionHandler()
+                Dex2jar
+                    .from(reader)
+                    .withExceptionHandler(handler)
+                    .reUseReg(false)
+                    .topoLogicalSort()
+                    .skipDebug(true)
+                    .optimizeSynchronized(false)
+                    .printIR(false)
+                    .noCode(false)
+                    .skipExceptions(false)
+                    .to(jarFilePath)
+            } catch (e: Exception) {
+                print(e)
+            }
+
+        }
     }
 
     private data class Metadata(
