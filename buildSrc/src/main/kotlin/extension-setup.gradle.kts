@@ -97,12 +97,12 @@ android {
     }
 }
 
-    tasks.register("export",DeployTask::class.java)
+tasks.register("deploy",DeployTask::class.java)
 
 
 
 dependencies {
-      implementation(project(Proj.defaultRes))
+    implementation(project(Proj.defaultRes))
 
     // Version Catalog not available here, and that is why we manually import them here
     val libs = project.extensions.getByType<VersionCatalogsExtension>()

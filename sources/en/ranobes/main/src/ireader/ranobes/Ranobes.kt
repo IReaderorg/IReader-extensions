@@ -11,7 +11,6 @@ import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import ireader.core.http.okhttp
-import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -42,7 +41,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
     override val id: Long
         get() = 13
-    override val baseUrl = "https://ranobes.net"
+    override val baseUrl = "https://ranobes.top"
 
     override val lang = "en"
 
@@ -120,7 +119,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
         var response = ""
 
-        val html = client.get(requestBuilder("https://ranobes.net/ranking/cstart=$page&ajax=true"))
+        val html = client.get(requestBuilder("$baseUrl/ranking/cstart=$page&ajax=true"))
         response = html.asJsoup().html()
 
         return bookListParse(
@@ -239,7 +238,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         var response: Document;
         val html = client.get(manga.key)
         response = html.asJsoup();
-
         return detailParse(response)
     }
 
@@ -313,7 +311,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
             var response = ""
 
             val html =
-                client.get(requestBuilder("https://ranobes.net/chapters/${bookId}/page/1/"))
+                client.get(requestBuilder("$baseUrl/chapters/${bookId}/page/1/"))
             response = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
                 .substringBefore("</script>")
             val chapters = Gson().fromJson(response, ChapterDTO::class.java)
@@ -334,7 +332,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         res = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
             .substringBefore("</script>")
         val json1 = Gson().fromJson(res, ChapterDTO::class.java)
-
 //        res = deps.httpClients.browser.fetch(
 //                    "https://ranobes.net/chapters/${bookId.first()}/page/1/",
 //                    selector = chaptersSelector(),
@@ -347,7 +344,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         withContext(Dispatchers.IO) {
             for (i in 1..maxPage) {
                 val response = client.get(
-                    "https://ranobes.net/chapters/${json1.book_id}/page/$i/"
+                    "$baseUrl/chapters/${json1.book_id}/page/$i/"
                 ).asJsoup().html().substringAfter("<script>window.__DATA__ = ")
                     .substringBefore("</script>")
 
@@ -370,7 +367,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     fun chaptersParse(chapterDTO: ChapterDTO): List<ChapterInfo> {
         return chapterDTO.chapters.map { chater ->
             ChapterInfo(
-                key = "https://ranobes.net/read-${chater.id}.html",
+                key = "$baseUrl/read-${chater.id}.html",
                 name = chater.title,
             )
         }
