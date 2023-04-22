@@ -62,12 +62,12 @@
   },
   {
     "pkg": "ireader.daonovel.en",
-    "apk": "ireader-en-daonovel-v1.5.apk",
+    "apk": "ireader-en-daonovel-v1.6.apk",
     "name": "DaoNovel",
     "id": 7847424113029628376,
     "lang": "en",
-    "code": 5,
-    "version": "1.5",
+    "code": 6,
+    "version": "1.6",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -556,12 +556,12 @@
   },
   {
     "pkg": "ireader.wuxiaworldsite.en",
-    "apk": "ireader-en-wuxiaworldsite-v1.9.apk",
+    "apk": "ireader-en-wuxiaworldsite-v1.10.apk",
     "name": "WuxiaWorldSite",
     "id": 2450173456282426491,
     "lang": "en",
-    "code": 9,
-    "version": "1.9",
+    "code": 10,
+    "version": "1.10",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
