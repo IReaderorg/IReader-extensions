@@ -133,7 +133,7 @@ abstract class DaoNovel(deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Detail(
             nameSelector = ".post-title h1",
             coverSelector = ".summary_image a img",
-            coverAtt = "src",
+            coverAtt = "data-src",
             descriptionSelector = ".description-summary p",
             onStatus = { status ->
                 if (status.contains("Completed")) {
