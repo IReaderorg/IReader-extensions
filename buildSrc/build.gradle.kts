@@ -19,11 +19,3 @@ kotlin {
   // Add Deps to compilation, so it will become available in main project
   sourceSets.getByName("main").kotlin.srcDir("buildSrc/src/main/kotlin")
 }
-
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile> {
-  kotlinOptions {
-    freeCompilerArgs += listOf(
-      "-opt-in=org.mylibrary.OptInAnnotation"
-    )
-  }
-}
