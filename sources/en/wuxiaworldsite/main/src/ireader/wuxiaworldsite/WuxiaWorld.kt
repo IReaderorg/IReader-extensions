@@ -12,6 +12,7 @@ import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ireader.core.http.okhttp
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -88,17 +89,22 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         }
     }
 
+    override fun getUserAgent(): String {
+        return "Mozilla/5.0 (Linux; Android 12; Pixel 6 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.85 Mobile Safari/537.36 OPR/66.2.3445.62346"
+    }
     suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/novel-list/page/$page/")
+        val res = requestBuilder("$baseUrl/novels-list/page/$page/")
+        val html = client.get(res).asJsoup()
+        Log.error { html.html() }
         return bookListParse(
-            client.get(res).asJsoup(),
+            html,
             "div.page-item-detail",
             popularNextPageSelector()
         ) { latestFromElement(it) }
     }
 
     suspend fun getPopular(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/novel-list/page/$page/?m_orderby=views")
+        val res = requestBuilder("$baseUrl/novels-list/page/$page/?m_orderby=views")
         return bookListParse(
             client.get(res).asJsoup(),
             "div.page-item-detail",
@@ -120,7 +126,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         headers {
             append(
                 HttpHeaders.UserAgent,
-                "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
+                getUserAgent()
             )
             append(HttpHeaders.CacheControl, "max-age=0")
             append(HttpHeaders.Referrer, baseUrl)
@@ -148,7 +154,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         val title = element.select("h3.h5 a").text()
         val url = element.select("h3.h5 a").attr("href")
         val thumbnailUrl = element.select("img").attr("data-src")
-
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
@@ -323,7 +328,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         return client to requestBuilder(url) {
             append(
                 HttpHeaders.UserAgent,
-                "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
+                getUserAgent()
             )
             append(HttpHeaders.CacheControl, "max-age=0")
             append(HttpHeaders.Referrer, "https://wuxiaworld.site/")
