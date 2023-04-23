@@ -169,6 +169,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.lnmtl.en",
+    "apk": "ireader-en-lnmtl-v1.1.apk",
+    "name": "LnMtl",
+    "id": 5475081638229100683,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.mostnovel.en",
     "apk": "ireader-en-mostnovel-v1.2.apk",
     "name": "MostNovel",
