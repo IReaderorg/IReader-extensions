@@ -32,7 +32,7 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(
         get() = "LnMtl"
 
     override fun getFilters(): FilterList = listOf(
-        Filter.Title(),
+
     )
 
     override fun getCommands(): CommandList = listOf(
@@ -53,20 +53,6 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(
                 coverSelector = "img",
                 coverAtt = "src",
                 maxPage = 80,
-            ),
-            BaseExploreFetcher(
-                "Search",
-                endpoint = "/page/{page}/?s={query}&post_type=wp-manga",
-                selector = ".c-tabs-item__content",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "data-src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts",
-                type = SourceFactory.Type.Search
             ),
             BaseExploreFetcher(
                 "Trending",
