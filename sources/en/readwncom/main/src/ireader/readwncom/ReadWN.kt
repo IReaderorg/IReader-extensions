@@ -3,6 +3,7 @@ package ireader.readwncom
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.http.Parameters
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
@@ -12,6 +13,8 @@ import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.Page
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
@@ -87,10 +90,34 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = ".titles > h2",
+            pageTitleSelector = ".titles h2",
             pageContentSelector = ".chapter-content p",
         )
 
+    override fun pageContentParse(document: Document): List<Page> {
+        val par = selectorReturnerListType(
+            document,
+            selector = contentFetcher.pageContentSelector,
+            contentFetcher.pageContentAtt
+        ).filter { it.isNotBlank() }.let { par ->
+            par.ifEmpty {
+                document.select(".chapter-content").html().split("<br>")
+                    .map { Jsoup.parse(it).text() }
+            }
+        }.let {
+            contentFetcher.onContent(it)
+        }
+
+        val head = selectorReturnerStringType(
+            document,
+            selector = contentFetcher.pageTitleSelector,
+            contentFetcher.pageTitleAtt
+        ).let {
+            contentFetcher.onTitle(it)
+        }
+
+        return listOf(head.toPage()) + par.map { it.toPage() }
+    }
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
