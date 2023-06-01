@@ -446,6 +446,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.royalroad.en",
+    "apk": "ireader-en-royalroad-v1.1.apk",
+    "name": "RoyalRoad",
+    "id": 7901266723452589635,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.scribblehub.en",
     "apk": "ireader-en-scribblehub-v1.2.apk",
     "name": "ScribbleHub",
