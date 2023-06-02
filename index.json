@@ -530,6 +530,19 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.wbnovel.wbnovel.in",
+    "apk": "ireader-in-wbnovel-v1.1.apk",
+    "name": "WbNovel",
+    "id": 6480076862656966258,
+    "lang": "in",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "wbnovel",
+    "assetsDir": "multisrc/skynovel/wbnovel/assets"
+  },
+  {
     "pkg": "ireader.webnovelcom.en",
     "apk": "ireader-en-webnovelcom-v1.6.apk",
     "name": "WebNovelCom",
