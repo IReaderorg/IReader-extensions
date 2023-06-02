@@ -302,6 +302,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.novelparadise.en",
+    "apk": "ireader-en-novelparadise-v1.1.apk",
+    "name": "NovelParadise",
+    "id": 5126995616733100356,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.novelscafes.en",
     "apk": "ireader-en-novelscafes-v1.2.apk",
     "name": "NovelsCafes",
