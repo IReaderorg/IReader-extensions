@@ -13,6 +13,7 @@ plugins {
 val extensionList: List<Extension> by extra
 
 android {
+    namespace = "ireader.extension"
     compileSdk = Config.compileSdk
     defaultConfig {
         minSdk = Config.minSdk
