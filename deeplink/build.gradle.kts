@@ -14,7 +14,7 @@ plugins {
 
 android {
   compileSdk = Config.compileSdk
-
+  namespace = "tachiyomix.deeplink"
   defaultConfig {
     minSdk = Config.minSdk
   }
