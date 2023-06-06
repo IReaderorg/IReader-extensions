@@ -97,6 +97,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.indowebnovel.en",
+    "apk": "ireader-en-indowebnovel-v1.1.apk",
+    "name": "IndoWebNovel",
+    "id": 5166164452994202381,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.kissnovellove.en",
     "apk": "ireader-en-kissnovellove-v1.3.apk",
     "name": "KissNovelLove",
