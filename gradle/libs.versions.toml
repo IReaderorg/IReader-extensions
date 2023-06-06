@@ -10,8 +10,8 @@ junitAndroidExtVersion = "1.1.4-alpha03"
 dex2jar = "v60"
 [libraries]
 
-android-sdklib = "com.android.tools:sdklib:30.3.1"
-android-gradle = "com.android.tools.build:gradle:7.4.2"
+android-sdklib = "com.android.tools:sdklib:27.1.2"
+android-gradle = "com.android.tools.build:gradle:8.0.0"
 
 
 ktor-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }

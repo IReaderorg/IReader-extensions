@@ -13,6 +13,7 @@ plugins {
 }
 
 android {
+namespace = "tachiyomix.defaultres"
   compileSdk = Config.compileSdk
 
   defaultConfig {
