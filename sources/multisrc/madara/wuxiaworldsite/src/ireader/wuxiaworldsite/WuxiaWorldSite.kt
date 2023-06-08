@@ -7,16 +7,16 @@ import ireader.madara.Path
 import tachiyomix.annotations.Extension
 
 @Extension
-abstract class Zinnovel(val deps: Dependencies) : Madara(
+abstract class WuxiaWorldSite(val deps: Dependencies) : Madara(
     deps,
-    key = "https://www.lunarletters.com",
-    sourceName = "LunarLetters",
-    sourceId = 55,
+    key = "https://wuxiaworld.site",
+    sourceName = "wuxiaworld",
+    sourceId = 70,
     language = "en",
     paths = Path(
-        novel = "series",
-        novels = "series",
-        chapter = "series"
+        novel = "manga",
+        novels = "manga",
+        chapter = "novel"
     )
 
 )
