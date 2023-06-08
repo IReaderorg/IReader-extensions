@@ -207,7 +207,8 @@ listOf(
         icon = DEFAULT_ICON,
         assetsDir = "multisrc/madara/wbnovel/assets",
         sourceDir = "wbnovel",
-    ),Extension(
+    ),
+    Extension(
         name = "WuxiaWorld",
         versionCode = 1,
         libVersion = "1",
@@ -285,17 +286,6 @@ listOf(
         sourceDir = "sonicmtl",
     ),
     Extension(
-        name = "SleepyTranslations",
-        versionCode = 1,
-        libVersion = "1",
-        lang = "en",
-        description = "",
-        nsfw = false,
-        icon = DEFAULT_ICON,
-        assetsDir = "multisrc/madara/sleepytranslations/assets",
-        sourceDir = "sleepytranslations",
-    ),
-    Extension(
         name = "MTLNovelClub",
         versionCode = 1,
         libVersion = "1",
@@ -316,10 +306,5 @@ listOf(
         icon = DEFAULT_ICON,
         assetsDir = "multisrc/madara/novelstic/assets",
         sourceDir = "novelstic",
-    ),
-
-
-
-
-
-    ).also(::register)
+    )
+).also(::register)
