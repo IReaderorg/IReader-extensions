@@ -1,4 +1,4 @@
-package ireader.chireads
+package ireader.noveldeglace
 
 import io.ktor.client.request.post
 import ireader.core.log.Log
@@ -15,17 +15,17 @@ import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension
-abstract class Chireads(deps: Dependencies) : SourceFactory(
+abstract class NovelDeGlace(deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
     override val lang: String
         get() = "fr"
     override val baseUrl: String
-        get() = "https://chireads.com"
+        get() = "https://noveldeglace.com"
     override val id: Long
-        get() = 79
+        get() = 80
     override val name: String
-        get() = "Chireads"
+        get() = "NovelDeGlace"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
@@ -52,14 +52,14 @@ abstract class Chireads(deps: Dependencies) : SourceFactory(
         get() = listOf(
             BaseExploreFetcher(
                 "Latest",
-                endpoint = "/category/translatedtales/page/{page}/",
-                selector = "#content li",
-                nameSelector = ".news-list-tit h5 a",
-                linkSelector = ".news-list-tit h5 a",
+                endpoint = "/roman/",
+                selector = "article",
+                nameSelector = "h2",
+                linkSelector = "h2 > a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                maxPage = 50,
+                maxPage = 0,
             ),
             BaseExploreFetcher(
                 "Search",
@@ -72,7 +72,8 @@ abstract class Chireads(deps: Dependencies) : SourceFactory(
                 coverSelector = "img",
                 coverAtt = "src",
                 maxPage = 0,
-                type = SourceFactory.Type.Search
+                type = SourceFactory.Type.Search,
+
             ),
 
 
@@ -80,15 +81,18 @@ abstract class Chireads(deps: Dependencies) : SourceFactory(
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = ".inform-title",
-            coverSelector = ".inform-product img",
+            nameSelector = "div.entry-content > div > strong",
+            coverSelector = ".su-row > div > div > img",
             coverAtt = "src",
-            descriptionSelector = ".inform-inform-txt",
+            descriptionSelector = "div[data-title=Synopsis]",
+            authorBookSelector = "div.romans > div.project-large > div.su-row > div.su-column.su-column-size-3-4 > div > div:nth-child(3) > strong",
+            categorySelector = ".genre",
+
         )
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = ".chapitre-table a",
+            selector = ".chpt",
             nameSelector = "a",
             linkSelector = "a",
             linkAtt = "href",
@@ -97,8 +101,8 @@ abstract class Chireads(deps: Dependencies) : SourceFactory(
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = ".article-title",
-            pageContentSelector = "#content p",
+            pageTitleSelector = "h2.western",
+            pageContentSelector = ".chapter-content p",
         )
 
     override fun getUserAgent(): String {
