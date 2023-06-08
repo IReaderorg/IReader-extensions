@@ -1,11 +1,10 @@
-package ireader.readwncom
+package ireader.readwn
 
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
+import io.ktor.client.request.post
 import io.ktor.http.Parameters
-import ireader.core.log.Log
 import ireader.core.source.Dependencies
-import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
@@ -14,23 +13,24 @@ import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.Page
+import ireader.core.source.SourceFactory
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension
-abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
+abstract class ReaderWnScraper(private val deps: Dependencies, private val sourceId: Long,private val key: String,private val sourceName: String, private val language:String) : SourceFactory(
     deps = deps,
 ) {
-
     override val lang: String
-        get() = "en"
+        get() = language
     override val baseUrl: String
-        get() = "https://www.readwn.com"
+        get() = key
     override val id: Long
-        get() = 37
+        get() = sourceId
     override val name: String
-        get() = "ReadWn"
+        get() = sourceName
+
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
@@ -74,7 +74,7 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
                 type = SourceFactory.Type.Search
             ),
 
-        )
+            )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -143,7 +143,7 @@ abstract class ReadWN(private val deps: Dependencies) : SourceFactory(
     ): Document {
         if (baseExploreFetcher.key == "Search") {
             return client.submitForm(
-                url = "https://www.readwn.com/e/search/index.php",
+                url = "$baseUrl/e/search/index.php",
                 formParameters = Parameters.build {
                     append("show", "title")
                     append("tempid", "1")
