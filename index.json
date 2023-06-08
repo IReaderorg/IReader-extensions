@@ -375,6 +375,19 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.noveltranslate.noveltranslate.en",
+    "apk": "ireader-en-noveltranslate-v1.1.apk",
+    "name": "NovelTranslate",
+    "id": 7757870478899123755,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "noveltranslate",
+    "assetsDir": "multisrc/madara/noveltranslate/assets"
+  },
+  {
     "pkg": "ireader.novelupdates.en",
     "apk": "ireader-en-novelupdates-v1.3.apk",
     "name": "NovelUpdates",
@@ -651,5 +664,18 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.zinnovel.zinnovel.en",
+    "apk": "ireader-en-zinnovel-v1.1.apk",
+    "name": "Zinnovel",
+    "id": 6099353536715341961,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "zinnovel",
+    "assetsDir": "multisrc/madara/zinnovel/assets"
   }
 ]
