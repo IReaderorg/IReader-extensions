@@ -9,14 +9,14 @@ import tachiyomix.annotations.Extension
 @Extension
 abstract class Zinnovel(val deps: Dependencies) : Madara(
     deps,
-    key = "https://www.lunarletters.com",
-    sourceName = "LunarLetters",
+    key = "https://zinnovel.com",
+    sourceName = "ZinnNovel",
     sourceId = 55,
     language = "en",
     paths = Path(
-        novel = "series",
-        novels = "series",
-        chapter = "series"
+        novel = "manga",
+        novels = "manga",
+        chapter = "manga"
     )
 
 )
