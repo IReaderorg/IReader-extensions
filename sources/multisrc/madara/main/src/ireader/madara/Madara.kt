@@ -179,7 +179,7 @@ abstract class Madara(
             document.select(selector).first()
         } != null
 
-        return MangasPageInfo(books, hasNextPage)
+        return MangasPageInfo(books, true)
     }
 
     private fun booksFromElement(element: Element): MangaInfo {
@@ -204,9 +204,9 @@ abstract class Madara(
 
     private fun detailParse(document: Document): MangaInfo {
         val title = document.select("div.post-title>h1").text()
-        var cover = document.select("div.summary_image a img").attr("data-src")
-        if (cover.isBlank()) {
-            cover = document.select("div.summary_image a img").attr("src")
+        var cover = document.select("div.summary_image a img").attr("src")
+        if (cover.isBlank() || cover.contains("data:image/svg+xml", ignoreCase = true)) {
+            cover = document.select("div.summary_image a img").attr("data-src")
         }
         val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
         var authorBookSelector = document.select("div.author-content>a").attr("title")
@@ -270,7 +270,25 @@ abstract class Madara(
             ) {
                 headersBuilder()
             }.asJsoup(),
-        )
+        ).ifEmpty {
+            chaptersParse(
+                client.submitForm(
+                    url = "$baseUrl/ajax/chapters/",
+                    formParameters = Parameters.build {
+                        append("action", "manga_get_chapters")
+                        append("manga", bookId)
+                    }
+                ) {
+                    headersBuilder()
+                }.asJsoup(),
+            )
+        }.ifEmpty {
+            chaptersParse(
+                client.get(manga.key) {
+                    headersBuilder()
+                }.asJsoup(),
+            )
+        }
         return chapters.reversed()
     }
 

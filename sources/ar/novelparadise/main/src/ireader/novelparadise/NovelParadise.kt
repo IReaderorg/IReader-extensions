@@ -1,4 +1,4 @@
-package ireader.royalroad
+package ireader.novelparadise
 
 import io.ktor.client.HttpClient
 import ireader.core.log.Log
@@ -14,18 +14,18 @@ import tachiyomix.annotations.Extension
 
 
 @Extension
-abstract class RoyalRoad(private val deps: Dependencies) : SourceFactory(
+abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
 
     override val lang: String
-        get() = "en"
+        get() = "ar"
     override val baseUrl: String
-        get() = "https://www.royalroad.com"
+        get() = "https://novelsparadise.net"
     override val id: Long
-        get() = 49
+        get() = 50
     override val name: String
-        get() = "RoyalRoad"
+        get() = "NovelParadise"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title()
@@ -42,45 +42,33 @@ abstract class RoyalRoad(private val deps: Dependencies) : SourceFactory(
     fun fetcherCreator(name:String, endpoint:String) :BaseExploreFetcher{
         return BaseExploreFetcher(
             name,
-            endpoint = "/fictions/$endpoint?page={page}",
-            selector = ".fiction-list-item",
-            nameSelector = ".fiction-title a",
+            endpoint = "/series/?page={page}&status=&type=&order=$name",
+            selector = ".maindet",
+            nameSelector = ".mdinfo h2 a",
             coverSelector = "img",
             coverAtt = "src",
-            linkSelector = ".fiction-title a",
+            linkSelector = ".mdinfo h2 a",
             linkAtt = "href",
-            addBaseUrlToLink = true,
-            maxPage = 2000,
+            maxPage = 50,
         )
     }
     fun search() :BaseExploreFetcher{
         return BaseExploreFetcher(
             "Search",
-            endpoint = "/fictions/search?page={page}}&title={query}",
-            selector = ".fiction-list-item",
-            nameSelector = ".fiction-title a",
+            endpoint = "/page/{page}}/?s={query}",
+            selector = ".maindet",
+            nameSelector = ".mdinfo h2 a",
             coverSelector = "img",
             coverAtt = "src",
-            linkSelector = ".fiction-title a",
+            linkSelector = ".mdinfo h2 a",
             linkAtt = "href",
-            addBaseUrlToLink = true,
-            maxPage = 2000,
+            maxPage = 50,
             type = SourceFactory.Type.Search
         )
     }
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
-            fetcherCreator("Last Update","latest-updates"),
-            fetcherCreator("Trending","trending"),
-            fetcherCreator("Best Rated","best-rated"),
-            fetcherCreator("Popular","active-popular"),
-            fetcherCreator("Complete","complete"),
-            fetcherCreator("Complete","complete"),
-            fetcherCreator("Weekly Popular","weekly-popular"),
-            fetcherCreator("New Releases","new-releases"),
-            fetcherCreator("New Releases","new-releases"),
-            fetcherCreator("Rising Stars","rising-stars"),
-            fetcherCreator("Writathon","writathon"),
+            fetcherCreator("Last Update","update"),
             search()
 
         )
@@ -97,26 +85,25 @@ abstract class RoyalRoad(private val deps: Dependencies) : SourceFactory(
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = "h1.font-white",
-            coverSelector = ".thumbnail",
+            nameSelector = "h1.entry-title",
+            coverSelector = ".sertothumb img",
             coverAtt = "src",
-            authorBookSelector = "h4.font-white",
-            categorySelector = ".margin-bottom-10 span a.label",
-            descriptionSelector = ".description p",
+            authorBookSelector = ".serl:nth-child(3) .serval",
+            categorySelector = ".sertogenre a",
+            descriptionSelector = ".sersysfull strong",
         )
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = "#chapters .chapter-row",
-            reverseChapterList = true,
-            nameSelector = "td:first-child a",
-            linkSelector = "td:first-child a",
+            selector = ".ts-chl-collapsible-content li a",
+            nameSelector = ".epl-num",
+            linkSelector = "a",
             linkAtt = "href",
-            addBaseUrlToLink = true,
         )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageContentSelector = ".chapter-content p",
+            pageTitleSelector = "entry-title",
+            pageContentSelector = ".entry-content p",
         )
 }
