@@ -1,4 +1,4 @@
-listOf("en").map { lang ->
+listOf("in").map { lang ->
   Extension(
     name = "IndoWebNovel",
     versionCode = 1,

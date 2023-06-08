@@ -21,4 +21,15 @@ listOf(
         assetsDir = "multisrc/skynovel/wbnovel/assets",
         sourceDir = "wbnovel",
     ),
+    Extension(
+        name = "Hizomanga",
+        versionCode = 1,
+        libVersion = "1",
+        lang = "ar",
+        description = "",
+        nsfw = false,
+        icon = DEFAULT_ICON,
+        assetsDir = "multisrc/skynovel/hizomanga/assets",
+        sourceDir = "hizomanga",
+    ),
 ).also(::register)

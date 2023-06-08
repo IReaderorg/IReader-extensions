@@ -62,8 +62,7 @@ abstract class SkyNovelModel(private val deps: Dependencies) : SourceFactory(
             linkAtt = "href",
             coverSelector = "a img",
             coverAtt = "src",
-            nextPageSelector = ".nav-previous",
-            nextPageValue = "Older Posts"
+            maxPage = 50
         )
     }
     override val exploreFetchers: List<BaseExploreFetcher>
