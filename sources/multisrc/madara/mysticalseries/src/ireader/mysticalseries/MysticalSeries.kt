@@ -1,4 +1,4 @@
-package ireader.mysticalmerries
+package ireader.mysticalseries
 
 
 import ireader.madara.Madara
