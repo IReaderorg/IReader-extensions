@@ -1,4 +1,4 @@
-package ireader.zinnovel
+package ireader.lunarletters
 
 
 import ireader.madara.Madara

@@ -1,4 +1,4 @@
-package ireader.zinnovel
+package ireader.turkcelightnovels
 
 
 import ireader.madara.Madara

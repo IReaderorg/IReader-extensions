@@ -1,4 +1,4 @@
-package ireader.zinnovel
+package ireader.sleepytranslations
 
 
 import ireader.madara.Madara

@@ -1,4 +1,4 @@
-package ireader.zinnovel
+package ireader.sonicmtl
 
 
 import ireader.madara.Madara
