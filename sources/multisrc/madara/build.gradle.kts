@@ -43,4 +43,15 @@ listOf(
         assetsDir = "multisrc/madara/noveltranslate/assets",
         sourceDir = "noveltranslate",
     ),
+    Extension(
+        name = "LunarLetters",
+        versionCode = 1,
+        libVersion = "1",
+        lang = "en",
+        description = "",
+        nsfw = false,
+        icon = DEFAULT_ICON,
+        assetsDir = "multisrc/madara/lunarletters/assets",
+        sourceDir = "lunarletters",
+    ),
 ).also(::register)
