@@ -124,6 +124,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.epiknovel.tu",
+    "apk": "ireader-tu-epiknovel-v1.1.apk",
+    "name": "EpikNovel",
+    "id": 4844890656048697000,
+    "lang": "tu",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.fastnovel.en",
     "apk": "ireader-en-fastnovel-v1.3.apk",
     "name": "FastNovel",
@@ -519,18 +531,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.novelstic.en",
-    "apk": "ireader-en-novelstic-v1.2.apk",
-    "name": "NovelStic",
-    "id": 1760102578558024000,
-    "lang": "en",
-    "code": 2,
-    "version": "1.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.noveltranslate.noveltranslate.en",
     "apk": "ireader-en-noveltranslate-v1.1.apk",
     "name": "NovelTranslate",
@@ -672,6 +672,18 @@
     "nsfw": false,
     "sourceDir": "novelmt",
     "assetsDir": "multisrc/madara/novelmt/assets"
+  },
+  {
+    "pkg": "ireader.novelstic.en",
+    "apk": "ireader-en-novelstic-v1.2.apk",
+    "name": "NovelStic",
+    "id": 1760102578558024000,
+    "lang": "en",
+    "code": 2,
+    "version": "1.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.noveltop1net.en",
