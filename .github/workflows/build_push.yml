@@ -4,12 +4,26 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - '**.md'
+      - '.github/workflows/issue_moderator.yml'
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  CI_CHUNK_SIZE: 65
 
 jobs:
-  check_wrapper:
-    name: Validate Gradle Wrapper
+  prepare:
+    name: Prepare job
     runs-on: ubuntu-latest
-
+    outputs:
+      individualMatrix: ${{ steps.generate-matrices.outputs.individualMatrix }}
+      multisrcMatrix: ${{ steps.generate-matrices.outputs.multisrcMatrix }}
+    env:
+      CI_MODULE_GEN: true
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
@@ -17,17 +31,35 @@ jobs:
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
 
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.9.1
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
-          access_token: ${{ github.token }}
-          all_but_latest: true
+          java-version: 17
+          distribution: adopt
 
-  build:
-    name: Build extension repo
-    needs: check_wrapper
+      - name: Get number of modules
+        run: |
+          set -x
+          ./gradlew -q projects | grep '.*extensions\:\(individual\|multisrc\)\:.*\:.*' > projects.txt
+
+          echo "NUM_INDIVIDUAL_MODULES=$(cat projects.txt | grep '.*\:individual\:.*' | wc -l)" >> $GITHUB_ENV
+      - id: generate-matrices
+        name: Create output matrices
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const numIndividualModules = process.env.NUM_INDIVIDUAL_MODULES;
+            const chunkSize = process.env.CI_CHUNK_SIZE;
+            const numIndividualChunks = Math.ceil(numIndividualModules / chunkSize);
+            console.log(`Individual modules: ${numIndividualModules} (${numIndividualChunks} chunks of ${chunkSize})`);
+            core.setOutput('individualMatrix', { 'chunk': [...Array(numIndividualChunks).keys()] });
+
+  build_individual:
+    name: Build modules
+    needs: prepare
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix: ${{ fromJSON(needs.prepare.outputs.individualMatrix) }}
     steps:
       - name: Checkout master branch
         uses: actions/checkout@v3
@@ -41,6 +73,10 @@ jobs:
           java-version: 17
           distribution: adopt
 
+      - name: Prepare signing key
+        run: |
+          echo ${{ secrets.SIGNING_KEY }} | base64 -d > signingkey.jks
+
       - name: Copy CI gradle.properties
         run: |
           cd master
@@ -50,6 +86,8 @@ jobs:
       - name: Build extensions and create repo artifacts
         uses: gradle/gradle-command-action@v2
         env:
+          CI_MULTISRC: "false"
+          CI_CHUNK_NUM: ${{ matrix.chunk }}
           ALIAS: ${{ secrets.ALIAS }}
           KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
@@ -62,25 +100,51 @@ jobs:
       #          dependencies-cache-enabled: true
       #          configuration-cache-enabled: true
 
-      - name: Sign APKs
-        if: github.event_name == 'push' && github.repository == 'IReaderorg/IReader-extensions'
+
+      - name: Upload APKs (chunk ${{ matrix.chunk }})
+        uses: actions/upload-artifact@v3
+        with:
+          name: "individual-apks-${{ matrix.chunk }}"
+          path: |
+            */build/repo/*
+            */scripts/commit-repo.sh
+          retention-days: 1
+
+  publish_repo:
+    name: Publish repo
+    needs:
+      - build_individual
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ~/artifacts
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: adopt
+
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+        with:
+          ref: master
+          path: master
+
+      - name: Moving Files
         run: |
           cd master
-          ./.github/scripts/sign-apks.sh \
-            ${{ secrets.SIGNING_KEY }} \
-            ${{ secrets.ALIAS }} \
-            ${{ secrets.KEY_STORE_PASSWORD }} \
-            ${{ secrets.KEY_PASSWORD }}
+          ./.github/scripts/move-files.sh
 
       - name: Checkout repo branch
-        if: github.event_name == 'push' && github.repository == 'IReaderorg/IReader-extensions'
         uses: actions/checkout@v3
         with:
           ref: repo
           path: repo
 
+
       - name: Deploy repo
-        if: github.event_name == 'push' && github.repository == 'IReaderorg/IReader-extensions'
         run: |
           cd repo
           ../master/.github/scripts/commit-repo.sh
