@@ -27,7 +27,7 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(
     override val baseUrl: String
         get() = "https://lnmtl.com/"
     override val id: Long
-        get() = 49
+        get() = 82
     override val name: String
         get() = "LnMtl"
 

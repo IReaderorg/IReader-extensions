@@ -21,7 +21,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val baseUrl: String
         get() = "https://indowebnovel.id/id"
     override val id: Long
-        get() = 51
+        get() = 71
     override val name: String
         get() = "IndoWebNovel"
 

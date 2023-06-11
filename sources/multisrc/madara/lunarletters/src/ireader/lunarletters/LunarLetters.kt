@@ -11,7 +11,7 @@ abstract class LunarLetters(val deps: Dependencies) : Madara(
     deps,
     key = "https://www.lunarletters.com",
     sourceName = "LunarLetters",
-    sourceId = 55,
+    sourceId = 81,
     language = "en",
     paths = Path(
         novel = "series",
