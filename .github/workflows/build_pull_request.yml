@@ -137,6 +137,15 @@ jobs:
           cd master
           ./.github/scripts/move-files.sh
 
+      - name: Sign APKs
+        if: github.event_name == 'push' && github.repository == 'IReaderorg/IReader-extensions'
+        run: |
+          cd master
+          ./.github/scripts/sign-apks.sh \
+            ${{ secrets.SIGNING_KEY }} \
+            ${{ secrets.ALIAS }} \
+            ${{ secrets.KEY_STORE_PASSWORD }} \
+            ${{ secrets.KEY_PASSWORD }}
       - name: Checkout repo branch
         uses: actions/checkout@v3
         with:

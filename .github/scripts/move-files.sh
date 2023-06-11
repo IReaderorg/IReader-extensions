@@ -26,8 +26,7 @@ rm -rf "$DEST_JSON" "$DEST_APK" "$DEST_JAR" "$DEST_ICON" && mkdir -p "$DEST_JSON
 # Move APK files to apk folder
 for APK in "${APKS[@]}"; do
     BASENAME=$(basename "$APK")
-    APKNAME="${BASENAME%%+(-release*)}.apk"
-    APKDEST="$DEST_APK/$APKNAME"
+    APKDEST="$DEST_APK/$BASENAME"
 
     cp "$APK" "$APKDEST"
 done
