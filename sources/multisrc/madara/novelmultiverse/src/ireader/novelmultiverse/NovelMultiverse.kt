@@ -11,7 +11,7 @@ abstract class NovelMultiverse(val deps: Dependencies) : Madara(
     deps,
     key = "https://www.novelmultiverse.com",
     sourceName = "novelmultiverse",
-    sourceId = 61,
+    sourceId = 83,
     language = "en",
 
 
