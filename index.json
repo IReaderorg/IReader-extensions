@@ -583,19 +583,6 @@
     "assetsDir": "multisrc/madara/sonicmtl/assets"
   },
   {
-    "pkg": "ireader.teamxnovel.teamxnovel.ar",
-    "apk": "ireader-ar-teamxnovel-v1.1.apk",
-    "name": "TeamXNovel",
-    "id": 5927308915940879000,
-    "lang": "ar",
-    "code": 1,
-    "version": "1.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "teamxnovel",
-    "assetsDir": "multisrc/madara/teamxnovel/assets"
-  },
-  {
     "pkg": "ireader.turkcelightnovels.turkcelightnovels.tu",
     "apk": "ireader-tu-turkcelightnovels-v1.1.apk",
     "name": "TurkceLightNovels",
@@ -607,19 +594,6 @@
     "nsfw": false,
     "sourceDir": "turkcelightnovels",
     "assetsDir": "multisrc/madara/turkcelightnovels/assets"
-  },
-  {
-    "pkg": "ireader.wbnovel.wbnovel.in",
-    "apk": "ireader-in-wbnovel-v1.1.apk",
-    "name": "WBNovel",
-    "id": 6480076862656967000,
-    "lang": "in",
-    "code": 1,
-    "version": "1.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "wbnovel",
-    "assetsDir": "multisrc/madara/wbnovel/assets"
   },
   {
     "pkg": "ireader.webnovellover.webnovelover.en",
