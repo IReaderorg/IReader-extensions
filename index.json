@@ -722,6 +722,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.pawread.en",
+    "apk": "ireader-en-pawread-v1.1.apk",
+    "name": "Pawread",
+    "id": 8494608835809224000,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.qidianundergrond.en",
     "apk": "ireader-en-qidianundergrond-v1.4.apk",
     "name": "QidianUndergrond",
