@@ -154,6 +154,7 @@ jobs:
 
 
       - name: Deploy repo
+        if: github.event_name == 'push' && github.repository == 'IReaderorg/IReader-extensions'
         run: |
           cd repo
           ../master/.github/scripts/commit-repo.sh
