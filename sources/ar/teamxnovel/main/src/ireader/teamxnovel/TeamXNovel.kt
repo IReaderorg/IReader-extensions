@@ -85,7 +85,7 @@ abstract class TeamXNovel(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
     suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/novel/page/$page/")
+        val res = requestBuilder("$baseUrl/series/page/$page/")
         return bookListParse(client.get(res).asJsoup(), "div.page-item-detail", popularNextPageSelector()) { latestFromElement(it) }
     }
 
