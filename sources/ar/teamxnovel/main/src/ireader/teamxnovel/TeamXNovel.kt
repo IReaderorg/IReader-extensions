@@ -37,7 +37,7 @@ abstract class TeamXNovel(private val deps: Dependencies) : ParsedHttpSource(dep
     override val id: Long
         get() = 42
 
-    override val baseUrl = "https://teamxnovel.com"
+    override val baseUrl = "https://novelxs.com"
 
     override val lang = "ar"
 
@@ -85,7 +85,7 @@ abstract class TeamXNovel(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
     suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/series/page/$page/")
+        val res = requestBuilder("$baseUrl/novel/page/$page/")
         return bookListParse(client.get(res).asJsoup(), "div.page-item-detail", popularNextPageSelector()) { latestFromElement(it) }
     }
 
@@ -258,7 +258,7 @@ abstract class TeamXNovel(private val deps: Dependencies) : ParsedHttpSource(dep
         return client to requestBuilder(url) {
             append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
             append(HttpHeaders.CacheControl, "max-age=0")
-            append(HttpHeaders.Referrer, "https://teamxnovel.com/")
+            append(HttpHeaders.Referrer, "https://novelxs.com/")
         }
     }
 }
