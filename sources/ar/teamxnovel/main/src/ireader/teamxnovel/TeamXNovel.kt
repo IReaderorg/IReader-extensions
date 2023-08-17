@@ -37,7 +37,7 @@ abstract class TeamXNovel(private val deps: Dependencies) : ParsedHttpSource(dep
     override val id: Long
         get() = 42
 
-    override val baseUrl = "https://teamxnovel.com"
+    override val baseUrl = "https://novelxs.com"
 
     override val lang = "ar"
 
@@ -85,7 +85,7 @@ abstract class TeamXNovel(private val deps: Dependencies) : ParsedHttpSource(dep
     }
 
     suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/series/page/$page/")
+        val res = requestBuilder("$baseUrl/novel/page/$page/")
         return bookListParse(client.get(res).asJsoup(), "div.page-item-detail", popularNextPageSelector()) { latestFromElement(it) }
     }
 
