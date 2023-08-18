@@ -7,7 +7,7 @@ serialization = "1.4.0"
 ksp = "1.7.10-1.0.6"
 serializationkotlinVersion = "1.7.10"
 junitAndroidExtVersion = "1.1.4-alpha03"
-dex2jar = "v63"
+dex2jar = "v64"
 [libraries]
 
 android-sdklib = "com.android.tools:sdklib:27.1.2"
