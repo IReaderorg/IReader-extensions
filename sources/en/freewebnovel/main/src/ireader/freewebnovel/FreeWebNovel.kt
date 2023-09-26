@@ -17,11 +17,6 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.withContext
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
@@ -44,7 +39,8 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
                 "Sort By:",
                 arrayOf(
                     "Latest",
-                    "Popular"
+                    "Popular",
+                    "New Novels"
                 )
             ),
         )
@@ -69,6 +65,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return when (sorts) {
             0 -> getLatest(page)
             1 -> getPopular(page)
+            2 -> getNewNovel(page)
             else -> getLatest(page)
         }
     }
@@ -84,6 +81,11 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     suspend fun getSearch(page: Int, query: String): MangasPageInfo {
         val res = requestBuilder("$baseUrl/search/?searchkey=$query")
         return bookListParse(client.get(res).asJsoup(), "div.ul-list1 div.li-row", null) { searchFromElement(it) }
+    }
+
+    private suspend fun getNewNovel(page: Int): MangasPageInfo {
+        val res = requestBuilder("$baseUrl/latest-novels/$page/")
+        return bookListParse(client.get(res).asJsoup(), "div.ul-list1 div.li", "div.ul-list1") { latestFromElement(it) }
     }
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
@@ -169,48 +171,12 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         return ChapterInfo(name = name, key = link)
     }
 
-    fun uniqueChaptersRequest(book: MangaInfo, page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(
-                book.key.replace("/${page - 1}.html", "").replace(".html", "")
-                    .plus("/$page.html")
-            )
-            headers { headers }
-        }
-    }
-
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
-                val maxPage = parseMaxPage(manga)
-                val list = mutableListOf<Deferred<List<ChapterInfo>>>()
-                for (i in 1..maxPage) {
-                    val pChapters = async {
-                        chaptersParse(
-                            client.get(
-                                uniqueChaptersRequest(
-                                    book = manga,
-                                    page = i
-                                )
-                            ).asJsoup()
-                        )
-                    }
-                    list.addAll(listOf(pChapters))
-                }
-                //  val request = client.get<String>(chaptersRequest(book = book))
-
-                return@withContext list.awaitAll().flatten()
-            }
-        }.getOrThrow()
-    }
-
-    suspend fun parseMaxPage(book: MangaInfo): Int {
-        val page = client.get(chaptersRequest(book = book)).asJsoup()
-        val maxPage = page.select("#indexselect option").eachText().size
-        return maxPage
+        val resp = client.get(chaptersRequest(manga)).asJsoup()
+        return chaptersParse(resp)
     }
 
     override fun pageContentParse(document: Document): List<String> {
