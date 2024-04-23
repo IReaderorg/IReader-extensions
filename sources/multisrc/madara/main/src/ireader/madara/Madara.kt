@@ -296,7 +296,7 @@ abstract class Madara(
         return document.select("li.wp-manga-chapter").map { chapterFromElement(it) }
     }
 
-    fun chapterFromElement(element: Element): ChapterInfo {
+    open fun chapterFromElement(element: Element): ChapterInfo {
         val link = baseUrl + element.select("a").attr("href").substringAfter(baseUrl)
         val name = element.select("a").text()
         val dateUploaded = element.select("i").text()
