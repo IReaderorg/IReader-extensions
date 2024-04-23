@@ -117,8 +117,6 @@ abstract class CoolNovel(deps: Dependencies) : SourceFactory(
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-
-            pageTitleSelector = ".chapter-title",
             pageContentSelector = "p",
             onContent = {
                 it.map { it.trim() }
