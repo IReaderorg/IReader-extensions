@@ -22,6 +22,7 @@ import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import java.io.File
+import java.io.OutputStream
 
 /*
     Copyright (C) 2018 The Tachiyomi Open Source Project
@@ -169,15 +170,21 @@ class ExtensionProcessor(
         }
     }
 
-    private fun getBuildDir(): String {
-        val pathOf = codeGenerator::class.java
-            .getDeclaredMethod("pathOf", String::class.java, String::class.java, String::class.java)
-        val stubFile = pathOf.invoke(codeGenerator, "", "a", "kt") as String
+    fun String.covertToOsPath() :String {
         return if (System.getProperty("os.name").contains("win", true)) {
-            File(stubFile).parentFile.parent.replace("\\", "/")
+            this.replace("\\", "/")
         } else {
-            File(stubFile).parentFile.parent
+            this
         }
+    }
+    private fun CodeGenerator.collectVariantName(fileName: String): String {
+        createNewFileByPath(Dependencies(false), fileName, "txt")
+        return generatedFile.first().run {
+            this.path.substringBefore("\\resources\\").substringBefore("/resources/")
+        }
+    }
+    private fun getBuildDir(): String {
+        return codeGenerator.collectVariantName("").covertToOsPath()
     }
 
     // TODO: this is temporary until ksp configurations are applied per variant rather than globally
