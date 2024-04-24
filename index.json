@@ -383,16 +383,56 @@
     "assetsDir": "multisrc/madara/mtlnovelclub/assets"
   },
   {
-    "pkg": "ireader.mtlnovelcom.en",
-    "apk": "ireader-en-mtlnovelcom-v1.7.apk",
-    "name": "MtlNovelCom",
-    "id": 4963245176571629000,
+    "pkg": "ireader.mtlnovelen.mtlnovelen.en",
+    "apk": "ireader-en-mtlnovelen-v1.1.apk",
+    "name": "MtlNovelEn",
+    "id": 8534701682490653000,
     "lang": "en",
-    "code": 7,
-    "version": "1.7",
+    "code": 1,
+    "version": "1.1",
     "description": "",
     "nsfw": false,
-    "sourceDir": "main"
+    "sourceDir": "mtlnovelen",
+    "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
+  },
+  {
+    "pkg": "ireader.mtlnoveles.mtlnoveles.es",
+    "apk": "ireader-es-mtlnoveles-v1.1.apk",
+    "name": "MtlNovelEs",
+    "id": 1239644387367325400,
+    "lang": "es",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mtlnoveles",
+    "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
+  },
+  {
+    "pkg": "ireader.mtlnovelfr.mtlnovelfr.fr",
+    "apk": "ireader-fr-mtlnovelfr-v1.1.apk",
+    "name": "MtlNovelFr",
+    "id": 8224812544459806000,
+    "lang": "fr",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mtlnovelfr",
+    "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
+  },
+  {
+    "pkg": "ireader.mtlnovelin.mtlnovelin.in",
+    "apk": "ireader-in-mtlnovelin-v1.1.apk",
+    "name": "MtlNovelIn",
+    "id": 1158147437730880800,
+    "lang": "in",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mtlnovelin",
+    "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
   },
   {
     "pkg": "ireader.mylovenovel.en",
