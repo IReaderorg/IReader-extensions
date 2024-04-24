@@ -1,4 +1,4 @@
-package ireader.mtlnovelcom
+package ireader.mtlnovelmodel
 
 import kotlinx.serialization.Serializable
 

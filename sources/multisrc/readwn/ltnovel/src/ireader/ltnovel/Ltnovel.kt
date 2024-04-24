@@ -1,7 +1,8 @@
-package ireader.readwn
+package ireader.ltnovel
 
 
 import ireader.core.source.Dependencies
+import ireader.readwn.ReaderWnScraper
 import tachiyomix.annotations.Extension
 
 @Extension

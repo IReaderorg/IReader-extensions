@@ -57,7 +57,7 @@ open class RepoTask : DefaultTask() {
         repoDir.mkdirs()
 
         extractApks(apkDir)
-        generateJars(apkDir,repoDir)
+        generateJars(apkDir, repoDir)
         val badgings = parseBadgings(apkDir) ?: return
         ensureValidState(badgings)
         extractIcons(apkDir, iconDir, badgings)
@@ -66,7 +66,7 @@ open class RepoTask : DefaultTask() {
     }
 
     private fun parseBadgings(apkDir: File): List<Badging>? {
-
+        print("Parsing Badging for ${apkDir.name}...\n")
         return apkDir.listFiles()
             ?.filter {
                 it.extension == "apk"
@@ -134,8 +134,18 @@ open class RepoTask : DefaultTask() {
         val sourceDir = metadata.firstOrNull { it.name == "source.dir" }?.value
         val assetsDir = metadata.firstOrNull { it.name == "source.assets" }?.value
         return Badging(
-            pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
-            nsfw, iconResourcePath = resourceIcon ?: iconPath, sourceDir = sourceDir,assetsDir = assetsDir
+            pkgName,
+            apkFile.name,
+            sourceName,
+            id,
+            lang,
+            vcode.toInt(),
+            vname,
+            description,
+            nsfw,
+            iconResourcePath = resourceIcon ?: iconPath,
+            sourceDir = sourceDir,
+            assetsDir = assetsDir
         )
     }
 
@@ -181,8 +191,10 @@ open class RepoTask : DefaultTask() {
     private fun extractIcons(apkDir: File, destDir: File, badgings: List<RepoTask.Badging>) {
         destDir.mkdirs()
         badgings.forEach { badging ->
+            print("Generating Icon for ${badging.name}...\n")
             val apkFile = File(apkDir, badging.apk)
             if (badging.iconResourcePath != null) {
+                print("Getting Assets Icon for ${badging.name}...\n")
                 ZipFile(apkFile).use { zip ->
                     val icon = zip.getEntry(badging.iconResourcePath)
                     val dest = File(destDir, "${apkFile.nameWithoutExtension}.png")
@@ -191,6 +203,7 @@ open class RepoTask : DefaultTask() {
                     }
                 }
             } else {
+                print("Getting Package Icon for ${badging.name}...\n")
                 val packageName = badging.pkg.substringAfter(".").substringBefore(".")
                 if (badging.assetsDir.isNullOrBlank()) {
                     project.copy {
@@ -205,6 +218,7 @@ open class RepoTask : DefaultTask() {
 
                     }
                 } else {
+                    print("Getting Default Assets Icon for ${badging.name}...\n")
                     project.copy {
                         from("${project.rootDir}/sources/${badging.assetsDir}")
                         include("**/*.png")
@@ -222,7 +236,7 @@ open class RepoTask : DefaultTask() {
                     File("${project.buildDir}/repo/icon/${apkFile.nameWithoutExtension}.png")
                 if (!iconFile.exists()) {
                     print(
-                        "WARNING: There is no Icon for $packageName," +
+                        "WARNING: There is no Icon for $packageName, ${apkFile.nameWithoutExtension}" +
                                 " Make sure that app has same name in build.gradle.kts as subproject name\n"
                     )
                 }
@@ -242,17 +256,16 @@ open class RepoTask : DefaultTask() {
         }
     }
 
-    fun generateJars(apkDir: File,repoDir: File) {
-        val jarDir = File(repoDir,"jar/")
+    fun generateJars(apkDir: File, repoDir: File) {
+        val jarDir = File(repoDir, "jar/")
         jarDir.mkdirs()
         apkDir.listFiles()
             ?.forEach { apk ->
-                print(apk.name)
-                val jarFile = File(jarDir,apk.name.replace(".apk",".jar"))
-                dex2jar(apk,jarFile,apk.name)
+                print("Generating Jar for ${apk.name}...\n")
+                val jarFile = File(jarDir, apk.name.replace(".apk", ".jar"))
+                dex2jar(apk, jarFile, apk.name)
             }
     }
-
 
 
     private fun getAapt2Path(): String {

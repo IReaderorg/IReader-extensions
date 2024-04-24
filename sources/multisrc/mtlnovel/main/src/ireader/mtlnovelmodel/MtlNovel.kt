@@ -1,4 +1,4 @@
-package ireader.mtlnovelcom
+package ireader.mtlnovelmodel
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -28,11 +28,9 @@ import ireader.core.source.model.MangasPageInfo
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
-import tachiyomix.annotations.Extension
 import java.util.concurrent.TimeUnit
 
-@Extension
-abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps) {
+abstract class MtlNovelModel(private val deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "MtlNovel"
 
@@ -87,7 +85,7 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return getSearch(page, query)
+            return getSearch(query)
         }
         return when (sorts) {
             0 -> getLatest(page)
@@ -104,7 +102,7 @@ abstract class MtlNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         val res = requestBuilder("$baseUrl/monthly-rank/page/$page/")
         return bookListParse(client.get(res).asJsoup(), "div.box", "#pagination > a:nth-child(13)") { popularFromElement(it) }
     }
-    suspend fun getSearch(page: Int, query: String): MangasPageInfo {
+    suspend fun getSearch(query: String): MangasPageInfo {
         val res = requestBuilder("$baseUrl/wp-admin/admin-ajax.php?action=autosuggest&q=$query&__amp_source_origin=https%3A%2F%2Fwww.mtlnovel.com")
         return customJsonSearchParse(client.get(res).body())
     }
