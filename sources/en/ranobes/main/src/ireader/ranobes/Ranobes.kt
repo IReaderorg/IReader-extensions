@@ -11,6 +11,7 @@ import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import ireader.core.http.okhttp
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -293,6 +294,12 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         return ChapterInfo(name = name, key = link)
     }
 
+    fun mtlChapterFromElement(element: Element): ChapterInfo {
+        val link = baseUrl + element.select("a").attr("href")
+        val name = element.select("h6").text()
+        return ChapterInfo(name = name, key = link)
+    }
+
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
@@ -300,7 +307,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
         if (chapterFetch != null) {
             return chaptersParse(chapterFetch.html.asJsoup()).reversed()
-                .map { it.copy(key = it.key.substringAfter(baseUrl)) }
         }
 
         val command = commands.findInstance<Command.Chapter.Select>()
@@ -331,6 +337,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
             client.get(requestBuilder("https://ranobes.net/chapters/${bookId}/page/1/"))
         res = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
             .substringBefore("</script>")
+        Log.error { res }
         val json1 = Gson().fromJson(res, ChapterDTO::class.java)
 //        res = deps.httpClients.browser.fetch(
 //                    "https://ranobes.net/chapters/${bookId.first()}/page/1/",
@@ -361,7 +368,11 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     override fun chaptersParse(document: Document): List<ChapterInfo> {
-        return document.select(chaptersSelector()).map { chapterFromElement(it) }
+        val mainChapters = document.select(chaptersSelector()).map { chapterFromElement(it) }
+        if (mainChapters.isNotEmpty()) {
+            return mainChapters.map { it.copy(key = it.key.substringAfter(baseUrl)) }
+        }
+        return document.select("#dle-content a").map { mtlChapterFromElement(it) }.reversed()
     }
 
     fun chaptersParse(chapterDTO: ChapterDTO): List<ChapterInfo> {
@@ -374,7 +385,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     }
 
     override fun pageContentParse(document: Document): List<String> {
-        return document.select(".shortstory h1,p").eachText()
+        return document.select(".shortstory h1,h3,p").eachText()
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
