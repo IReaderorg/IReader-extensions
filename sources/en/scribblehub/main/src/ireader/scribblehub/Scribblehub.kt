@@ -29,6 +29,7 @@ abstract class Scribblehub(private val deps: Dependencies) : SourceFactory(
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
+        Filter.Sort("Sort By:", arrayOf("Popular", "Latest"))
     )
 
     override fun getCommands(): CommandList {
@@ -51,6 +52,18 @@ abstract class Scribblehub(private val deps: Dependencies) : SourceFactory(
                 linkSelector = "div.search_title > a",
                 nextPageSelector = "body",
                 linkAtt = "href",
+            ),
+            BaseExploreFetcher(
+                "Latest",
+                endpoint = "/?pg={page}",
+                selector = "tr.toc_w",
+                nameSelector = "a.fp_title",
+                nameAtt = "title",
+                coverSelector = "img",
+                coverAtt = "src",
+                linkSelector = "a.fp_title",
+                linkAtt = "href",
+                nextPageSelector = "body"
             ),
             BaseExploreFetcher(
                 "Search",
