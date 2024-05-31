@@ -60,27 +60,33 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return getSearch(page, query)
+            return getSearch(query)
         }
         return when (sorts) {
             0 -> getLatest(page)
-            1 -> getPopular(page)
+            1 -> getPopular()
             2 -> getNewNovel(page)
             else -> getLatest(page)
         }
     }
 
-    suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/latest-release-novel/$page/")
-        return bookListParse(client.get(res).asJsoup(), "div.ul-list1 div.li", "div.ul-list1") { latestFromElement(it) }
+    private suspend fun getLatest(page: Int): MangasPageInfo {
+        val req = requestBuilder("$baseUrl/latest-release-novels/$page/")
+        // resp can be 404
+        val resp = client.get(req)
+        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li", "div.ul-list1") { latestFromElement(it) }
     }
-    suspend fun getPopular(page: Int): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/most-popular-novel/")
-        return bookListParse(client.get(res).asJsoup(), "div.ul-list1 div.li-row", null) { popularFromElement(it) }
+    private suspend fun getPopular(): MangasPageInfo {
+        val req = requestBuilder("$baseUrl/most-popular-novels/")
+        // resp can be 404
+        val resp = client.get(req)
+        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", null) { popularFromElement(it) }
     }
-    suspend fun getSearch(page: Int, query: String): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/search/?searchkey=$query")
-        return bookListParse(client.get(res).asJsoup(), "div.ul-list1 div.li-row", null) { searchFromElement(it) }
+    private suspend fun getSearch(query: String): MangasPageInfo {
+        val req = requestBuilder("$baseUrl/search/?searchkey=$query")
+        // resp can be 404
+        val resp = client.get(req)
+        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", null) { searchFromElement(it) }
     }
 
     private suspend fun getNewNovel(page: Int): MangasPageInfo {
@@ -181,10 +187,6 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override fun pageContentParse(document: Document): List<String> {
         return document.select("div.txt h4,p").eachText()
-    }
-
-    override suspend fun getContents(chapter: ChapterInfo): List<String> {
-        return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
     override fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder {
