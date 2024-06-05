@@ -21,7 +21,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "ar"
     override val baseUrl: String
-        get() = "https://riwyat.com"
+        get() = "https://riwyat.org"
     override val id: Long
         get() = 23
     override val name: String
