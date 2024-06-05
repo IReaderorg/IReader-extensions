@@ -21,7 +21,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "ar"
     override val baseUrl: String
-        get() = "https://novelsparadise.net"
+        get() = "https://novelsparadise.site"
     override val id: Long
         get() = 50
     override val name: String
