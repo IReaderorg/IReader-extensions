@@ -50,6 +50,19 @@
     "assetsDir": "multisrc/madara/arnovel/assets"
   },
   {
+    "pkg": "ireader.azora.azora.ar",
+    "apk": "ireader-ar-azora-v1.1.apk",
+    "name": "Azora",
+    "id": 3544999809861403000,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "azora",
+    "assetsDir": "multisrc/madara/azora/assets"
+  },
+  {
     "pkg": "ireader.boxnovelcom.en",
     "apk": "ireader-en-boxnovelcom-v1.4.apk",
     "name": "BoxNovelCom",
@@ -223,12 +236,12 @@
   },
   {
     "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v1.4.apk",
+    "apk": "ireader-ar-kolnovel-v1.5.apk",
     "name": "KolNovel",
     "id": 1070515268391361400,
     "lang": "ar",
-    "code": 4,
-    "version": "1.4",
+    "code": 5,
+    "version": "1.5",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -559,13 +572,13 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.novelparadise.en",
-    "apk": "ireader-en-novelparadise-v1.1.apk",
+    "pkg": "ireader.novelparadise.ar",
+    "apk": "ireader-ar-novelparadise-v1.2.apk",
     "name": "NovelParadise",
-    "id": 5126995616733100000,
-    "lang": "en",
-    "code": 1,
-    "version": "1.1",
+    "id": 7351326936191662000,
+    "lang": "ar",
+    "code": 2,
+    "version": "1.2",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -860,12 +873,12 @@
   },
   {
     "pkg": "ireader.riwyat.ar",
-    "apk": "ireader-ar-riwyat-v1.5.apk",
+    "apk": "ireader-ar-riwyat-v1.6.apk",
     "name": "Riwyat",
     "id": 3911602848528028000,
     "lang": "ar",
-    "code": 5,
-    "version": "1.5",
+    "code": 6,
+    "version": "1.6",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
