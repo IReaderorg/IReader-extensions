@@ -243,7 +243,7 @@ listOf(
     ),
 Extension(
         name = "Azora",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "ar",
         description = "",
