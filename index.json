@@ -739,6 +739,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.novelsemperor.en",
+    "apk": "ireader-en-novelsemperor-v1.1.apk",
+    "name": "NovelsEmperor",
+    "id": 8742112884893981000,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.novelstic.en",
     "apk": "ireader-en-novelstic-v1.2.apk",
     "name": "NovelStic",
