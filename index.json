@@ -211,6 +211,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.genesistranslator.en",
+    "apk": "ireader-en-genesistranslator-v1.1.apk",
+    "name": "GenesisTranslator",
+    "id": 1136051970374149800,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.indowebnovel.in",
     "apk": "ireader-in-indowebnovel-v1.1.apk",
     "name": "IndoWebNovel",
@@ -572,18 +584,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.novelparadise.ar",
-    "apk": "ireader-ar-novelparadise-v1.2.apk",
-    "name": "NovelParadise",
-    "id": 7351326936191662000,
-    "lang": "ar",
-    "code": 2,
-    "version": "1.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.noveltranslate.noveltranslate.en",
     "apk": "ireader-en-noveltranslate-v1.1.apk",
     "name": "NovelTranslate",
@@ -725,6 +725,18 @@
     "nsfw": false,
     "sourceDir": "novelmt",
     "assetsDir": "multisrc/madara/novelmt/assets"
+  },
+  {
+    "pkg": "ireader.novelparadise.ar",
+    "apk": "ireader-ar-novelparadise-v1.2.apk",
+    "name": "NovelParadise",
+    "id": 7351326936191662000,
+    "lang": "ar",
+    "code": 2,
+    "version": "1.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelscafes.en",
