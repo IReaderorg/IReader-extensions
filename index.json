@@ -248,12 +248,12 @@
   },
   {
     "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v1.5.apk",
+    "apk": "ireader-ar-kolnovel-v1.6.apk",
     "name": "KolNovel",
     "id": 1070515268391361400,
     "lang": "ar",
-    "code": 5,
-    "version": "1.5",
+    "code": 6,
+    "version": "1.6",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
