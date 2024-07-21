@@ -20,7 +20,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "ar"
     override val baseUrl: String
-        get() = "https://kolbook.xyz"
+        get() = "https://kolcars.shop"
     override val id: Long
         get() = 41
     override val name: String
