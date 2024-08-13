@@ -1,4 +1,4 @@
-package ireader.mtlnation
+package ireader.mtlarchive
 
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
@@ -23,11 +23,11 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "en"
     override val baseUrl: String
-        get() = "https://mtlnation.com"
+        get() = "https://mtlarchive.com"
     override val id: Long
         get() = 7
     override val name: String
-        get() = "MtlNation"
+        get() = "Mtlarchive"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
