@@ -16,7 +16,7 @@ import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension
-abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
+abstract class Mtlarchive(private val deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
 
