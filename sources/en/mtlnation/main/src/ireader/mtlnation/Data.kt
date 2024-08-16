@@ -1,4 +1,4 @@
-package ireader.mtlnation
+package ireader.mtlarchive
 
 data class Data(
     val content: String,
