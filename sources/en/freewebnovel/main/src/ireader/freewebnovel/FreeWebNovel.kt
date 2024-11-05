@@ -126,11 +126,10 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     // manga details
     override fun detailParse(document: Document): MangaInfo {
         val title = document.select("div.m-desc h1.tit").text()
-        val cover = document.select("div.m-book1 div.pic img").text()
+        val cover = document.select("div.m-book1 div.pic img").attr("src")
         val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
         val authorBookSelector = document.select("div.right a.a1").attr("title")
         val description = document.select("div.inner p").eachText().joinToString("\n")
-        // not sure why its not working.
         val category = document.select("[title=Genre]")
             .next()
             .text()
