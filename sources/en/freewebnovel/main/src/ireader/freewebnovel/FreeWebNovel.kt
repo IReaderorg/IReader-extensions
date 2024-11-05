@@ -113,7 +113,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val title = element.select("div.txt a").attr("title")
         val url = baseUrl + element.select("div.txt a").attr("href")
         val thumbnailUrl = element.select("div.pic img").attr("src")
-        return MangaInfo(key = url, title = title, cover = thumbnailUrl)
+        return MangaInfo(key = url, title = title, cover = baseUrl + thumbnailUrl)
     }
 
     private fun searchFromElement(element: Element): MangaInfo {
