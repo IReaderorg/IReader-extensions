@@ -200,12 +200,12 @@
   },
   {
     "pkg": "ireader.freewebnovel.en",
-    "apk": "ireader-en-freewebnovel-v1.9.apk",
+    "apk": "ireader-en-freewebnovel-v1.10.apk",
     "name": "FreeWebNovel",
     "id": 3970612267773145000,
     "lang": "en",
-    "code": 9,
-    "version": "1.9",
+    "code": 10,
+    "version": "1.10",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -995,12 +995,12 @@
   },
   {
     "pkg": "ireader.webnovelcom.en",
-    "apk": "ireader-en-webnovelcom-v1.6.apk",
+    "apk": "ireader-en-webnovelcom-v1.7.apk",
     "name": "WebNovelCom",
     "id": 1917247548522700500,
     "lang": "en",
-    "code": 6,
-    "version": "1.6",
+    "code": 7,
+    "version": "1.7",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
