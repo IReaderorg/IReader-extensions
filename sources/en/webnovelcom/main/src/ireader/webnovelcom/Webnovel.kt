@@ -4,7 +4,6 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
-import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ireader.core.source.Dependencies
@@ -35,27 +34,32 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val id: Long = 16
 
+    override fun getUserAgent() = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+
     override fun getListings(): List<Listing> {
         return listOf(
             LatestListing(),
         )
     }
     class LatestListing() : Listing("Latest")
+
     override fun getFilters(): FilterList {
         return listOf(
             Filter.Title(),
             Filter.Sort(
                 "Sort By:",
                 arrayOf(
-                    "Latest",
-                    "Popular"
+                    "Latest Novel",
+                    "Latest Fanfic",
+                    "Popular Novel",
+                    "Popular Fanfic",
                 )
             ),
         )
     }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
-        return getLatest(page)
+        return getLatestNovel(page)
     }
 
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
@@ -65,101 +69,89 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
             return getSearch(page, query)
         }
         return when (sorts) {
-            0 -> getLatest(page)
-            1 -> getPopular(page)
-            else -> getLatest(page)
+            0 -> getLatestNovel(page)
+            1 -> getLatestFanfic(page)
+            2 -> getPopularNovel(page)
+            3 -> getPopularFanfic(page)
+            else -> getLatestNovel(page)
         }
     }
 
-    suspend fun getLatest(page: Int): MangasPageInfo {
-        val res = requestBuilder(baseUrl + fetchLatestEndpoint(page))
-        return bookListParse(client.get(res).asJsoup(), latestSelector(), latestNextPageSelector()) { latestFromElement(it) }
+    private suspend fun getLatestNovel(page: Int): MangasPageInfo {
+        val res = requestBuilder(baseUrl + fetchLatestNovelEndpoint(page))
+        val html = client.get(res)
+        return bookListParse(html.asJsoup(), latestSelector(), latestNextPageSelector()) { latestFromElement(it) }
     }
-    suspend fun getPopular(page: Int): MangasPageInfo {
-        val res = requestBuilder(baseUrl + fetchPopularEndpoint(page))
+    private suspend fun getLatestFanfic(page: Int): MangasPageInfo {
+        val res = requestBuilder(baseUrl + fetchLatestFanficEndpoint(page))
+        val html = client.get(res)
+        return bookListParse(html.asJsoup(), latestSelector(), latestNextPageSelector()) { latestFromElement(it) }
+    }
+    private suspend fun getPopularNovel(page: Int): MangasPageInfo {
+        val res = requestBuilder(baseUrl + fetchPopularNovelEndpoint(page))
         return bookListParse(client.get(res).asJsoup(), popularSelector(), popularNextPageSelector()) { popularFromElement(it) }
     }
-    suspend fun getSearch(page: Int, query: String): MangasPageInfo {
+    private suspend fun getPopularFanfic(page: Int): MangasPageInfo {
+        val res = requestBuilder(baseUrl + fetchPopularFanficEndpoint(page))
+        return bookListParse(client.get(res).asJsoup(), popularSelector(), popularNextPageSelector()) { popularFromElement(it) }
+    }
+    private suspend fun getSearch(page: Int, query: String): MangasPageInfo {
         val res = requestBuilder(baseUrl + fetchSearchEndpoint(page, query))
         return bookListParse(client.get(res).asJsoup(), searchSelector(), searchNextPageSelector()) { searchFromElement(it) }
     }
 
-    fun fetchLatestEndpoint(page: Int): String? =
-        "/stories/novel?pageIndex=$page&orderBy=5"
+    private fun fetchLatestNovelEndpoint(page: Int): String = "/stories/novel?pageIndex=$page&orderBy=5"
 
-    fun fetchPopularEndpoint(page: Int): String? =
-        "/stories/novel?pageIndex=$page&orderBy=1"
+    private fun fetchLatestFanficEndpoint(page: Int): String = "/stories/fanfic?pageIndex=$page&orderBy=5"
 
-    fun fetchSearchEndpoint(page: Int, query: String): String? =
-        "/search?keywords=$query?pageIndex=$page"
+    private fun fetchPopularNovelEndpoint(page: Int): String = "/stories/novel?pageIndex=$page&orderBy=1"
+
+    private fun fetchPopularFanficEndpoint(page: Int): String = "/stories/fanfic?pageIndex=$page&orderBy=1"
+
+    private fun fetchSearchEndpoint(page: Int, query: String): String {
+        var type = "novel"
+        var keywords = query
+        if (query.startsWith("fanfic")) {
+            type = "fanfic"
+            keywords = query.removePrefix("fanfic")
+        }
+        keywords = keywords.replace(' ', '+')
+        return "/search?keywords=${keywords}&type=$type&pageIndex=$page"
+    }
 
     private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
 
-    private fun headersBuilder() = io.ktor.http.Headers.build {
-        append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
-        append(HttpHeaders.CacheControl, "max-age=0")
-        append(HttpHeaders.Referrer, baseUrl)
-    }
+    private fun popularSelector() = "div.j_category_wrapper li.fl a.g_thumb"
 
-    // popular
-    fun popularRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchPopularEndpoint(page = page)!!)
-        }
-    }
-
-    fun popularSelector() = "div.j_category_wrapper li.fl a.g_thumb"
-
-    fun popularFromElement(element: Element): MangaInfo {
+    private fun popularFromElement(element: Element): MangaInfo {
         val url = baseUrl + element.attr("href")
         val title = element.attr("title")
-        val thumbnailUrl = element.select("img").attr("src")
+        val thumbnailUrl = "https:" + element.select("img").attr("data-original")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    fun popularNextPageSelector() = "[rel=next]"
+    private fun popularNextPageSelector() = "body"
 
-    // latest
+    private fun latestSelector(): String = popularSelector()
 
-    fun latestRequest(page: Int): HttpRequestBuilder {
-        return HttpRequestBuilder().apply {
-            url(baseUrl + fetchLatestEndpoint(page)!!)
-            headers { headers }
-        }
+    private fun latestFromElement(element: Element) = popularFromElement(element)
+
+    private fun latestNextPageSelector() = popularNextPageSelector()
+
+    private fun searchSelector() = "li a.g_thumb"
+
+    private fun searchFromElement(element: Element): MangaInfo {
+        val url = baseUrl + element.attr("href")
+        val title = element.attr("title")
+        val thumbnailUrl = "https:" + element.select("img").attr("src")
+        return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
-    fun latestSelector(): String = popularSelector()
-
-    fun latestFromElement(element: Element) = popularFromElement(element)
-
-    fun latestNextPageSelector() = popularNextPageSelector()
-
-    // search
-    fun searchRequest(
-        page: Int,
-        query: String,
-        filters: List<Filter<*>>,
-    ): HttpRequestBuilder {
-        val filters = if (filters.isEmpty()) getFilters() else filters
-        val genre = filters.findInstance<GenreList>()?.toUriPart()
-        val order = filters.findInstance<OrderByFilter>()?.toUriPart()
-        val status = filters.findInstance<StatusFilter>()?.toUriPart()
-
-        return when {
-            query.isNotEmpty() -> requestBuilder("$baseUrl/search?keywords=$query&type=1&pageIndex=$page")
-            else -> requestBuilder("$baseUrl/category/$genre" + "_comic_page1?&orderBy=$order&bookStatus=$status")
-        }
-    }
-
-    fun searchSelector() = popularSelector()
-
-    fun searchFromElement(element: Element) = popularFromElement(element)
-
-    fun searchNextPageSelector() = popularNextPageSelector()
+    private fun searchNextPageSelector() = popularNextPageSelector()
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
-        val thumbnailUrl = document.select("i.g_thumb img:first-child").attr("src")
+        val thumbnailUrl = "http:" + document.select("i.g_thumb img:first-child").attr("src")
         val title = document.select("div.g_col h2").text()
         val description = document.select("div.g_txt_over p.c_000").text()
         val author = document.select("p.ell a.c_primary").text()
@@ -191,19 +183,19 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
             ""
         } +
             element.attr("title")
-        val date_upload = parseChapterDate(element.select(".oh small").text())
+        val dateUpload = parseChapterDate(element.select(".oh small").text())
 
-        return ChapterInfo(name = name, dateUpload = date_upload, key = key)
+        return ChapterInfo(name = name, dateUpload = dateUpload, key = key)
     }
 
     override suspend fun getChapterList(
-        book: MangaInfo,
+        manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {
 
-                val request = client.get(chaptersRequest(book = book)).asJsoup()
+                val request = client.get(chaptersRequest(book = manga)).asJsoup()
 
                 return@withContext chaptersParse(request)
             }
@@ -227,7 +219,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
         }
     }
 
-    fun parseChapterDate(date: String): Long {
+    private fun parseChapterDate(date: String): Long {
         return if (date.contains("ago")) {
             val value = date.split(' ')[0].toInt()
             when {
@@ -260,62 +252,6 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
                 0L
             }
         }
-    }
-
-    private class StatusFilter : UriPartFilter(
-        "Status",
-        arrayOf(
-            Pair("0", "All"),
-            Pair("1", "Ongoing"),
-            Pair("2", "Completed")
-        )
-    )
-
-    private class OrderByFilter : UriPartFilter(
-        "Order By",
-        arrayOf(
-            Pair("1", "Default"),
-            Pair("1", "Popular"),
-            Pair("2", "Recommendation"),
-            Pair("3", "Collection"),
-            Pair("4", "Rates"),
-            Pair("5", "Updated")
-        )
-    )
-
-    private class GenreList : UriPartFilter(
-        "Select Genre",
-        arrayOf(
-            Pair("0", "All"),
-            Pair("60002", "Action"),
-            Pair("60014", "Adventure"),
-            Pair("60011", "Comedy"),
-            Pair("60009", "Cooking"),
-            Pair("60027", "Diabolical"),
-            Pair("60024", "Drama"),
-            Pair("60006", "Eastern"),
-            Pair("60022", "Fantasy"),
-            Pair("60017", "Harem"),
-            Pair("60018", "History"),
-            Pair("60015", "Horror"),
-            Pair("60013", "Inspiring"),
-            Pair("60029", "LGBT+"),
-            Pair("60016", "Magic"),
-            Pair("60008", "Mystery"),
-            Pair("60003", "Romance"),
-            Pair("60007", "School"),
-            Pair("60004", "Sci-fi"),
-            Pair("60019", "Slice of Life"),
-            Pair("60023", "Sports"),
-            Pair("60012", "Transmigration"),
-            Pair("60005", "Urban"),
-            Pair("60010", "Wuxia")
-        )
-    )
-
-    private open class UriPartFilter(displayName: String, val vals: Array<Pair<String, String>>) :
-        Filter.Select(displayName, vals.map { it.second }.toTypedArray()) {
-        fun toUriPart() = vals[value].first
     }
 
     private inline fun <reified T> Iterable<*>.findInstance() = find { it is T } as? T
