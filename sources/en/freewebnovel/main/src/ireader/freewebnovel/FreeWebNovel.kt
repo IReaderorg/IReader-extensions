@@ -106,31 +106,30 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val url = baseUrl + element.select("a").attr("href")
         val title = element.select("a").attr("title")
         val thumbnailUrl = element.select("img").attr("src")
-        return MangaInfo(key = url, title = title, cover = thumbnailUrl)
+        return MangaInfo(key = url, title = title, cover = baseUrl + thumbnailUrl)
     }
 
     private fun latestFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
         val url = baseUrl + element.select("div.txt a").attr("href")
         val thumbnailUrl = element.select("div.pic img").attr("src")
-        return MangaInfo(key = url, title = title, cover = thumbnailUrl)
+        return MangaInfo(key = url, title = title, cover = baseUrl + thumbnailUrl)
     }
 
     private fun searchFromElement(element: Element): MangaInfo {
         val title = element.select("div.txt a").attr("title")
         val url = baseUrl + element.select("div.txt a").attr("href")
         val thumbnailUrl = element.select("div.pic img").attr("src")
-        return MangaInfo(key = url, title = title, cover = thumbnailUrl)
+        return MangaInfo(key = url, title = title, cover = baseUrl + thumbnailUrl)
     }
 
     // manga details
     override fun detailParse(document: Document): MangaInfo {
         val title = document.select("div.m-desc h1.tit").text()
-        val cover = document.select("div.m-book1 div.pic img").text()
+        val cover = document.select("div.m-book1 div.pic img").attr("src")
         val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
         val authorBookSelector = document.select("div.right a.a1").attr("title")
         val description = document.select("div.inner p").eachText().joinToString("\n")
-        // not sure why its not working.
         val category = document.select("[title=Genre]")
             .next()
             .text()
@@ -144,7 +143,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
         return MangaInfo(
             title = title,
-            cover = cover,
+            cover = baseUrl + cover,
             description = description,
             author = authorBookSelector,
             genres = category,
