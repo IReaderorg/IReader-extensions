@@ -34,7 +34,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: 17
+          java-version: 21
           distribution: adopt
 
       - name: Get number of modules
@@ -70,7 +70,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: 17
+          java-version: 21
           distribution: adopt
 
       - name: Prepare signing key
@@ -121,9 +121,9 @@ jobs:
         with:
           path: ~/artifacts
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          java-version: 17
+          java-version: 21
           distribution: adopt
 
       - name: Checkout master branch
