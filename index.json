@@ -714,6 +714,18 @@
     "assetsDir": "multisrc/madara/ltnovel/assets"
   },
   {
+    "pkg": "ireader.novelbuddy.en",
+    "apk": "ireader-en-novelbuddy-v1.1.apk",
+    "name": "NovelBuddy",
+    "id": 1260875580122894435,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "Novel source based on novelbuddy.com",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.noveldeglace.fr",
     "apk": "ireader-fr-noveldeglace-v1.1.apk",
     "name": "NovelDeGlace",
