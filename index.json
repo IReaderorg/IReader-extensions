@@ -63,6 +63,18 @@
     "assetsDir": "multisrc/madara/azora/assets"
   },
   {
+    "pkg": "ireader.bestlightnovel.en",
+    "apk": "ireader-en-bestlightnovel-v1.1.apk",
+    "name": "BestLightNovel",
+    "id": 8668957442148319359,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "Novel source based on bestlightnovel.com",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.boxnovelcom.en",
     "apk": "ireader-en-boxnovelcom-v1.4.apk",
     "name": "BoxNovelCom",
@@ -149,6 +161,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.dreambigtl.en",
+    "apk": "ireader-en-dreambigtl-v1.1.apk",
+    "name": "DreamBigTL",
+    "id": 1887945205772019696,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "Novel source based on dreambigtl.com",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.epiknovel.tu",
     "apk": "ireader-tu-epiknovel-v1.1.apk",
     "name": "EpikNovel",
@@ -180,6 +204,18 @@
     "lang": "en",
     "code": 3,
     "version": "1.3",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.fictionzone.en",
+    "apk": "ireader-en-fictionzone-v1.1.apk",
+    "name": "FictionZone",
+    "id": 6938628683888032691,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -279,6 +315,18 @@
     "code": 7,
     "version": "1.7",
     "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.libread.en",
+    "apk": "ireader-en-libread-v1.1.apk",
+    "name": "LibRead",
+    "id": 560439935624956734,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "Novel source based on libread.com",
     "nsfw": false,
     "sourceDir": "main"
   },
@@ -523,54 +571,6 @@
     "assetsDir": "multisrc/madara/novel4up/assets"
   },
   {
-    "pkg": "ireader.noveldeglace.fr",
-    "apk": "ireader-fr-noveldeglace-v1.1.apk",
-    "name": "NovelDeGlace",
-    "id": 4140598854940859954,
-    "lang": "fr",
-    "code": 1,
-    "version": "1.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.novelfull.en",
-    "apk": "ireader-en-novelfull-v1.8.apk",
-    "name": "NovelFull",
-    "id": 1811616907726599068,
-    "lang": "en",
-    "code": 8,
-    "version": "1.8",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.novelfullme.en",
-    "apk": "ireader-en-novelfullme-v1.2.apk",
-    "name": "NovelFullMe",
-    "id": 7539536711637595421,
-    "lang": "en",
-    "code": 2,
-    "version": "1.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.novelhall.en",
-    "apk": "ireader-en-novelhall-v1.5.apk",
-    "name": "NovelHall",
-    "id": 8288303759567562418,
-    "lang": "en",
-    "code": 5,
-    "version": "1.5",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.novelmultiverse.novelmultiverse.en",
     "apk": "ireader-en-novelmultiverse-v1.1.apk",
     "name": "NovelMultiverse",
@@ -714,6 +714,54 @@
     "assetsDir": "multisrc/madara/ltnovel/assets"
   },
   {
+    "pkg": "ireader.noveldeglace.fr",
+    "apk": "ireader-fr-noveldeglace-v1.1.apk",
+    "name": "NovelDeGlace",
+    "id": 4140598854940859954,
+    "lang": "fr",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.novelfull.en",
+    "apk": "ireader-en-novelfull-v1.8.apk",
+    "name": "NovelFull",
+    "id": 1811616907726599068,
+    "lang": "en",
+    "code": 8,
+    "version": "1.8",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.novelfullme.en",
+    "apk": "ireader-en-novelfullme-v1.2.apk",
+    "name": "NovelFullMe",
+    "id": 7539536711637595421,
+    "lang": "en",
+    "code": 2,
+    "version": "1.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.novelhall.en",
+    "apk": "ireader-en-novelhall-v1.5.apk",
+    "name": "NovelHall",
+    "id": 8288303759567562418,
+    "lang": "en",
+    "code": 5,
+    "version": "1.5",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.novelmt.novelmt.en",
     "apk": "ireader-en-novelmt-v1.1.apk",
     "name": "Novelmt",
@@ -725,6 +773,18 @@
     "nsfw": false,
     "sourceDir": "novelmt",
     "assetsDir": "multisrc/madara/novelmt/assets"
+  },
+  {
+    "pkg": "ireader.novelonline.en",
+    "apk": "ireader-en-novelonline-v1.1.apk",
+    "name": "NovelOnline",
+    "id": 8534783734268209516,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "Novel source based on novelsonline.net",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.novelowlcom.en",
@@ -967,6 +1027,18 @@
     "nsfw": false,
     "sourceDir": "skynovel",
     "assetsDir": "multisrc/skynovel/skynovel/assets"
+  },
+  {
+    "pkg": "ireader.storyseedling.en",
+    "apk": "ireader-en-storyseedling-v1.1.apk",
+    "name": "StorySeedling",
+    "id": 1923878708529299131,
+    "lang": "en",
+    "code": 1,
+    "version": "1.1",
+    "description": "Novel source based on storyseedling.com",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.teamxnovel.ar",
