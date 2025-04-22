@@ -20,7 +20,7 @@ import tachiyomix.annotations.Extension
 @Extension
 abstract class ArNovel(val deps: Dependencies) : Madara(
     deps,
-    key = "https://ar-novel.com",
+    key = "https://ar-no.com",
     sourceName = "arnovel",
     sourceId = 65,
     language = "ar",

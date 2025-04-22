@@ -111,7 +111,7 @@ listOf(
     ),
     Extension(
         name = "ArNovel",
-        versionCode = 2,
+        versionCode = 3,
         libVersion = "1",
         lang = "ar",
         description = "",

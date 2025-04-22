@@ -32,7 +32,7 @@ abstract class Hizomanga(deps: Dependencies) : SkyNovelModel(deps,) {
     get() = "ar"
 
     override val baseUrl: String
-    get() = "https://hizomanga.com"
+    get() = "https://hizomanga.net"
 
     override val mainEndpoint: String
     get() = "book"
