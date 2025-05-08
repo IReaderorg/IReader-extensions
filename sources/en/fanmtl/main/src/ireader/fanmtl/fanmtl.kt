@@ -27,7 +27,7 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "en"
     override val baseUrl: String
-        get() = "https://fanmtl.org"
+        get() = "https://fanmtl.co "
     override val id: Long
         get() = 40
     override val name: String
