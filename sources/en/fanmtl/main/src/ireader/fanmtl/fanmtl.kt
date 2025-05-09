@@ -27,7 +27,7 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "en"
     override val baseUrl: String
-        get() = "https://fanmtl.co "
+        get() = "https://fanmtl.com"
     override val id: Long
         get() = 40
     override val name: String
@@ -54,7 +54,7 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
                 nameSelector = "a",
                 nameAtt = "title",
                 coverSelector = ".cover-wrap img",
-                coverAtt = "src",
+                coverAtt = "data-src",
                 linkSelector = "a",
                 linkAtt = "href",
                 maxPage = 39,
@@ -67,7 +67,7 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
                 nameSelector = "a",
                 nameAtt = "title",
                 coverSelector = ".cover-wrap img",
-                coverAtt = "src",
+                coverAtt = "data-src",
                 linkSelector = "a",
                 linkAtt = "href",
                 maxPage = 39,
