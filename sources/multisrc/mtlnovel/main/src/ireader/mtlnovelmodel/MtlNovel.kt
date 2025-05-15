@@ -118,7 +118,9 @@ abstract class MtlNovelModel(private val deps: Dependencies) : ParsedHttpSource(
     fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("a.list-title").attr("aria-label")
         val url = element.select("a.list-title").attr("href")
-        val thumbnailUrl = element.select("amp-img.list-img").attr("src")
+        // val thumbnailUrl = element.select("amp-img.list-img").attr("src")
+       //url change
+       val thumbnailUrl = element.select("amp-img.list-img").attr("src").replace("www.mtlnovel.net", "www.mtlnovels.com/wp-content/uploads")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
