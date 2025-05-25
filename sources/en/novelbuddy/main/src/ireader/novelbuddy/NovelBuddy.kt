@@ -17,7 +17,8 @@ import tachiyomix.annotations.Extension
 @Extension
 abstract class NovelBuddy(private val deps: Dependencies) : SourceFactory(deps) {
     override val lang: String get() = "en"
-    override val baseUrl: String get() = "https://novelbuddy.io"
+   // override val baseUrl: String get() = "https://novelbuddy.io"
+    override val baseUrl: String get() = "https://novelbuddy.com" //funciona el url cover
     override val id: Long get() = 1002L
     override val name: String get() = "NovelBuddy"
 
