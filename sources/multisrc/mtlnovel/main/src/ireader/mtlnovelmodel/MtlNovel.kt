@@ -34,7 +34,7 @@ abstract class MtlNovelModel(private val deps: Dependencies) : ParsedHttpSource(
 
     override val name = "MtlNovel"
 
-    override val baseUrl = "https://www.mtlnovel.com"
+    override val baseUrl = "https://www.mtlnovels.com"
     override val lang = "en"
 
     override val id: Long
@@ -103,7 +103,7 @@ abstract class MtlNovelModel(private val deps: Dependencies) : ParsedHttpSource(
         return bookListParse(client.get(res).asJsoup(), "div.box", "#pagination > a:nth-child(13)") { popularFromElement(it) }
     }
     suspend fun getSearch(query: String): MangasPageInfo {
-        val res = requestBuilder("$baseUrl/wp-admin/admin-ajax.php?action=autosuggest&q=$query&__amp_source_origin=https%3A%2F%2Fwww.mtlnovel.com")
+        val res = requestBuilder("$baseUrl/wp-admin/admin-ajax.php?action=autosuggest&q=$query&__amp_source_origin=https%3A%2F%2Fwww.mtlnovels.com")
         return customJsonSearchParse(client.get(res).body())
     }
 
@@ -118,7 +118,9 @@ abstract class MtlNovelModel(private val deps: Dependencies) : ParsedHttpSource(
     fun popularFromElement(element: Element): MangaInfo {
         val title = element.select("a.list-title").attr("aria-label")
         val url = element.select("a.list-title").attr("href")
-        val thumbnailUrl = element.select("amp-img.list-img").attr("src")
+        // val thumbnailUrl = element.select("amp-img.list-img").attr("src")
+       //url change
+       val thumbnailUrl = element.select("amp-img.list-img").attr("src").replace("www.mtlnovel.net", "www.mtlnovels.com/wp-content/uploads")
         return MangaInfo(key = url, title = title, cover = thumbnailUrl)
     }
 
