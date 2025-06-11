@@ -11,8 +11,8 @@ listOf(
         sourceDir = "neosekaitranslations",
     ),
     Extension(
-        name = "Armtl",
-        versionCode = 1,
+        name = "HizoManga",
+        versionCode = 2,
         libVersion = "1",
         lang = "ar",
         description = "",
