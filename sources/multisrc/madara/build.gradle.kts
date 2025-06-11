@@ -19,7 +19,7 @@ listOf(
         nsfw = false,
         icon = DEFAULT_ICON,
         assetsDir = "multisrc/madara/armtl/assets",
-        sourceDir = "armtl",
+        sourceDir = "hizomanga",
     ),
     Extension(
         name = "Zinnovel",
