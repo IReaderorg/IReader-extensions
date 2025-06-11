@@ -1,4 +1,4 @@
-package ireader.armtl
+package ireader.hozomanaga
 
 import ireader.madara.Madara
 import ireader.core.source.Dependencies
@@ -6,10 +6,10 @@ import ireader.core.source.Dependencies
 import tachiyomix.annotations.Extension
 
 @Extension
-abstract class ArMtl(val deps: Dependencies) : Madara(
+abstract class HizoManga(val deps: Dependencies) : Madara(
     deps,
-    key = "https://ar-mtl.club",
-    sourceName = "ArMtl",
+    key = "https://hizomanga.net",
+    sourceName = "HizoManga",
     sourceId = 46,
     language = "ar"
 )
