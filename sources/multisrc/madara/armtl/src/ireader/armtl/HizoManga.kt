@@ -1,4 +1,4 @@
-package ireader.armtl
+package ireader.hozomanaga
 
 import ireader.madara.Madara
 import ireader.core.source.Dependencies
