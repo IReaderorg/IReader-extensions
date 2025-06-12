@@ -22,6 +22,17 @@ listOf(
         sourceDir = "armtl",
     ),
     Extension(
+        name = "HizoManga",
+        versionCode = 1,
+        libVersion = "1",
+        lang = "ar",
+        description = "",
+        nsfw = false,
+        icon = DEFAULT_ICON,
+        assetsDir = "multisrc/madara/armtl/assets",
+        sourceDir = "hizomanga",
+    ),
+    Extension(
         name = "Zinnovel",
         versionCode = 1,
         libVersion = "1",
