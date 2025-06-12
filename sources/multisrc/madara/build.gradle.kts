@@ -20,17 +20,6 @@ listOf(
         icon = DEFAULT_ICON,
         assetsDir = "multisrc/madara/armtl/assets",
         sourceDir = "armtl",
-    ),),
-    Extension(
-        name = "Armtl",
-        versionCode = 1,
-        libVersion = "1",
-        lang = "ar",
-        description = "",
-        nsfw = false,
-        icon = DEFAULT_ICON,
-        assetsDir = "multisrc/madara/armtl/assets",
-        sourceDir = "armtl",
     ),
     Extension(
         name = "HizoManga",
