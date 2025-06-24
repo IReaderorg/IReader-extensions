@@ -11,15 +11,15 @@ listOf(
         sourceDir = "neosekaitranslations",
     ),
     Extension(
-        name = "Armtl",
-        versionCode = 1,
+        name = "HizoManga",
+        versionCode = 2,
         libVersion = "1",
         lang = "ar",
         description = "",
         nsfw = false,
         icon = DEFAULT_ICON,
         assetsDir = "multisrc/madara/armtl/assets",
-        sourceDir = "armtl",
+        sourceDir = "hizomanga",
     ),
     Extension(
         name = "HizoManga",
