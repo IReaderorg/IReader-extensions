@@ -80,7 +80,7 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
                 selector = ".col-novel-main > .list-novel .row",
                 nameSelector = ".novel-title",
                 coverSelector = ".cover",
-                coverAtt = "src",
+                coverAtt = "data-src",
                 linkSelector = ".novel-title > a",
                 linkAtt = "href",
                 addBaseUrlToLink = false,
@@ -103,9 +103,10 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
                     encodeInQuery = true
                 ) { headersBuilder() }.bodyAsText()
             Log.error { response }
-            val mangas = response.asJsoup().select(".novel-item").map { html ->
-                val name = html.select(".a").text().trim()
-                val cover = html.select(".cover-wrap img").attr("src")
+            val mangas = response.asJsoup().select("li.novel-item").map { html ->
+                //val name = html.select(".a").text().trim()
+                val name = html.select("a").attr("title").trim()
+                val cover = html.select(".cover-wrap img").attr("data-src")
                 val url = baseUrl + html.select("a").attr("href")
                 MangaInfo(
                     key = url,
@@ -125,7 +126,7 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Detail(
             nameSelector = "h1.novel-title",
             coverSelector = ".cover img",
-            coverAtt = "src",
+            coverAtt = "data-src",
             addBaseurlToCoverLink = true,
             // We are using nth-last-child(x) because there are some
             // novels which can have alternative names that is added
