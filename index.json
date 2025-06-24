@@ -271,6 +271,19 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.hizomanga.hizomanga.ar",
+    "apk": "ireader-ar-hizomanga-v1.1.apk",
+    "name": "HizoManga",
+    "id": 3299958336217533379,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "hizomanga",
+    "assetsDir": "multisrc/madara/armtl/assets"
+  },
+  {
     "pkg": "ireader.indowebnovel.in",
     "apk": "ireader-in-indowebnovel-v1.1.apk",
     "name": "IndoWebNovel",
@@ -686,19 +699,6 @@
     "nsfw": false,
     "sourceDir": "zinnovel",
     "assetsDir": "multisrc/madara/zinnovel/assets"
-  },
-  {
-    "pkg": "ireader.hizomanga.hizomanga.ar",
-    "apk": "ireader-ar-hizomanga-v1.2.apk",
-    "name": "Hizomanga",
-    "id": 3299958336217533379,
-    "lang": "ar",
-    "code": 2,
-    "version": "1.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "hizomanga",
-    "assetsDir": "multisrc/skynovel/hizomanga/assets"
   },
   {
     "pkg": "ireader.ltnovel.ltnovel.en",
