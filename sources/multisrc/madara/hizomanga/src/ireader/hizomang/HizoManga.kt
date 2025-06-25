@@ -9,7 +9,7 @@ import tachiyomix.annotations.Extension
 abstract class HizoManga(val deps: Dependencies) : Madara(
     deps,
     key = "https://hizomanga.net",
-    sourceName = "ArMtl",
+    sourceName = "HizoManga",
     sourceId = 46,
     language = "ar"
 )
