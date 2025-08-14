@@ -140,5 +140,9 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Content(
             pageTitleSelector = ".epheader",
             pageContentSelector = "div.entry-content p:not([style~=opacity]), div.entry-content ol li",
+            list.map { text ->
+            text.replace("*إقرأ* رواياتنا* فقط* على* مو*قع م*لوك الرو*ايات ko*lno*vel ko*lno*vel. com", "", ignoreCase = true)
+                .trim()
+        }
         )
 }
