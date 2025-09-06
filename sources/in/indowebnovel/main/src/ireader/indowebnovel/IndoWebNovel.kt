@@ -1,4 +1,4 @@
-package ireader.indowebnovel
+id ireader.indowebnovel
 
 import io.ktor.client.request.post
 import ireader.core.source.Dependencies
@@ -19,7 +19,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "en"
     override val baseUrl: String
-        get() = "https://indowebnovel.id/id"
+        get() = "https://indowebnovel.id/"
     override val id: Long
         get() = 71
     override val name: String
