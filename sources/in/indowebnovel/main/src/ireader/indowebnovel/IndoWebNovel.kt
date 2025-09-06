@@ -23,7 +23,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val id: Long
         get() = 71
     override val name: String
-        get() = "IndoWebNovel"
+        get() = "IndoWebnovel"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
