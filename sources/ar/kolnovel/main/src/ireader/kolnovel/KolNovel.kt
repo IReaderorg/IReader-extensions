@@ -24,7 +24,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
         get() = "ar"
     
     override val baseUrl: String
-        get() = "https://kollnovel.com"
+        get() = "https://kollnovel.site"
     
     override val id: Long
         get() = 41
