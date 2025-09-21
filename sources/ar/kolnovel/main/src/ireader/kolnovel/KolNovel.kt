@@ -29,7 +29,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
     
     // إصلاح: baseUrl صحيح (كان .site خاطئًا، يسبب عدم استخراج الصور)
     override val baseUrl: String
-        get() = "https://kollnovel.com"
+        get() = "https://kollnovel.site"
     
     override val id: Long
         get() = 41
