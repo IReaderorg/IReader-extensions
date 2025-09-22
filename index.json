@@ -309,12 +309,12 @@
   },
   {
     "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v1.12.apk",
+    "apk": "ireader-ar-kolnovel-v1.13.apk",
     "name": "KolNovel",
     "id": 1070515268391361388,
     "lang": "ar",
-    "code": 12,
-    "version": "1.12",
+    "code": 13,
+    "version": "1.13",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -956,6 +956,18 @@
     "assetsDir": "multisrc/madara/readwn/assets"
   },
   {
+    "pkg": "ireader.realmnovel.ar",
+    "apk": "ireader-ar-realmnovel-v1.1.apk",
+    "name": "Realmnovel",
+    "id": 9155405429017944360,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.realwebnovel.en",
     "apk": "ireader-en-realwebnovel-v1.7.apk",
     "name": "RealWebNovel",
@@ -1065,18 +1077,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.teamxnovel.ar",
-    "apk": "ireader-ar-teamxnovel-v1.1.apk",
-    "name": "Teamxnovel",
-    "id": 5927308915940879829,
-    "lang": "ar",
-    "code": 1,
-    "version": "1.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.wbnovel.wbnovel.in",
     "apk": "ireader-in-wbnovel-v1.1.apk",
     "name": "WbNovel",
@@ -1088,6 +1088,30 @@
     "nsfw": false,
     "sourceDir": "wbnovel",
     "assetsDir": "multisrc/skynovel/wbnovel/assets"
+  },
+  {
+    "pkg": "ireader.sunovels.ar",
+    "apk": "ireader-ar-sunovels-v1.1.apk",
+    "name": "Sunovels",
+    "id": 4644508340445345656,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.teamxnovel.ar",
+    "apk": "ireader-ar-teamxnovel-v1.1.apk",
+    "name": "Teamxnovel",
+    "id": 5927308915940879829,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.uptvs.fa",
