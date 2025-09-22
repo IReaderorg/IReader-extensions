@@ -63,13 +63,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img.cover, img.thumbnail, .novel-cover img, .thumb img",
-                coverAtt = { element: Element ->
-                    var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("data-lazy-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                    if (url != null && !url.startsWith("http")) {
-                        url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                    }
-                    url ?: ""
-                },
+                coverAtt ="data-src",
                 nextPageSelector = "a.next, .pagination .next, .page-numbers.next, .nav-links .next"
             ),
             BaseExploreFetcher(
@@ -81,13 +75,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img.cover, img.thumbnail, .novel-cover img, .thumb img",
-                coverAtt = { element: Element ->
-                    var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("data-lazy-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                    if (url != null && !url.startsWith("http")) {
-                        url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                    }
-                    url ?: ""
-                },
+                coverAtt = "data-src",
                 nextPageSelector = "a.next, .pagination .next, .page-numbers.next, .nav-links .next",
                 type = SourceFactory.Type.Search
             ),
@@ -100,13 +88,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img.cover, img.thumbnail, .novel-cover img, .thumb img",
-                coverAtt = { element: Element ->
-                    var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("data-lazy-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                    if (url != null && !url.startsWith("http")) {
-                        url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                    }
-                    url ?: ""
-                },
+                coverAtt = "data-src",
                 nextPageSelector = "a.next, .pagination .next, .page-numbers.next, .nav-links .next"
             ),
             BaseExploreFetcher(
@@ -118,13 +100,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img.cover, img.thumbnail, .novel-cover img, .thumb img",
-                coverAtt = { element: Element ->
-                    var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("data-lazy-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                    if (url != null && !url.startsWith("http")) {
-                        url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                    }
-                    url ?: ""
-                },
+                coverAtt = "data-src",
                 nextPageSelector = "a.next, .pagination .next, .page-numbers.next, .nav-links .next"
             ),
         )
@@ -133,13 +109,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Detail(
             nameSelector = "h1.title, .novel-title, h1.entry-title, .post-title",
             coverSelector = "img.cover, .novel-cover img, .series-cover img, .thumb img",
-            coverAtt = { element: Element ->
-                var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("data-lazy-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                if (url != null && !url.startsWith("http")) {
-                    url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                }
-                url ?: ""
-            },
+            coverAtt = "data-src",
             descriptionSelector = "div.description, .synopsis, .summary, .post-content p:first-of-type",
             authorBookSelector = ".author a, span.author, .novel-author, .post-meta .author",
             categorySelector = ".genres a, .tags a, .categories a, .post-tags a",

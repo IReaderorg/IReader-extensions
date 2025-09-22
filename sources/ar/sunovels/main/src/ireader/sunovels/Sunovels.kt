@@ -63,13 +63,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img.cover, img.thumbnail",
-                coverAtt = { element: Element ->
-                    var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                    if (url != null && !url.startsWith("http")) {
-                        url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                    }
-                    url ?: ""
-                },
+                coverAtt = "data-src",
                 nextPageSelector = "a.next.page-numbers, .pagination .next"
             ),
             BaseExploreFetcher(
@@ -81,13 +75,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img.cover, img.thumbnail",
-                coverAtt = { element: Element ->
-                    var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                    if (url != null && !url.startsWith("http")) {
-                        url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                    }
-                    url ?: ""
-                },
+                coverAtt = "data-src",
                 nextPageSelector = "a.next.page-numbers, .pagination .next",
                 type = SourceFactory.Type.Search
             ),
@@ -100,13 +88,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img.cover, img.thumbnail",
-                coverAtt = { element: Element ->
-                    var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                    if (url != null && !url.startsWith("http")) {
-                        url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                    }
-                    url ?: ""
-                },
+                coverAtt = "data-src",
                 nextPageSelector = "a.next.page-numbers, .pagination .next"
             ),
             BaseExploreFetcher(
@@ -118,13 +100,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img.cover, img.thumbnail",
-                coverAtt = { element: Element ->
-                    var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                    if (url != null && !url.startsWith("http")) {
-                        url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                    }
-                    url ?: ""
-                },
+                coverAtt = "data-src",
                 nextPageSelector = "a.next.page-numbers, .pagination .next"
             ),
         )
@@ -133,13 +109,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Detail(
             nameSelector = "h1.title, .series-title",
             coverSelector = "img.cover, .series-cover img",
-            coverAtt = { element: Element ->
-                var url = element.attr("data-src").takeIf { it.isNotEmpty() } ?: element.attr("src").takeIf { it.isNotEmpty() }
-                if (url != null && !url.startsWith("http")) {
-                    url = baseUrl.removeSuffix("/") + "/" + url.trimStart('/')
-                }
-                url ?: ""
-            },
+            coverAtt = "data-src",
             descriptionSelector = "div.description, .synopsis p",
             authorBookSelector = ".author a, span.author",
             categorySelector = ".genres a, .tags a",
