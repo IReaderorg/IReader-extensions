@@ -5,7 +5,7 @@ listOf("ar").map { lang ->
     libVersion = "1",
     lang = lang,
     description = "",
-    nsfw = false,
+    nsfw = true,
     icon = DEFAULT_ICON
   )
 }.also(::register)
