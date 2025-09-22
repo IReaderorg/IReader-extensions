@@ -980,6 +980,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.rewayatfans.ar",
+    "apk": "ireader-ar-rewayatfans-v1.1.apk",
+    "name": "Rewayatfans",
+    "id": 3083109954792853783,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.riwyat.ar",
     "apk": "ireader-ar-riwyat-v1.8.apk",
     "name": "Riwyat",
@@ -1065,18 +1077,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.uptvs.fa",
-    "apk": "ireader-fa-uptvs-v1.1.apk",
-    "name": "Uptvs",
-    "id": 7997113151965107101,
-    "lang": "fa",
-    "code": 1,
-    "version": "1.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.wbnovel.wbnovel.in",
     "apk": "ireader-in-wbnovel-v1.1.apk",
     "name": "WbNovel",
@@ -1088,6 +1088,18 @@
     "nsfw": false,
     "sourceDir": "wbnovel",
     "assetsDir": "multisrc/skynovel/wbnovel/assets"
+  },
+  {
+    "pkg": "ireader.uptvs.fa",
+    "apk": "ireader-fa-uptvs-v1.1.apk",
+    "name": "Uptvs",
+    "id": 7997113151965107101,
+    "lang": "fa",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.webnovelcom.en",
