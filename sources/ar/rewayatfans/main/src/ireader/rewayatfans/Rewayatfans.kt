@@ -49,123 +49,142 @@ abstract class RewayatFans(deps: Dependencies) : SourceFactory(
         get() = listOf(
             BaseExploreFetcher(
                 "الأحدث",
-                endpoint = "/?page={page}",
-                selector = "ul li, .recent-list li, div.post-list li",
-                nameSelector = "a, li",
+                endpoint = "/",
+                selector = "div.post-list li, ul.recent-posts li, .novel-item",
+                nameSelector = "h2 a, .post-title a, h3 a",
                 nameAtt = "text",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                nextPageSelector = "a.next, .pagination a:contains(2), Pages a"
+                nextPageSelector = ".pagination .next, a[rel='next'], .page-numbers.next",
+                onLink = { link -> if (!link.startsWith("http")) baseUrl + link else link }
             ),
             BaseExploreFetcher(
                 "البحث",
-                endpoint = "/?s={query}&page={page}",
-                selector = "ul li:has(a), .search-results li",
-                nameSelector = "a",
+                endpoint = "/?s={query}",
+                selector = "div.search-results li, ul li:has(a), .post-item",
+                nameSelector = "h2 a, .entry-title a",
                 nameAtt = "text",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                nextPageSelector = "a.next",
-                type = SourceFactory.Type.Search
+                nextPageSelector = ".pagination .next, a[rel='next']",
+                type = SourceFactory.Type.Search,
+                onLink = { link -> if (!link.startsWith("http")) baseUrl + link else link }
             ),
             BaseExploreFetcher(
                 "الشائعة",
-                endpoint = "/novels/?page={page}&order=popular",
-                selector = "ul li, .novel-list li",
+                endpoint = "/popular-novels/",
+                selector = "div.popular-list li, ul li.popular, .trending-item",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                nextPageSelector = "a.next"
+                nextPageSelector = ".pagination .next",
+                onLink = { link -> if (!link.startsWith("http")) baseUrl + link else link }
             ),
             BaseExploreFetcher(
                 "المكتملة",
-                endpoint = "/completed/?page={page}",
-                selector = "ul li:contains(النهاية), .completed li",
-                nameSelector = "a",
+                endpoint = "/completed/",
+                selector = "div.completed-list li, ul li.completed, .post-item:has(.status:contains(مكتمل))",
+                nameSelector = "h2 a, .entry-title a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                nextPageSelector = "a.next"
+                nextPageSelector = ".pagination .next",
+                onLink = { link -> if (!link.startsWith("http")) baseUrl + link else link }
             ),
             BaseExploreFetcher(
                 "الجديدة",
-                endpoint = "/?page={page}&order=new",
-                selector = "ul li:contains(new), .new-list li",
+                endpoint = "/new-novels/",
+                selector = "div.new-list li, ul li.new, .recent-item",
                 nameSelector = "a",
                 nameAtt = "text",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                nextPageSelector = "a.next"
+                nextPageSelector = ".pagination .next",
+                onLink = { link -> if (!link.startsWith("http")) baseUrl + link else link }
             ),
         )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = "h1.entry-title, .novel-title, h1",
-            coverSelector = "div.thumb img, .cover img, img[src*='cover']",
+            nameSelector = "h1.entry-title, .novel-title, h1.post-title, title",
+            coverSelector = "div.seriethumb img, .cover-image img, .entry-thumb img, img[src*='cover']",
             coverAtt = "src",
-            descriptionSelector = "div.entry-content p, .description p, .summary",
-            authorBookSelector = ".author span a, div:contains(الكاتب) a",
-            categorySelector = ".genres a, .tags a, div.sertogenre a",
-            statusSelector = ".status span, div.sertostat span, .novel-status",
+            descriptionSelector = "div.entry-content p:first-of-type, .novel-summary, .description p, div.seriessyn",
+            authorBookSelector = ".post-meta .author a, div:contains(الكاتب) a, .novel-author a",
+            categorySelector = ".post-tags a, .genres a, .tags a, div.genres a",
+            statusSelector = ".post-meta .status, .novel-status span, div.seriestat, .status",
             onStatus = { status ->
-                if (status.contains("مكتمل", ignoreCase = true) || status.contains("النهاية") || status.contains("Completed") || status.contains("The End")) {
-                    MangaInfo.COMPLETED
-                } else if (status.contains("مستمر", ignoreCase = true) || status.contains("Ongoing")) {
-                    MangaInfo.ONGOING
-                } else if (status.contains("توقف", ignoreCase = true) || status.contains("Hiatus")) {
-                    MangaInfo.ON_HIATUS
-                } else {
-                    MangaInfo.UNKNOWN
+                val lowerStatus = status.lowercase()
+                when {
+                    lowerStatus.contains("مكتمل") || lowerStatus.contains("النهاية") || lowerStatus.contains("completed") || lowerStatus.contains("the end") -> MangaInfo.COMPLETED
+                    lowerStatus.contains("مستمر") || lowerStatus.contains("ongoing") || lowerStatus.contains("جاري") -> MangaInfo.ONGOING
+                    lowerStatus.contains("توقف") || lowerStatus.contains("hiatus") || lowerStatus.contains("معلق") -> MangaInfo.ON_HIATUS
+                    else -> MangaInfo.UNKNOWN
                 }
             },
+            onDescription = { desc ->
+                desc.replace(Regex("<[^>]*>"), "")
+                    .replace(Regex("\\s+"), " ")
+                    .trim()
+            }
         )
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
             append(
                 HttpHeaders.UserAgent,
-                "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             )
             append(HttpHeaders.Referrer, baseUrl)
             append(HttpHeaders.AcceptLanguage, "ar-SA,ar;q=0.9,en-US;q=0.8,en;q=0.7")
-            append(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            append(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+            append(HttpHeaders.AcceptEncoding, "gzip, deflate, br")
         }
     }
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = "ul.chapter-list li, li[data-id], .chapters li",
-            nameSelector = "a, div.epl-title",
+            selector = "ul.chapter-list li, div.chapters-list li, .wp-block-list li, ul li:has(a:contains(فصل)), .chapter-item",
+            nameSelector = "a.chapter-title, a, span.chap-title",
+            nameIncludeChapterNumber = true,
             linkSelector = "a",
             linkAtt = "href",
-            reverseChapterList = true,
+            dateSelector = ".chapter-date, time",
+            reverseChapterList = false,
+            onChapter = { chapter ->
+                chapter.copy(
+                    url = if (!chapter.url.startsWith("http")) baseUrl + chapter.url else chapter.url,
+                    name = chapter.name.replace(Regex("فصل\\s*\\d+\\s*:?\\s*"), "فصل ")
+                )
+            }
         )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = ".epheader, h1.chapter-title, .post-title",
-            pageContentSelector = "div.entry-content p, .chapter-content p, ol li",
+            pageTitleSelector = ".entry-header h1, .chapter-title, h1.post-title, title",
+            pageContentSelector = "div.entry-content > p, .chapter-content p, div.reading-content p, ol li p, div#content p",
+            nextContentSelector = ".next-chapter a, .chapter-nav .next",
             onContent = { contents: List<String> ->
-                contents.map { text ->
-                    text.replace(
-                        Regex("(?i).*new.*|.*النهاية.*|.*The End.*|.*اقرأ.*فقط.*على.*rewayatfans.*com.*|.*إعلان.*"),
-                        ""
-                    )
+                contents.mapNotNull { text ->
+                    val cleaned = text
+                        .replace(Regex("(?i)(new|النهاية|the end|اقرأ فقط على rewayatfans|إعلان|discord|twitter|facebook|.*rewayatfans\\.com.*)"), "")
+                        .replace(Regex("<[^>]*>"), "")
                         .replace(Regex("\\s+"), " ")
-                        .trim { it.isWhitespace() || it == '*' }
-                        .takeIf { it.length > 20 && !it.contains("Discord", ignoreCase = true) } ?: ""
+                        .trim()
+                    if (cleaned.length > 50 && !cleaned.contains("تعليق", ignoreCase = true) && !cleaned.matches(Regex("^\\*+$"))) {
+                        cleaned
+                    } else null
                 }.filter { it.isNotEmpty() }
             }
         )
