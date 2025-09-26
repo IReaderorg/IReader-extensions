@@ -1,4 +1,4 @@
-package ireader.kolnovel
+package ireader.sunovels
 
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.headers
@@ -15,21 +15,24 @@ import ireader.core.source.model.MangaInfo.Companion.ONGOING
 import ireader.core.source.model.MangaInfo.Companion.ON_HIATUS
 import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+import java.util.Locale
 
 @Extension
-abstract class KolNovel(deps: Dependencies) : SourceFactory(
+abstract class Sunovels(deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
     override val lang: String
         get() = "ar"
     
     override val baseUrl: String
-        get() = "https://kolnovel.site"
+        get() = "https://sunovels.com"
     
     override val id: Long
-        get() = 41
+        get() = 42
     override val name: String
-        get() = "KolNovel"
+        get() = "Sunovels"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
@@ -53,66 +56,66 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
         get() = listOf(
             BaseExploreFetcher(
                 "Latest",
-                endpoint = "/series/?page={page}&status=&order=latest",
-                selector = "div.inmain div.mdthumb",
-                nameSelector = "a",
+                endpoint = "/series/?page={page}&order=latest",
+                selector = "div.series-item, div.manga-item",
+                nameSelector = "a.title, h3 a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
-                coverSelector = "a img",
+                coverSelector = "img.cover, img.thumbnail",
                 coverAtt = "data-src",
-                nextPageSelector = "a.next.page-numbers"
+                nextPageSelector = "a.next.page-numbers, .pagination .next"
             ),
             BaseExploreFetcher(
                 "Search",
-                endpoint = "/page/{page}/?s={query}",
-                selector = "div.inmain div.mdthumb",
-                nameSelector = "a",
+                endpoint = "/search/?q={query}&page={page}",
+                selector = "div.series-item, div.manga-item",
+                nameSelector = "a.title, h3 a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
-                coverSelector = "a img",
+                coverSelector = "img.cover, img.thumbnail",
                 coverAtt = "data-src",
-                nextPageSelector = "a.next.page-numbers",
+                nextPageSelector = "a.next.page-numbers, .pagination .next",
                 type = SourceFactory.Type.Search
             ),
             BaseExploreFetcher(
-                "Trending",
-                endpoint = "/series/?page={page}&status=&order=popular",
-                selector = "div.inmain div.mdthumb",
-                nameSelector = "a",
+                "Popular",
+                endpoint = "/series/?page={page}&order=popular",
+                selector = "div.series-item, div.manga-item",
+                nameSelector = "a.title, h3 a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
-                coverSelector = "a img",
+                coverSelector = "img.cover, img.thumbnail",
                 coverAtt = "data-src",
-                nextPageSelector = "a.next.page-numbers"
+                nextPageSelector = "a.next.page-numbers, .pagination .next"
             ),
             BaseExploreFetcher(
                 "New",
-                endpoint = "/series/?page={page}&order=update",
-                selector = "div.inmain div.mdthumb",
-                nameSelector = "a",
+                endpoint = "/series/?page={page}&order=new",
+                selector = "div.series-item, div.manga-item",
+                nameSelector = "a.title, h3 a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
-                coverSelector = "a img",
+                coverSelector = "img.cover, img.thumbnail",
                 coverAtt = "data-src",
-                nextPageSelector = "a.next.page-numbers"
+                nextPageSelector = "a.next.page-numbers, .pagination .next"
             ),
         )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = "h1.entry-title",
-            coverSelector = "div.sertothumb img",
+            nameSelector = "h1.title, .series-title",
+            coverSelector = "img.cover, .series-cover img",
             coverAtt = "data-src",
-            descriptionSelector = "div.entry-content p",
-            authorBookSelector = "div.serl:contains(الكاتب) span a",
-            categorySelector = "div.sertogenre a",
-            statusSelector = "div.sertostat span",
+            descriptionSelector = "div.description, .synopsis p",
+            authorBookSelector = ".author a, span.author",
+            categorySelector = ".genres a, .tags a",
+            statusSelector = ".status span",
             onStatus = { status ->
-                val lowerStatus = status.lowercase()
+                val lowerStatus = status.lowercase(Locale.ROOT)
                 when {
                     lowerStatus.contains("ongoing") || lowerStatus.contains("مستمرة") -> ONGOING
                     lowerStatus.contains("hiatus") || lowerStatus.contains("متوقفة") -> ON_HIATUS
@@ -139,8 +142,8 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = "li[data-id]",
-            nameSelector = "a div.epl-num, a div.epl-title",
+            selector = "ul.chapters li, .chapter-list li",
+            nameSelector = "a.chapter-title, a",
             linkSelector = "a",
             linkAtt = "href",
             reverseChapterList = true,
@@ -148,14 +151,35 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = ".epheader",
-            pageContentSelector = "div.entry-content p:not([style~=opacity]), div.entry-content ol li",
+            pageTitleSelector = ".chapter-title, h2",
+            pageContentSelector = "div.content p, div.reader p, article p",
             onContent = { contents: List<String> ->
-                contents.map { text ->
-                    text.replace(
-                        Regex("(?i)\\*?إقرأ\\s*رواياتنا\\s*فقط\\s*على\\s*موقع\\s*ملك\\s*الروايات\\s*koll?novel\\.?\\s*koll?novel\\.com?"),
+                contents.map { htmlText ->
+                    val cleaned = htmlText.replace(
+                        Regex("(?i)(?:(?:إقرأ|اقرأ)\\s*رواياتنا\\s*فقط\\s*على\\s*موقع\\s*(?:sunovels|الروايات|novel)\\.?\\s*(?:com|site)?(?:\\s*\\*?)+)"),
                         ""
                     ).trim()
+                    
+                    if (cleaned.contains("<img", ignoreCase = true)) {
+                        val doc = Jsoup.parseBodyFragment(cleaned)
+                        doc.setBaseUri(baseUrl)
+                        val images = doc.select("img")
+                        images.forEach { img ->
+                            var src = img.attr("src").takeIf { it.isNotEmpty() } ?: img.attr("data-src").takeIf { it.isNotEmpty() }
+                            if (src != null && !src.startsWith("http")) {
+                                src = baseUrl.removeSuffix("/") + "/" + src.trimStart('/')
+                            }
+                            if (src != null) {
+                                img.attr("src", src)
+                            }
+                            if (img.attr("alt").isEmpty()) {
+                                img.attr("alt", "صورة من الرواية")
+                            }
+                        }
+                        doc.body().html()
+                    } else {
+                        cleaned
+                    }
                 }.filter { it.isNotBlank() }
             }
         )
