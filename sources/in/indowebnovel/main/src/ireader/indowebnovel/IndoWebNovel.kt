@@ -86,7 +86,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = ".title-chapter",
-            pageContentSelector = ".readersss p",
+            pageContentSelector = ".text-left p",
         )
 
 }
