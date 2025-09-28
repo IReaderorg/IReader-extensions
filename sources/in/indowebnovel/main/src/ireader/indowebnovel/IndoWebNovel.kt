@@ -54,68 +54,74 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
             BaseExploreFetcher(
                 "A-Z",
                 endpoint = "/advanced-search/?page={page}&order=title",
-                selector = ".listupd .bs",
+                selector = ".flexbox3 .flexbox3-item",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
+                maxPage = 10
             ),
             BaseExploreFetcher(
                 "Z-A",
                 endpoint = "/advanced-search/?page={page}&order=titlereverse",
-                selector = ".listupd .bs",
+                selector = ".flexbox3 .flexbox3-item",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
+                maxPage = 10
             ),
             BaseExploreFetcher(
                 "Latest Update",
                 endpoint = "/advanced-search/?page={page}&order=update",
-                selector = ".listupd .bs",
+                selector = ".flexbox3 .flexbox3-item",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
+                maxPage = 10
             ),
             BaseExploreFetcher(
                 "Latest Added",
                 endpoint = "/advanced-search/?page={page}&order=latest",
-                selector = ".listupd .bs",
+                selector = ".flexbox3 .flexbox3-item",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
+                maxPage = 10
             ),
             BaseExploreFetcher(
                 "Popular",
                 endpoint = "/advanced-search/?page={page}&order=popular",
-                selector = ".listupd .bs",
+                selector = ".flexbox3 .flexbox3-item",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
+                maxPage = 10
             ),
             BaseExploreFetcher(
                 "Rating",
                 endpoint = "/advanced-search/?page={page}&order=rating",
-                selector = ".listupd .bs",
+                selector = ".flexbox3 .flexbox3-item",
                 nameSelector = "a",
                 nameAtt = "title",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
+                maxPage = 10
             ),
             BaseExploreFetcher(
                 "Search",
@@ -127,6 +133,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
+                maxPage = 10,
                 type = SourceFactory.Type.Search
             ),
         )
