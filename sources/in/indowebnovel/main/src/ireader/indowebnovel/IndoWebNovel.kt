@@ -1,4 +1,4 @@
-package ireader.indowebnovel
+overrideverrideackage ireader.indowebnovel
 
 import io.ktor.client.request.post
 import ireader.core.source.Dependencies
@@ -26,21 +26,8 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val id: Long
         get() = 71
     override val name: String
-        get() = "IndoWebNovel"
-
-    override fun getFilters(): FilterList = listOf(
+        get() = "IndoWebNoexploreFetcherside fun getFilters(): FilterList = listOf(
         Filter.Title(),
-        Filter.Sort(
-            "SortBy:",
-            arrayOf(
-                "A-Z",
-                "Z-A",
-                "Latest Update",
-                "Latest Added",
-                "Popular",
-                "Rating"
-            ),
-        )
     )
 
     override fun getCommands(): CommandList = listOf(
@@ -52,68 +39,8 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
-                "A-Z",
-                endpoint = "/advanced-search/?page={page}&order=title",
-                selector = ".flexbox3 .flexbox3-item",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "img",
-                coverAtt = "src",
-                maxPage = 10
-            ),
-            BaseExploreFetcher(
-                "Z-A",
-                endpoint = "/advanced-search/?page={page}&order=titlereverse",
-                selector = ".flexbox3 .flexbox3-item",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "img",
-                coverAtt = "src",
-                maxPage = 10
-            ),
-            BaseExploreFetcher(
-                "Latest Update",
-                endpoint = "/advanced-search/?page={page}&order=update",
-                selector = ".flexbox3 .flexbox3-item",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "img",
-                coverAtt = "src",
-                maxPage = 10
-            ),
-            BaseExploreFetcher(
-                "Latest Added",
-                endpoint = "/advanced-search/?page={page}&order=latest",
-                selector = ".flexbox3 .flexbox3-item",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "img",
-                coverAtt = "src",
-                maxPage = 10
-            ),
-            BaseExploreFetcher(
-                "Popular",
-                endpoint = "/advanced-search/?page={page}&order=popular",
-                selector = ".flexbox3 .flexbox3-item",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "img",
-                coverAtt = "src",
-                maxPage = 10
-            ),
-            BaseExploreFetcher(
-                "Rating",
-                endpoint = "/advanced-search/?page={page}&order=rating",
+                "Latest",
+                endpoint = "/page/{page}/",
                 selector = ".flexbox3 .flexbox3-item",
                 nameSelector = "a",
                 nameAtt = "title",
@@ -144,12 +71,12 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
             coverSelector = ".series-thumb img",
             coverAtt = "src",
             authorBookSelector = "li:contains(Author) span",
-            categorySelector = "li:contains(Tags) span a",
+            categorySelector = "li:contains(tags) span a",
             statusSelector = ".series-infoz .status",
             onStatus = { status ->
                 val lowerStatus = status.lowercase()
                 when {
-                    lowerStatus.contains("ongoing") -> ONGOING
+                    lowerStatus.contains(ONGOINGg") -> ONGOING
                     lowerStatus.contains("completed") -> COMPLETED
                     lowerStatus.contains("hiatus") -> ON_HIATUS
                     else -> ONGOING
