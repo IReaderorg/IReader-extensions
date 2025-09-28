@@ -9,6 +9,9 @@ import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.MangaInfo.Companion.COMPLETED
+import ireader.core.source.model.MangaInfo.Companion.ONGOING
+import ireader.core.source.model.MangaInfo.Companion.ON_HIATUS
 import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
 
@@ -70,6 +73,18 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
             nameSelector = ".series-title h2",
             coverSelector = ".series-thumb img",
             coverAtt = "src",
+            authorBookSelector = "li:contains(Author) span",
+            categorySelector = "li:contains(tags) span a",
+            statusSelector = ".series-infoz .status",
+            onStatus = { status ->
+                val lowerStatus = status.lowercase()
+                when {
+                    lowerStatus.contains(ONGOINGg") -> ONGOING
+                    lowerStatus.contains("completed") -> COMPLETED
+                    lowerStatus.contains("hiatus") -> ON_HIATUS
+                    else -> ONGOING
+                }
+            },
             descriptionSelector = ".series-synops p",
         )
 
@@ -86,7 +101,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = ".title-chapter",
-            pageContentSelector = ".readersss p",
+            pageContentSelector = ".text-left p",
         )
 
 }
