@@ -49,7 +49,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
-                name = "A-Z",
+                "A-Z",
                 endpoint = "/advanced-search/?page={page}&order=title",
                 selector = ".listupd .bs",
                 nameSelector = "a",
@@ -60,7 +60,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
                 coverAtt = "src",
             ),
             BaseExploreFetcher(
-                name = "Z-A",
+                "Z-A",
                 endpoint = "/advanced-search/?page={page}&order=titlereverse",
                 selector = ".listupd .bs",
                 nameSelector = "a",
@@ -71,7 +71,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
                 coverAtt = "src",
             ),
             BaseExploreFetcher(
-                name = "Latest Update",
+                "Latest Update",
                 endpoint = "/advanced-search/?page={page}&order=update",
                 selector = ".listupd .bs",
                 nameSelector = "a",
@@ -82,7 +82,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
                 coverAtt = "src",
             ),
             BaseExploreFetcher(
-                name = "Latest Added",
+                "Latest Added",
                 endpoint = "/advanced-search/?page={page}&order=latest",
                 selector = ".listupd .bs",
                 nameSelector = "a",
@@ -93,7 +93,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
                 coverAtt = "src",
             ),
             BaseExploreFetcher(
-                name = "Popular",
+                "Popular",
                 endpoint = "/advanced-search/?page={page}&order=popular",
                 selector = ".listupd .bs",
                 nameSelector = "a",
@@ -104,7 +104,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
                 coverAtt = "src",
             ),
             BaseExploreFetcher(
-                name = "Rating",
+                "Rating",
                 endpoint = "/advanced-search/?page={page}&order=rating",
                 selector = ".listupd .bs",
                 nameSelector = "a",
@@ -115,7 +115,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
                 coverAtt = "src",
             ),
             BaseExploreFetcher(
-                name = "Search",
+                "Search",
                 endpoint = "/page/{page}/?s={query}",
                 selector = ".flexbox2 .flexbox2-item",
                 nameSelector = "a",
