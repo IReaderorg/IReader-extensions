@@ -1,4 +1,4 @@
-overrideverrideackage ireader.indowebnovel
+package ireader.indowebnovel
 
 import io.ktor.client.request.post
 import ireader.core.source.Dependencies
@@ -22,11 +22,13 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "en"
     override val baseUrl: String
-        get() = "https://indowebnovel.id"
+        get() = "https://indowebnovel.id/"
     override val id: Long
         get() = 71
     override val name: String
-        get() = "IndoWebNoexploreFetcherside fun getFilters(): FilterList = listOf(
+        get() = "IndoWebNovel"
+
+    override fun getFilters(): FilterList = listOf(
         Filter.Title(),
     )
 
@@ -35,6 +37,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
         Command.Content.Fetch(),
         Command.Chapter.Fetch(),
     )
+
 
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
@@ -84,6 +87,7 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
             },
             descriptionSelector = ".series-synops p",
         )
+
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
             selector = ".series-chapter li .flexch-infoz a",
@@ -99,4 +103,5 @@ abstract class IndoWebNovel(deps: Dependencies) : SourceFactory(
             pageTitleSelector = ".title-chapter",
             pageContentSelector = ".text-left p",
         )
+
 }
