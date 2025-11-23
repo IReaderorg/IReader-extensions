@@ -1,12 +1,12 @@
 listOf("en").map { lang ->
     Extension(
-        name = "Novelbuddy",
+        name = "ReadNovelFullPlugin",
         versionCode = 10,
         libVersion = "1",
         lang = lang,
-        description = "Read novels from NovelBuddy.io",
+        description = "Read novels from ",
         nsfw = false,
         icon = DEFAULT_ICON,
-        assetsDir = "en/novelbuddy/main/assets",
+        assetsDir = "en//main/assets",
     )
 }.also(::register)

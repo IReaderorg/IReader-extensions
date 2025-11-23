@@ -1,12 +1,12 @@
 listOf("en").map { lang ->
     Extension(
-        name = "Novelbuddy",
+        name = "Fenrir",
         versionCode = 10,
         libVersion = "1",
         lang = lang,
-        description = "Read novels from NovelBuddy.io",
+        description = "Read novels from Fenrir Realm",
         nsfw = false,
         icon = DEFAULT_ICON,
-        assetsDir = "en/novelbuddy/main/assets",
+        assetsDir = "en/fenrir/main/assets",
     )
 }.also(::register)

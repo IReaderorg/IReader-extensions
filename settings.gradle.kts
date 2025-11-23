@@ -36,6 +36,19 @@ if (System.getenv("CI") == null || System.getenv("CI_MODULE_GEN") == "true") {
                 File("sources/multisrc/${dir.name}")
         }
     }
+
+    // Include sources-v5-batch directory (converted plugins V5)
+    File(rootDir, "sources-v5-batch").eachDir { dir ->
+        if (dir.name != "multisrc") {
+            dir.eachDir { subDir ->
+                if (File(subDir, "build.gradle.kts").exists()) {
+                    val name = ":extensions:v5:${dir.name}:${subDir.name}"
+                    include(name)
+                    project(name).projectDir = File("sources-v5-batch/${dir.name}/${subDir.name}")
+                }
+            }
+        }
+    }
 } else {
     // Running in CI (GitHub Actions)
     val chunkSize = System.getenv("CI_CHUNK_SIZE").toInt()

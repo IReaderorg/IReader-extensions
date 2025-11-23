@@ -93,3 +93,4 @@ build/reports/detekt/
 # Test results
 test-results/
 lnreader-plugins-master
+lnreader-plugins-plugins-v3.0.0
