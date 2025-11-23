@@ -9,6 +9,9 @@ import io.ktor.client.request.post
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import ireader.common.utils.DateParser
+import ireader.common.utils.SelectorConstants
+import ireader.common.utils.StatusParser
 import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
@@ -26,9 +29,6 @@ import kotlinx.coroutines.withContext
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 @Extension
 abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -40,6 +40,10 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     override val baseUrl = "https://boxnovel.com"
 
     override val lang = "en"
+    
+    companion object {
+        private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
+    }
 
     override fun getFilters(): FilterList {
         return listOf(
@@ -88,7 +92,7 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         val res = requestBuilder("$baseUrl/novel/page/$page/")
         return bookListParse(
             client.get(res).asJsoup(),
-            "div.page-item-detail",
+            SelectorConstants.WPManga.BOOK_LIST,
             popularNextPageSelector()
         ) { latestFromElement(it) }
     }
@@ -97,7 +101,7 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
         val res = requestBuilder("$baseUrl/novel/page/$page/?m_orderby=views")
         return bookListParse(
             client.get(res).asJsoup(),
-            "div.page-item-detail",
+            SelectorConstants.WPManga.BOOK_LIST,
             popularNextPageSelector()
         ) { popularFromElement(it) }
     }
@@ -107,17 +111,14 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
             requestBuilder("$baseUrl/?s=$query&post_type=wp-manga&op=&author=&artist=&release=&adult=")
         return bookListParse(
             client.get(res).asJsoup(),
-            "div.c-tabs-item__content",
+            SelectorConstants.Madara.SEARCH_RESULTS,
             null
         ) { searchFromElement(it) }
     }
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
-            append(
-                HttpHeaders.UserAgent,
-                "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-            )
+            append(HttpHeaders.UserAgent, USER_AGENT)
             append(HttpHeaders.CacheControl, "max-age=0")
             append(HttpHeaders.Referrer, baseUrl)
         }
@@ -171,11 +172,7 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     }
 
     private fun parseStatus(string: String): Long {
-        return when {
-            "OnGoing" in string -> MangaInfo.ONGOING
-            "Completed" in string -> MangaInfo.COMPLETED
-            else -> MangaInfo.UNKNOWN
-        }
+        return StatusParser.parseStatus(string)
     }
 
     // chapters
@@ -195,44 +192,11 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     }
 
     fun parseChapterDate(date: String): Long {
-        return if (date.contains("ago")) {
-            val value = date.split(' ')[0].toInt()
-            when {
-                "min" in date -> Calendar.getInstance().apply {
-                    add(Calendar.MINUTE, value * -1)
-                }.timeInMillis
-                "hour" in date -> Calendar.getInstance().apply {
-                    add(Calendar.HOUR_OF_DAY, value * -1)
-                }.timeInMillis
-                "day" in date -> Calendar.getInstance().apply {
-                    add(Calendar.DATE, value * -1)
-                }.timeInMillis
-                "week" in date -> Calendar.getInstance().apply {
-                    add(Calendar.DATE, value * 7 * -1)
-                }.timeInMillis
-                "month" in date -> Calendar.getInstance().apply {
-                    add(Calendar.MONTH, value * -1)
-                }.timeInMillis
-                "year" in date -> Calendar.getInstance().apply {
-                    add(Calendar.YEAR, value * -1)
-                }.timeInMillis
-                else -> {
-                    0L
-                }
-            }
-        } else {
-            try {
-                dateFormat.parse(date)?.time ?: 0
-            } catch (_: Exception) {
-                0L
-            }
-        }
+        return DateParser.parseRelativeOrAbsoluteDate(date)
     }
 
-    private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
-
     override fun chaptersSelector(): String {
-        return "li.wp-manga-chapter"
+        return SelectorConstants.WPManga.CHAPTER_LIST
     }
 
     override suspend fun getChapterList(
@@ -274,12 +238,9 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
 
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
         return client to requestBuilder(url) {
-            append(
-                HttpHeaders.UserAgent,
-                "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-            )
+            append(HttpHeaders.UserAgent, USER_AGENT)
             append(HttpHeaders.CacheControl, "max-age=0")
-            append(HttpHeaders.Referrer, "https://wuxiaworld.site/")
+            append(HttpHeaders.Referrer, baseUrl)
         }
     }
 }

@@ -14,5 +14,5 @@ dependencies {
   implementation(libs.kotlinpoet)
   implementation(libs.ksp.api)
 
-  implementation(project(Proj.annotation))
+  implementation(project(":annotations"))
 }

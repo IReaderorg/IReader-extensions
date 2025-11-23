@@ -108,7 +108,7 @@ tasks.register("deploy",DeployTask::class.java)
 
 
 dependencies {
-    implementation(project(Proj.defaultRes))
+    implementation(project(":defaultRes"))
 
     // Version Catalog not available here, and that is why we manually import them here
     val libs = project.extensions.getByType<VersionCatalogsExtension>()
@@ -128,13 +128,14 @@ dependencies {
     compileOnly(libs.findLibrary("ktor-android").get())
     compileOnly(libs.findLibrary("ktor-okhttp").get())
 
-    compileOnly(project(Proj.annotation))
-    compileOnly(project(Proj.multisrc))
-    ksp(project(Proj.compiler))
+    compileOnly(project(":annotations"))
+    compileOnly(project(":multisrc"))
+    compileOnly(project(":common"))
+    ksp(project(":compiler"))
 
     extensionList.forEach { extension ->
         if (extension.deepLinks.isNotEmpty()) {
-            add("${extension.flavor}Implementation", project(Proj.deeplink))
+            add("${extension.flavor}Implementation", project(":deeplink"))
         }
         extension.projectDependencies.forEach { dependency ->
             add("${extension.flavor}Implementation", project(dependency))

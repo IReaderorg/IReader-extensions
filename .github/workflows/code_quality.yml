@@ -1,0 +1,51 @@
+name: Code Quality
+
+on:
+  pull_request:
+    paths:
+      - '**.kt'
+      - '**.kts'
+      - 'detekt.yml'
+      - '.editorconfig'
+
+jobs:
+  detekt:
+    name: Detekt Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: adopt
+
+      - name: Run detekt
+        run: ./gradlew detekt
+        continue-on-error: true
+
+      - name: Upload detekt report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: detekt-report
+          path: build/reports/detekt/
+
+  ktlint:
+    name: Ktlint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: adopt
+
+      - name: Run ktlint
+        run: ./gradlew ktlintCheck
+        continue-on-error: true

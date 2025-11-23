@@ -18,7 +18,6 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.ksp.KotlinPoetKspPreview
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import java.io.File
@@ -32,7 +31,6 @@ import java.io.OutputStream
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-@KotlinPoetKspPreview
 class ExtensionProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
@@ -220,7 +218,6 @@ class ExtensionProcessor(
     }
 }
 
-@KotlinPoetKspPreview
 class ExtensionProcessorFactory : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {

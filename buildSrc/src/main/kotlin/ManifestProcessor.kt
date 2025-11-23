@@ -41,7 +41,11 @@ private fun ManifestProcessorTask.processExtension(extension: Extension) {
 
     val app = (parser["application"] as NodeList).first() as Node
 
-    if (!extension.icon.isAssetType()) {
+    // Only add ic_launcher if icon is NOT using assets (i.e., using remote URL or default)
+    if (extension.icon == DEFAULT_ICON || extension.icon.startsWith("http")) {
+        // Don't add icon attribute - will use remote icon
+    } else if (extension.assetsDir.isNullOrBlank()) {
+        // Using local res folder
         app.attributes().putIfAbsent("android:icon","@mipmap/ic_launcher")
     }
     
@@ -97,12 +101,13 @@ private fun addDeepLinks(app: Node, deeplinks: List<DeepLink>) {
 }
 
 fun String.isAssetType() : Boolean {
-   return this.isNotBlank() || this == DEFAULT_ICON
+   return this.isNotBlank() && this != DEFAULT_ICON && !this.startsWith("http")
 }
+
 const val DEFAULT_ICON = "default_icon"
 const val REPO_URL = "https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repo/icon"
 
-fun createExtensionIconLink( extension: Extension): String {
+fun createExtensionIconLink(extension: Extension): String {
     return "$REPO_URL/ireader-${extension.lang}-${
         extension.name.toLowerCase(Locale.getDefault())
     }-v${extension.libVersion}.${extension.versionCode}.png"

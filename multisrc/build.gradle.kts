@@ -10,17 +10,17 @@ android {
     namespace = "ireader.test_extensions"
     defaultConfig {
         minSdk = Config.minSdk
-        targetSdk = Config.targetSdk
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-        jvmTarget = "21"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        }
     }
-
 }
 
 dependencies {
@@ -41,6 +41,6 @@ dependencies {
     compileOnly(libs.findLibrary("ktor-gson").get())
     compileOnly(libs.findLibrary("ktor-jackson").get())
 
-    compileOnly(project(Proj.annotation))
-    compileOnly(project(Proj.compiler))
+    compileOnly(project(":annotations"))
+    compileOnly(project(":common"))
 }
