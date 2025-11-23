@@ -100,5 +100,5 @@ fun File.getChunk(chunk: Int, chunkSize: Int,block: (File) -> Unit) {
         .forEach { block(it) }
 }
 
-//include(":test-extensions")
+include(":test-extensions")
 include(":multisrc")

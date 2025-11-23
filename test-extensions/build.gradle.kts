@@ -24,12 +24,14 @@ android {
 }
 
 dependencies {
-    //change this name to your extension name
-    //implementation(project(":extensions:individual:en:mylovenovel"))
+    // Extension to test - configured automatically by test scripts
+    // Uncomment and change for manual testing:
+    implementation(project(":extensions:v5:en:chrysanthemumgarden"))
+    
     implementation(project(":multisrc"))
     implementation(libs.bundles.common)
     implementation(libs.bundles.commonTesting)
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.8.2")
-    implementation(project(Proj.annotation))
-    implementation(project(Proj.compiler))
+    implementation(project(":annotations"))
+    implementation(project(":compiler"))
 }
