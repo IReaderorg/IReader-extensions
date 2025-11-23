@@ -182,31 +182,93 @@ class ConverterV5AI:
         # Fix common lambda issues
         code = re.sub(r'\.map\s*\{\s*it\s*->', '.map { element ->', code)
         
-        # Fix .contents() pattern for removing HTML comments
-        # Pattern: document.select("selector").contents().filter { it.nodeName() == "#comment" }.forEach { it.remove() }
-        # Should be: val content = document.select("selector").first() ?: return emptyList()
-        #            val nodesToRemove = content.childNodes().filter { it.nodeName() == "#comment" }
-        #            nodesToRemove.forEach { it.remove() }
+        # Remove any childNodes() or contents() usage - they don't work in Jsoup
+        # Replace with proper paragraph splitting pattern
+        if '.childNodes()' in code or '.contents()' in code:
+            # Remove the entire childNodes/contents block
+            code = re.sub(
+                r'(\s+).*?\.(?:childNodes|contents)\(\).*?\.remove\(\)\s*\n',
+                '',
+                code,
+                flags=re.DOTALL
+            )
         
-        # Replace inline .contents() with proper pattern
+        # Fix incorrect pattern: document.select("container").mapNotNull
+        # Should be: val content = document.select("container").first(); content.select("p").mapNotNull
+        # Pattern: return document.select("selector").mapNotNull { element ->
+        incorrect_pattern = r'return\s+document\.select\(([^)]+)\)\.mapNotNull\s*\{\s*element\s*->'
+        if re.search(incorrect_pattern, code):
+            # Replace with correct pattern
+            code = re.sub(
+                incorrect_pattern,
+                r'val content = document.select(\1).first() ?: return emptyList()\n        content.select("script, style, .ads").remove()\n        return content.select("p").mapNotNull { element ->',
+                code
+            )
+        
+        # Fix relative URLs in manga.key - must be absolute
+        # Pattern: key = novel.slug or key = "series/${novel.slug}"
+        # Should be: key = "$baseUrl/series/${novel.slug}"
+        if 'key = novel.slug' in code:
+            code = code.replace('key = novel.slug', 'key = "$baseUrl/series/${novel.slug}"')
+        
+        if 'key = "series/${novel.slug}"' in code:
+            code = code.replace('key = "series/${novel.slug}"', 'key = "$baseUrl/series/${novel.slug}"')
+        
+        # Fix string concatenation - use string templates
+        # Pattern: baseUrl + "/" + novel.cover
+        # Should be: "$baseUrl/${novel.cover}"
         code = re.sub(
-            r'document\.select\(([^)]+)\)\.contents\(\)\.filter\s*\{\s*it\.nodeName\(\)\s*==\s*"#comment"\s*\}\.forEach\s*\{\s*it\.remove\(\)\s*\}\s*return\s+listOf\(Text\(document\.select\(\1\)\.html\(\)',
-            r'val content = document.select(\1).first() ?: return emptyList()\n        val nodesToRemove = content.childNodes().filter { it.nodeName() == "#comment" }\n        nodesToRemove.forEach { it.remove() }\n        return listOf(Text(content.html()',
+            r'baseUrl\s*\+\s*"/"\s*\+\s*(\w+\.\w+)',
+            r'"$baseUrl/${\1}"',
             code
         )
         
-        # Simple fallback: just replace .contents() with .childNodes()
-        code = code.replace('.contents()', '.childNodes()')
+        # Ensure all required imports are present
+        required_imports = [
+            'import io.ktor.client.request.*',
+            'import io.ktor.client.statement.*',
+            'import ireader.core.source.Dependencies',
+            'import ireader.core.source.SourceFactory',
+            'import ireader.core.source.asJsoup',
+            'import ireader.core.source.findInstance',
+            'import ireader.core.source.model.ChapterInfo',
+            'import ireader.core.source.model.Command',
+            'import ireader.core.source.model.CommandList',
+            'import ireader.core.source.model.Filter',
+            'import ireader.core.source.model.FilterList',
+            'import ireader.core.source.model.Listing',
+            'import ireader.core.source.model.MangaInfo',
+            'import ireader.core.source.model.MangasPageInfo',
+            'import ireader.core.source.model.Page',
+            'import ireader.core.source.model.Text',
+            'import kotlinx.serialization.Serializable',
+            'import kotlinx.serialization.json.Json',
+            'import org.jsoup.nodes.Document',
+            'import tachiyomix.annotations.Extension',
+        ]
         
-        # Fix childNodes() usage without proper variable extraction
-        # Pattern: .childNodes().filter { it.nodeName() == "#comment" }.forEach { it.remove() }
-        # Should extract to variable first to avoid type issues
-        if '.childNodes()' in code and 'val nodesToRemove' not in code:
-            code = re.sub(
-                r'(\s+)(\w+)\.childNodes\(\)\.filter\s*\{\s*it\.nodeName\(\)\s*==\s*"#comment"\s*\}\.forEach\s*\{\s*it\.remove\(\)\s*\}',
-                r'\1val nodesToRemove = \2.childNodes().filter { it.nodeName() == "#comment" }\n\1nodesToRemove.forEach { it.remove() }',
-                code
-            )
+        # Find the package line
+        package_match = re.search(r'package\s+[\w.]+', code)
+        if package_match:
+            package_line = package_match.group(0)
+            
+            # Extract existing imports
+            existing_imports = re.findall(r'import\s+[\w.*]+', code)
+            
+            # Add missing imports
+            imports_to_add = [imp for imp in required_imports if imp not in code]
+            
+            if imports_to_add:
+                # Build new import section
+                all_imports = '\n'.join(required_imports)
+                
+                # Replace the import section
+                code = re.sub(
+                    r'(package\s+[\w.]+\s*\n\n)(import\s+.*?\n)+',
+                    f'{package_line}\n\n{all_imports}\n',
+                    code,
+                    flags=re.DOTALL
+                )
         
         return code
     
@@ -218,12 +280,21 @@ class ConverterV5AI:
         if 'abstract class' not in code:
             issues.append("Missing 'abstract' keyword in class declaration")
         
-        # Check for required URL parameters
-        if 'addBaseUrlToLink' not in code:
-            issues.append("Missing 'addBaseUrlToLink' parameter")
+        # Check for required imports
+        required_imports = [
+            'import io.ktor.client.request.*',
+            'import io.ktor.client.statement.*',
+            'import ireader.core.source.asJsoup',
+            'import ireader.core.source.findInstance',
+            'import ireader.core.source.model.MangasPageInfo',
+            'import ireader.core.source.model.Listing',
+            'import kotlinx.serialization.Serializable',
+            'import kotlinx.serialization.json.Json',
+        ]
         
-        if 'addBaseurlToCoverLink' not in code:
-            issues.append("Missing 'addBaseurlToCoverLink' parameter")
+        missing_imports = [imp for imp in required_imports if imp not in code]
+        if missing_imports:
+            issues.append(f"Missing imports: {', '.join([imp.split('.')[-1] for imp in missing_imports])}")
         
         # Check for pageContentParse override
         if 'override fun pageContentParse' not in code:
@@ -232,6 +303,14 @@ class ConverterV5AI:
         # Check for wrong method names
         if '.asText()' in code:
             issues.append("Uses 'asText()' instead of 'bodyAsText()'")
+        
+        # Check for relative URLs in manga.key
+        if 'key = novel.slug' in code or 'key = "series/' in code:
+            issues.append("Uses relative URLs - must use absolute URLs: key = \"$baseUrl/series/${novel.slug}\"")
+        
+        # Check for string concatenation instead of templates
+        if 'baseUrl + "/' in code or 'baseUrl + "/" +' in code:
+            issues.append("Uses string concatenation - use string templates: \"$baseUrl/${novel.cover}\"")
         
         return issues
     

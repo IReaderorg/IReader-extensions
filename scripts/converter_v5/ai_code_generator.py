@@ -138,14 +138,19 @@ import io.ktor.client.statement.*
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
+import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
 import ireader.core.source.model.Text
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.jsoup.nodes.Document
 import tachiyomix.annotations.Extension
 
@@ -366,31 +371,53 @@ CONTENT PARSING:
 - Remove unwanted elements with `document.select("selector").remove()`
 - Split content into paragraphs for better reading experience
 - Return clean text without HTML tags
-- BEST PRACTICE: Use this pattern:
-  ```kotlin
-  override fun pageContentParse(document: Document): List<Page> {{
-      val content = document.select(".content-selector").first() ?: return emptyList()
-      
-      // Remove HTML comments
-      val nodesToRemove = content.childNodes().filter {{ it.nodeName() == "#comment" }}
-      nodesToRemove.forEach {{ it.remove() }}
-      
-      // Remove unwanted elements
-      content.select("script, style, .ads, .advertisement").remove()
-      
-      // Split content into paragraphs (better reading experience)
-      return content.select("p, div.paragraph, div.text").mapNotNull {{ element ->
-          val text = element.text().trim()
-          if (text.isNotEmpty()) Text(text) else null
-      }}.ifEmpty {{
-          // Fallback: if no paragraphs found, return all text
-          listOf(Text(content.text()))
-      }}
-  }}
-  ```
-- IMPORTANT: Use `.childNodes()` NOT `.contents()` (Jsoup uses childNodes, not contents)
-- IMPORTANT: Use `.text()` to get clean text without HTML tags
-- IMPORTANT: Split into paragraphs using `select("p")` for better pagination
+- Each paragraph should be a separate Text() item in the list
+
+BEST PRACTICE PATTERN:
+```kotlin
+override fun pageContentParse(document: Document): List<Page> {{
+    val content = document.select(".content-selector").first() ?: return emptyList()
+    
+    // Remove unwanted elements
+    content.select("script, style, .ads, .advertisement").remove()
+    
+    // Select paragraphs INSIDE the content container
+    // IMPORTANT: Use content.select("p") NOT document.select(".content-selector")
+    return content.select("p").mapNotNull {{ element ->
+        val text = element.text().trim()
+        if (text.isNotEmpty()) Text(text) else null
+    }}.ifEmpty {{
+        // Fallback: if no paragraphs found, return all text as single item
+        listOf(Text(content.text()))
+    }}
+}}
+```
+
+CRITICAL RULES:
+1. ✅ First select the CONTAINER: `val content = document.select(".container").first()`
+2. ✅ Then select PARAGRAPHS inside: `content.select("p")`
+3. ✅ Each paragraph becomes ONE Text() item
+4. ✅ Return List<Page> with multiple Text() items
+5. ❌ Do NOT select the container in mapNotNull - select paragraphs!
+6. ❌ Do NOT use `.childNodes()` or `.contents()`
+
+WRONG PATTERN (DO NOT USE):
+```kotlin
+// ❌ WRONG - Selects container, not paragraphs
+return document.select(".content-selector").mapNotNull {{ element ->
+    Text(element.text())
+}}
+```
+
+CORRECT PATTERN (USE THIS):
+```kotlin
+// ✅ CORRECT - Selects paragraphs inside container
+val content = document.select(".content-selector").first() ?: return emptyList()
+return content.select("p").mapNotNull {{ element ->
+    val text = element.text().trim()
+    if (text.isNotEmpty()) Text(text) else null
+}}
+```
 
 JSON API HANDLING:
 If the TypeScript uses `.json()` to parse API responses (like Fenrir Realm):
@@ -470,40 +497,147 @@ override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>
     // Extract slug from absolute URL: "https://site.com/series/slug" -> "slug"
     val novelSlug = manga.key.removePrefix("$baseUrl/series/")
     val chaptersJson = client.get(requestBuilder("$baseUrl/api/novels/chapter-list/$novelSlug")).bodyAsText()
-    val json = Json {{ ignoreUnknownKeys = true }}
-    val chapters = json.decodeFromString<List<APIChapter>>(chaptersJson)
+    
+    val json = Json {{ 
+        ignoreUnknownKeys = true
+        isLenient = true
+    }}
+    
+    val chapters = try {{
+        json.decodeFromString<List<APIChapter>>(chaptersJson)
+    }} catch (e: Exception) {{
+        println("Failed to parse chapters: ${{e.message}}")
+        emptyList()
+    }}
     
     return chapters.map {{ c ->
         ChapterInfo(
             name = "Chapter ${{c.number}}" + (if (!c.title.isNullOrBlank()) " - ${{c.title}}" else ""),
-            key = "${{manga.key}}/chapter-${{c.number}}"  // Absolute URL: https://site.com/series/slug/chapter-1
+            key = "${{manga.key}}/chapter-${{c.number}}"  // IMPORTANT: Use manga.key directly (already absolute)
         )
     }}
 }}
 
 @Serializable
 data class APIChapter(
+    val locked: Locked? = null,
+    val group: Group? = null,
     val title: String? = null,
     val number: Int
 )
+
+@Serializable
+data class Locked(
+    val price: Int? = null
+)
+
+@Serializable
+data class Group(
+    val index: Int? = null,
+    val slug: String? = null
+)
 ```
 
-CRITICAL URL RULES:
-- ✅ ALWAYS use ABSOLUTE URLs for `manga.key`: `"$baseUrl/series/${{slug}}"` NOT just `"series/${{slug}}"`
+CRITICAL URL RULES (MUST FOLLOW):
+- ✅ ALWAYS use ABSOLUTE URLs for `manga.key`: `"$baseUrl/series/${{slug}}"` NOT just `"${{slug}}"` or `"series/${{slug}}"`
 - ✅ ALWAYS use ABSOLUTE URLs for `chapter.key`: `"${{manga.key}}/chapter-${{num}}"` 
+- ✅ When calling APIs that need just the slug, extract it: `manga.key.removePrefix("$baseUrl/series/")`
+- ✅ For chapter keys, use `manga.key` directly - it's already absolute, don't add baseUrl again!
+- ❌ NEVER use relative URLs like `key = novel.slug` or `key = "series/${{slug}}"`
+- ❌ NEVER concatenate like `baseUrl + "/" + novel.cover` - use string templates: `"$baseUrl/${{novel.cover}}"`
+- ❌ NEVER do `"$baseUrl/series/${{manga.key.removePrefix(...)}}"` - just use `manga.key` directly!
+
+EXAMPLE - CORRECT PATTERN:
+```kotlin
+// In getFromAPI - Create manga with ABSOLUTE URL
+MangaInfo(
+    key = "$baseUrl/series/${{novel.slug}}",  // ✅ ABSOLUTE URL
+    cover = "$baseUrl/${{novel.cover}}"       // ✅ String template
+)
+
+// In getChapterList - Extract slug for API call
+val novelSlug = manga.key.removePrefix("$baseUrl/series/")  // ✅ Extract slug
+val json = client.get(requestBuilder("$baseUrl/api/novels/chapter-list/$novelSlug")).bodyAsText()
+
+// Build chapter key from manga.key
+ChapterInfo(
+    key = "${{manga.key}}/chapter-${{c.number}}"  // ✅ Builds on absolute URL
+)
+```
+
+EXAMPLE - WRONG PATTERNS (DO NOT USE):
+```kotlin
+// ❌ WRONG - Relative URL
+MangaInfo(key = novel.slug)
+
+// ❌ WRONG - Partial path
+MangaInfo(key = "series/${{novel.slug}}")
+
+// ❌ WRONG - String concatenation
+MangaInfo(cover = baseUrl + "/" + novel.cover)
+
+// ❌ WRONG - Using full URL in API call
+val json = client.get(requestBuilder("$baseUrl/api/novels/chapter-list/${{manga.key}}"))
+```
 - ✅ The framework does NOT automatically prepend baseUrl to keys
 - ✅ Keys must be complete URLs like: `https://site.com/series/novel-name/chapter-1`
 
-CRITICAL IMPORTS FOR JSON:
-- ✅ ALWAYS import: `io.ktor.client.request.*`
-- ✅ ALWAYS import: `io.ktor.client.statement.*`
-- ✅ ALWAYS import: `ireader.core.source.asJsoup`
-- ✅ ALWAYS import: `kotlinx.serialization.Serializable`
-- ✅ ALWAYS import: `kotlinx.serialization.json.Json`
-- ✅ ALWAYS import: `ireader.core.source.model.MangasPageInfo`
-- ✅ ALWAYS import: `ireader.core.source.findInstance`
+CRITICAL JSON SERIALIZATION RULES:
+- ✅ ALWAYS make nested object fields nullable: `val group: Group? = null`
+- ✅ ALWAYS make fields inside nested objects nullable: `val slug: String? = null`
+- ✅ ALWAYS add default values: `= null`
+- ✅ Use `isLenient = true` in Json builder
+- ❌ NEVER assume API fields are non-null
+- ❌ NEVER omit default values
+
+EXAMPLE:
+```kotlin
+@Serializable
+data class APIChapter(
+    val locked: Locked? = null,      // ✅ Nullable with default
+    val group: Group? = null,         // ✅ Nullable with default
+    val title: String? = null,        // ✅ Nullable with default
+    val number: Int                   // ✅ Required field (no default)
+)
+
+@Serializable
+data class Group(
+    val index: Int? = null,           // ✅ All fields nullable
+    val slug: String? = null          // ✅ All fields nullable
+)
+```
+
+CRITICAL IMPORTS (ALWAYS INCLUDE ALL OF THESE):
+```kotlin
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import ireader.core.source.Dependencies
+import ireader.core.source.SourceFactory
+import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
+import ireader.core.source.model.ChapterInfo
+import ireader.core.source.model.Command
+import ireader.core.source.model.CommandList
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
+import ireader.core.source.model.Listing
+import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.MangasPageInfo
+import ireader.core.source.model.Page
+import ireader.core.source.model.Text
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import org.jsoup.nodes.Document
+import tachiyomix.annotations.Extension
+```
+
+IMPORTANT NOTES:
+- ✅ Include ALL imports above, even if not all are used
 - ✅ Use `client.get(requestBuilder(url)).asJsoup()` for HTML
 - ✅ Use `client.get(requestBuilder(url)).bodyAsText()` for API text/JSON responses
+- ✅ `findInstance` is needed for filter access
+- ✅ `Listing` and `MangasPageInfo` are needed for custom explore methods
+- ✅ `Serializable` and `Json` are needed for JSON API plugins
 
 DO NOT:
 - ❌ Use Filter.Header, Filter.Sort, Filter.Select, Filter.Group, Filter.CheckBox
