@@ -26,7 +26,7 @@ android {
 dependencies {
     // Extension to test - configured automatically by test scripts
     // Uncomment and change for manual testing:
-    implementation(project(":extensions:individual:en:daonovel"))
+    //implementation(project(":extensions:individual:en:daonovel"))
     implementation(project(":multisrc"))
     implementation(libs.bundles.common)
     implementation(libs.bundles.commonTesting)
