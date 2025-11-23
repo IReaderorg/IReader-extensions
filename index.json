@@ -173,18 +173,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.epiknovel.tu",
-    "apk": "ireader-tu-epiknovel-v1.1.apk",
-    "name": "EpikNovel",
-    "id": 4844890656048697396,
-    "lang": "tu",
-    "code": 1,
-    "version": "1.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.fanmtl.en",
     "apk": "ireader-en-fanmtl-v1.1.apk",
     "name": "fanmtl",
@@ -207,6 +195,19 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.fenrir.en",
+    "apk": "ireader-en-fenrir-v1.10.apk",
+    "name": "Fenrir",
+    "id": 1971001510155696709,
+    "lang": "en",
+    "code": 10,
+    "version": "1.10",
+    "description": "Read novels from Fenrir Realm",
+    "nsfw": false,
+    "sourceDir": "main",
+    "assetsDir": "en/fenrir/main/assets"
   },
   {
     "pkg": "ireader.fictionzone.en",
@@ -533,18 +534,6 @@
     "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
   },
   {
-    "pkg": "ireader.mylovenovel.en",
-    "apk": "ireader-en-mylovenovel-v1.8.apk",
-    "name": "MyLoveNovel",
-    "id": 2565621255340942305,
-    "lang": "en",
-    "code": 8,
-    "version": "1.8",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.mysticalseries.mysticalseries.en",
     "apk": "ireader-en-mysticalseries-v1.1.apk",
     "name": "MysticalSeries",
@@ -714,16 +703,41 @@
     "assetsDir": "multisrc/madara/ltnovel/assets"
   },
   {
-    "pkg": "ireader.novelbuddy.en",
-    "apk": "ireader-en-novelbuddy-v1.1.apk",
-    "name": "NovelBuddy",
-    "id": 1260875580122894435,
+    "pkg": "ireader.mylovenovel.en",
+    "apk": "ireader-en-mylovenovel-v1.8.apk",
+    "name": "MyLoveNovel",
+    "id": 2565621255340942305,
     "lang": "en",
-    "code": 1,
-    "version": "1.1",
-    "description": "Novel source based on novelbuddy.com",
+    "code": 8,
+    "version": "1.8",
+    "description": "",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.novel4up.ar",
+    "apk": "ireader-ar-novel4up-v1.1.apk",
+    "name": "Novel4Up",
+    "id": 2811323081963026244,
+    "lang": "ar",
+    "code": 1,
+    "version": "1.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.novelbuddy.en",
+    "apk": "ireader-en-novelbuddy-v1.10.apk",
+    "name": "Novelbuddy",
+    "id": 1260875580122894435,
+    "lang": "en",
+    "code": 10,
+    "version": "1.10",
+    "description": "Read novels from NovelBuddy.io",
+    "nsfw": false,
+    "sourceDir": "main",
+    "assetsDir": "en/novelbuddy/main/assets"
   },
   {
     "pkg": "ireader.noveldeglace.fr",
@@ -943,19 +957,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.readwn.readwn.en",
-    "apk": "ireader-en-readwn-v1.1.apk",
-    "name": "Readwn",
-    "id": 360679230228192343,
-    "lang": "en",
-    "code": 1,
-    "version": "1.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "readwn",
-    "assetsDir": "multisrc/madara/readwn/assets"
-  },
-  {
     "pkg": "ireader.realmnovel.ar",
     "apk": "ireader-ar-realmnovel-v1.1.apk",
     "name": "Realmnovel",
@@ -1052,6 +1053,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.skynovel.en",
+    "apk": "ireader-en-skynovel-v1.5.apk",
+    "name": "SkyNovel",
+    "id": 8270913328350885364,
+    "lang": "en",
+    "code": 5,
+    "version": "1.5",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.skynovel.skynovel.en",
     "apk": "ireader-en-skynovel-v1.5.apk",
     "name": "SkyNovel",
@@ -1075,19 +1088,6 @@
     "description": "Novel source based on storyseedling.com",
     "nsfw": false,
     "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.wbnovel.wbnovel.in",
-    "apk": "ireader-in-wbnovel-v1.1.apk",
-    "name": "WbNovel",
-    "id": 6480076862656966258,
-    "lang": "in",
-    "code": 1,
-    "version": "1.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "wbnovel",
-    "assetsDir": "multisrc/skynovel/wbnovel/assets"
   },
   {
     "pkg": "ireader.sunovels.ar",
