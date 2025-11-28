@@ -1,0 +1,18 @@
+{
+    "name": "RealmNovel",
+    "lang": "en",
+    "baseUrl": "https://www.realmnovel.com",
+    "selectors": {
+        "title": ".novel-title",
+        "author": ".author",
+        "description": ".desc",
+        "cover": ".cover img",
+        "chapter-item": ".chapter-list li",
+        "chapter-name": ".chapter-title",
+        "chapter-link": "a",
+        "content": ".chapter-content"
+    },
+    "latestUrl": "/novel-list?sort=latest&page={{page}}",
+    "popularUrl": "/novel-list?sort=popular&page={{page}}",
+    "searchUrl": "/search?keyword={{query}}&page={{page}}"
+}
