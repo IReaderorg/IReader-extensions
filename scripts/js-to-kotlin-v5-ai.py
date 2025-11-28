@@ -292,8 +292,28 @@ class ConverterV5AI:
         code = re.sub(r',\s*,', ',', code)
         code = re.sub(r',\s*\)', ')', code)
         
-        # Fix content.html() to content.text() - app needs pure text not HTML
-        code = code.replace('content.html()', 'content.text()')
+        # Fix pageContentParse - should return list of Text() for each paragraph element
+        # LNReader returns whole HTML, but IReader needs each paragraph as separate Text()
+        # Extract the content selector and add common paragraph-like elements
+        content_selector_match = re.search(r'pageContentSelector\s*=\s*"([^"]+)"', code)
+        content_selector = content_selector_match.group(1) if content_selector_match else "#content"
+        
+        # Common paragraph-like elements that contain text content
+        # p = paragraph, div = division, br = line break (for sites that use br instead of p)
+        paragraph_selectors = "p, div.text, div.paragraph, br"
+        
+        # Replace wrong patterns with correct list-based approach
+        wrong_pattern = r'val content = document\.selectFirst\("([^"]+)"\)[^}]*?return listOf\(Text\(content\.(?:html|text)\(\)\)\)'
+        
+        def fix_content_parse(match):
+            selector = match.group(1)
+            return f'''val content = document.select("{selector} p, {selector} br").mapNotNull {{ element ->
+            val text = if (element.tagName() == "br") "\\n" else element.text().trim()
+            if (text.isNotEmpty()) Text(text) else null
+        }}
+        return content.ifEmpty {{ listOf(Text(document.select("{selector}").text())) }}'''
+        
+        code = re.sub(wrong_pattern, fix_content_parse, code, flags=re.DOTALL)
         
         # Extract BaseExploreFetcher keys and add Filter.Sort if only Filter.Title() exists
         fetcher_keys = re.findall(r'BaseExploreFetcher\(\s*"([^"]+)"', code)

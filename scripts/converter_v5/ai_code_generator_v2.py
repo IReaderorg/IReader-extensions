@@ -533,8 +533,22 @@ OUTPUT ONLY THE KOTLIN CODE, NO EXPLANATIONS."""
         code = re.sub(r',\s*,', ',', code)
         code = re.sub(r',\s*\)', ')', code)
         
-        # Fix 11: content.html() to content.text() - app needs pure text not HTML
-        code = code.replace('content.html()', 'content.text()')
+        # Fix 11: pageContentParse - should return list of Text() for each paragraph element
+        # LNReader returns whole HTML, but IReader needs each paragraph as separate Text()
+        content_selector_match = re.search(r'pageContentSelector\s*=\s*"([^"]+)"', code)
+        content_selector = content_selector_match.group(1) if content_selector_match else "#content"
+        
+        wrong_pattern = r'val content = document\.selectFirst\("([^"]+)"\)[^}]*?return listOf\(Text\(content\.(?:html|text)\(\)\)\)'
+        
+        def fix_content_parse(match):
+            selector = match.group(1)
+            return f'''val content = document.select("{selector} p, {selector} br").mapNotNull {{ element ->
+            val text = if (element.tagName() == "br") "\\n" else element.text().trim()
+            if (text.isNotEmpty()) Text(text) else null
+        }}
+        return content.ifEmpty {{ listOf(Text(document.select("{selector}").text())) }}'''
+        
+        code = re.sub(wrong_pattern, fix_content_parse, code, flags=re.DOTALL)
         
         # Fix 12: Extract BaseExploreFetcher keys and add Filter.Sort
         fetcher_keys = re.findall(r'BaseExploreFetcher\(\s*"([^"]+)"', code)
