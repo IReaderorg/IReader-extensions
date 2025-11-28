@@ -752,6 +752,19 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.novelfire.en",
+    "apk": "ireader-en-novelfire-v1.10.apk",
+    "name": "Novelfire",
+    "id": 7165539527173321330,
+    "lang": "en",
+    "code": 10,
+    "version": "1.10",
+    "description": "Read novels from Novel Fire",
+    "nsfw": false,
+    "sourceDir": "main",
+    "assetsDir": "en/novelfire/main/assets"
+  },
+  {
     "pkg": "ireader.novelfull.en",
     "apk": "ireader-en-novelfull-v1.8.apk",
     "name": "NovelFull",
@@ -1050,18 +1063,6 @@
     "version": "1.2",
     "description": "",
     "nsfw": true,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.skynovel.en",
-    "apk": "ireader-en-skynovel-v1.5.apk",
-    "name": "SkyNovel",
-    "id": 8270913328350885364,
-    "lang": "en",
-    "code": 5,
-    "version": "1.5",
-    "description": "",
-    "nsfw": false,
     "sourceDir": "main"
   },
   {
