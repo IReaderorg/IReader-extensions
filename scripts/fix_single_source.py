@@ -39,12 +39,16 @@ class SourceFixer:
         # Configure test module
         self._configure_test_module()
         
-        # Run gradle test
+        # Run gradle test with test module enabled
         # Use .\gradlew.bat on Windows, ./gradlew on Unix
         if sys.platform == 'win32':
             gradle_cmd = ".\\gradlew.bat"
         else:
             gradle_cmd = "./gradlew"
+        
+        # Enable test module via environment variable
+        env = os.environ.copy()
+        env['ENABLE_TEST_MODULE'] = 'true'
         
         result = subprocess.run(
             [gradle_cmd, ":test-extensions:test", "--rerun-tasks", "--info"],
@@ -54,7 +58,8 @@ class SourceFixer:
             errors='replace',
             timeout=180,
             cwd=str(self.workspace_root),
-            shell=True  # Use shell to handle path resolution
+            shell=True,  # Use shell to handle path resolution
+            env=env
         )
         
         # Parse results

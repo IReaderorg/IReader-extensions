@@ -1,5 +1,3 @@
-
-
 plugins {
     id("com.android.library")
     kotlin("android")
@@ -20,17 +18,29 @@ android {
     kotlinOptions {
         jvmTarget = "21"
     }
-
 }
 
+// Extension dependency is configured dynamically by test scripts
+// To test manually:
+// 1. Uncomment ONE of the lines below (or add your own)
+// 2. Run: ./gradlew :test-extensions:test
+//
+// Example extensions:
+// implementation(project(":extensions:v5:en:novelbuddy"))
+// implementation(project(":extensions:individual:en:mylovenovel"))
+
 dependencies {
-    // Extension to test - configured automatically by test scripts
-    // Uncomment and change for manual testing:
-    //implementation(project(":extensions:individual:en:daonovel"))
+    // Core dependencies - always included
     implementation(project(":multisrc"))
     implementation(libs.bundles.common)
     implementation(libs.bundles.commonTesting)
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.8.2")
     implementation(project(":annotations"))
     implementation(project(":compiler"))
+    
+    // Extension to test - ADD YOUR EXTENSION HERE
+    // The test scripts will automatically configure this
+    // For manual testing, uncomment and modify one of these:
+    // implementation(project(":extensions:v5:en:novelbuddy"))
+    // implementation(project(":extensions:individual:en:mylovenovel"))
 }

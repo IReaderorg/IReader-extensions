@@ -51,19 +51,23 @@ def check_plugins_dir():
     return None
 
 def check_test_module():
-    """Check if test module is enabled"""
+    """Check if test module is configured"""
     settings_file = Path("settings.gradle.kts")
     if not settings_file.exists():
         print("❌ settings.gradle.kts not found")
         return False
     
     content = settings_file.read_text(encoding='utf-8')
-    if 'include(":test-extensions")' in content:
+    if 'ENABLE_TEST_MODULE' in content:
+        print("✅ Test module: Configured (enabled via env var)")
+        # Set the environment variable for this session
+        os.environ['ENABLE_TEST_MODULE'] = 'true'
+        return True
+    elif 'include(":test-extensions")' in content:
         print("✅ Test module: Enabled")
         return True
     else:
-        print("⚠️  Test module: Not enabled")
-        print("   Run: Uncomment include(':test-extensions') in settings.gradle.kts")
+        print("⚠️  Test module: Not configured")
         return False
 
 def main():

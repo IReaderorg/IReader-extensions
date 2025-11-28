@@ -27,7 +27,13 @@ if sys.platform == 'win32':
 sys.path.insert(0, str(Path(__file__).parent))
 
 from converter_v5.typescript_analyzer import TypeScriptAnalyzer
-from converter_v5.ai_code_generator import AICodeGenerator
+# Try to use V2 generator, fall back to V1
+try:
+    from converter_v5.ai_code_generator_v2 import AICodeGeneratorV2 as AICodeGenerator
+    print("   ✓ Using enhanced AI generator V2")
+except ImportError:
+    from converter_v5.ai_code_generator import AICodeGenerator
+    print("   ✓ Using standard AI generator")
 import json
 import shutil
 
@@ -243,6 +249,7 @@ class ConverterV5AI:
             'import ireader.core.source.model.Text',
             'import kotlinx.serialization.Serializable',
             'import kotlinx.serialization.json.Json',
+            'import org.jsoup.Jsoup',
             'import org.jsoup.nodes.Document',
             'import tachiyomix.annotations.Extension',
         ]
@@ -269,6 +276,44 @@ class ConverterV5AI:
                     code,
                     flags=re.DOTALL
                 )
+        
+        # Fix invalid Type references (only Search and Others are valid for fetchers)
+        code = re.sub(r',?\s*type\s*=\s*SourceFactory\.Type\.Latest\s*,?', '', code)
+        code = re.sub(r',?\s*type\s*=\s*SourceFactory\.Type\.Popular\s*,?', '', code)
+        code = re.sub(r',?\s*type\s*=\s*Type\.Latest\s*,?', '', code)
+        code = re.sub(r',?\s*type\s*=\s*Type\.Popular\s*,?', '', code)
+        
+        # Fix regex escaping - AI often over-escapes
+        code = re.sub(r'\\\\\\\\d\+', r'\\\\d+', code)
+        code = re.sub(r'\\\\\\d\+', r'\\\\d+', code)
+        code = re.sub(r'\\\\\\"', r'\\"', code)
+        
+        # Clean up any double commas or trailing commas before )
+        code = re.sub(r',\s*,', ',', code)
+        code = re.sub(r',\s*\)', ')', code)
+        
+        # Fix content.html() to content.text() - app needs pure text not HTML
+        code = code.replace('content.html()', 'content.text()')
+        
+        # Extract BaseExploreFetcher keys and add Filter.Sort if only Filter.Title() exists
+        fetcher_keys = re.findall(r'BaseExploreFetcher\(\s*"([^"]+)"', code)
+        non_search_keys = [k for k in fetcher_keys if k.lower() != 'search']
+        
+        if non_search_keys and 'Filter.Sort' not in code:
+            # Build the Filter.Sort array
+            keys_array = ',\n                '.join([f'"{k}"' for k in non_search_keys])
+            filter_sort = f'''Filter.Sort(
+            "Sort By:",
+            arrayOf(
+                {keys_array},
+            )
+        ),'''
+            # Replace simple Filter.Title() with Filter.Title() + Filter.Sort()
+            code = re.sub(
+                r'override fun getFilters\(\): FilterList = listOf\(Filter\.Title\(\)\)',
+                f'override fun getFilters(): FilterList = listOf(\n        Filter.Title(),\n        {filter_sort}\n    )',
+                code
+            )
         
         return code
     

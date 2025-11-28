@@ -100,5 +100,11 @@ fun File.getChunk(chunk: Int, chunkSize: Int,block: (File) -> Unit) {
         .forEach { block(it) }
 }
 
-include(":test-extensions")
+// Test module - only include when explicitly testing
+// To enable: set environment variable ENABLE_TEST_MODULE=true
+// Or run: ./gradlew :test-extensions:test (will fail if not configured)
+if (System.getenv("ENABLE_TEST_MODULE") == "true" || System.getProperty("enableTestModule") == "true") {
+    include(":test-extensions")
+}
+
 include(":multisrc")
