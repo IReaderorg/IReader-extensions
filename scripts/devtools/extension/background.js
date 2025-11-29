@@ -1,46 +1,46 @@
-// IReader Source Creator - Background Script
+/**
+ * IReader Source Creator - Background Service Worker
+ */
 
-// Handle extension installation
 chrome.runtime.onInstalled.addListener((details) => {
-  if (details.reason === 'install') {
-    console.log('IReader Source Creator installed');
-    // Initialize storage
-    chrome.storage.local.set({ sourceData: {} });
-  }
-});
-
-// Handle messages from popup or content script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'injectContentScript') {
-    // Inject content script into the active tab
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]) {
-        chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          files: ['content_script.js']
-        }).then(() => {
-          sendResponse({ success: true });
-        }).catch((error) => {
-          sendResponse({ success: false, error: error.message });
+    if (details.reason === 'install') {
+        console.log('[IReader] Extension installed');
+        chrome.storage.local.set({ sourceData: {} });
+    }
+    
+    // Create context menu
+    chrome.contextMenus.removeAll(() => {
+        chrome.contextMenus.create({
+            id: 'ireader-select',
+            title: 'IReader: Select Element',
+            contexts: ['all']
         });
-      }
     });
-    return true; // Keep channel open for async response
-  }
-});
-
-// Context menu for quick access
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'ireader-select-element',
-    title: 'Select this element for IReader',
-    contexts: ['all']
-  });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'ireader-select-element') {
-    // Open popup or start selection
-    chrome.action.openPopup();
-  }
+    if (info.menuItemId === 'ireader-select' && tab) {
+        chrome.action.openPopup();
+    }
 });
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'injectScripts') {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+            if (tabs[0]) {
+                try {
+                    await chrome.scripting.executeScript({
+                        target: { tabId: tabs[0].id },
+                        files: ['ireader_core.js', 'ireader_selector.js']
+                    });
+                    sendResponse({ success: true });
+                } catch (e) {
+                    sendResponse({ success: false, error: e.message });
+                }
+            }
+        });
+        return true;
+    }
+});
+
+console.log('[IReader] Background service worker ready');

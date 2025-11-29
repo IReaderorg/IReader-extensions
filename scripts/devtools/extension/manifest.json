@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "IReader Source Creator",
-  "version": "2.1",
-  "description": "Create IReader sources by visually selecting elements on novel websites.",
+  "version": "3.0.0",
+  "description": "Create IReader novel sources by selecting elements from any website",
   "permissions": [
     "activeTab",
     "scripting",
@@ -11,7 +11,7 @@
     "contextMenus"
   ],
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup_ireader.html",
     "default_icon": {
       "16": "images/icon16.png",
       "48": "images/icon48.png",
@@ -29,11 +29,9 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content_script.js"],
+      "js": ["ireader_core.js", "ireader_selector.js"],
       "run_at": "document_idle"
     }
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ]
+  "host_permissions": ["<all_urls>"]
 }
