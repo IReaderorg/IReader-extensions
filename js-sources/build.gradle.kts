@@ -228,6 +228,12 @@ tasks.register<Copy>("copyKspGeneratedFiles") {
     }
     
     into(outputDir)
+    
+    // Declare dependency on KSP tasks that generate these files
+    jsSources.forEach { source ->
+        val kspTaskName = source.projectPath + ":ksp${source.lang.replaceFirstChar { it.uppercase() }}ReleaseKotlin"
+        dependsOn(kspTaskName)
+    }
 }
 
 // Task to copy and rename JS registration files from .kt.txt to .kt
@@ -247,6 +253,12 @@ tasks.register<Copy>("copyJsRegistrationFiles") {
     }
     
     into(outputDir)
+    
+    // Declare dependency on KSP tasks that generate these files
+    jsSources.forEach { source ->
+        val kspTaskName = source.projectPath + ":ksp${source.lang.replaceFirstChar { it.uppercase() }}ReleaseKotlin"
+        dependsOn(kspTaskName)
+    }
 }
 
 // Make sure all source files are copied before compilation
