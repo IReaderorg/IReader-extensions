@@ -82,7 +82,11 @@ open class RepoTask : DefaultTask() {
     }
     
     /**
-     * Generate JS bundles for iOS and return list of JS source info
+     * Generate JS bundles for iOS and return list of JS source info.
+     * 
+     * All JS-enabled sources are compiled into a single bundle (sources-bundle.js).
+     * Each source has its own init function (e.g., initFreeWebNovelKmp).
+     * The iOS app loads the bundle once and calls the appropriate init function.
      */
     private fun generateJsBundles(jsDir: File): List<JsSourceInfo> {
         jsDir.mkdirs()
@@ -101,30 +105,29 @@ open class RepoTask : DefaultTask() {
                 try {
                     val indexJson = Json.decodeFromString<JsIndex>(indexFile.readText())
                     
-                    // Copy the webpack bundled JS file with extension name
+                    // Copy the single webpack bundle (contains ALL sources)
                     val bundleFile = File(webpackDir, "sources-bundle.js")
                     if (bundleFile.exists()) {
+                        val destFile = File(jsDir, "sources-bundle.js")
+                        bundleFile.copyTo(destFile, overwrite = true)
+                        print("  - ${destFile.name} (${destFile.length() / 1024}KB) - contains ${indexJson.sources.size} source(s)\n")
+                        
+                        // Copy source map
+                        val mapFile = File(webpackDir, "sources-bundle.js.map")
+                        if (mapFile.exists()) {
+                            mapFile.copyTo(File(jsDir, "sources-bundle.js.map"), overwrite = true)
+                        }
+                        
+                        // Add each source to the index (all use the same bundle file)
                         indexJson.sources.forEach { source ->
-                            // Name file after the extension: freewebnovelkmp.js
-                            val destName = "${source.id}.js"
-                            val destFile = File(jsDir, destName)
-                            bundleFile.copyTo(destFile, overwrite = true)
-                            
-                            // Copy source map with same name
-                            val mapFile = File(webpackDir, "sources-bundle.js.map")
-                            if (mapFile.exists()) {
-                                mapFile.copyTo(File(jsDir, "${source.id}.js.map"), overwrite = true)
-                            }
-                            
-                            print("  - ${destFile.name} (${destFile.length() / 1024}KB)\n")
-                            
                             jsSources.add(JsSourceInfo(
                                 id = source.id,
                                 name = source.name,
                                 lang = source.lang,
-                                file = destName,
+                                file = "sources-bundle.js",  // All sources share the same bundle
                                 initFunction = source.initFunction
                             ))
+                            print("    - ${source.name} (${source.lang}) -> ${source.initFunction}()\n")
                         }
                     }
                 } catch (e: Exception) {
