@@ -427,6 +427,12 @@ abstract class VerifyKspFilesTask : DefaultTask() {
 tasks.register<VerifyKspFilesTask>("verifyKspGeneratedFiles") {
     group = "js"
     description = "Verify that KSP-generated files exist"
+    
+    // Declare explicit dependencies on KSP tasks from other projects
+    kspTaskPaths.forEach { taskPath ->
+        dependsOn(taskPath)
+    }
+    
     generatedDirFiles.from(jsSources.map { file(it.generatedDir) })
     sourceNames.set(jsSources.map { it.name })
     projectPathsInput.set(jsSources.map { it.projectPath })
