@@ -16,9 +16,11 @@ plugins {
 }
 
 // Sources to compile (those with enableJs = true)
+// name should match the @Extension name for proper init function naming
 val jsSources = listOf(
     JsSourceConfig(
-        name = "freewebnovelkmp",
+        name = "FreeWebNovelKmp",  // Must match @Extension name
+        id = "freewebnovelkmp",    // Lowercase ID for file naming
         lang = "en",
         sourceDir = "../sources/en/freewebnovelkmp/main/src",
         generatedDir = "../sources/en/freewebnovelkmp/build/generated/ksp/enRelease/kotlin"
@@ -26,7 +28,8 @@ val jsSources = listOf(
 )
 
 data class JsSourceConfig(
-    val name: String,
+    val name: String,      // Display name (matches @Extension)
+    val id: String,        // Lowercase ID for file naming
     val lang: String,
     val sourceDir: String,
     val generatedDir: String
@@ -58,13 +61,14 @@ kotlin {
     
     sourceSets {
         val jsMain by getting {
-            // Include JS-specific registration code
-            kotlin.srcDir("src/jsMain/kotlin")
-            
-            // Include source files and KSP-generated init files
+            // Include source files and KSP-generated files
             jsSources.forEach { source ->
+                // Source implementation files
                 kotlin.srcDir(source.sourceDir)
+                // KSP-generated JsInit.kt (platform-agnostic)
                 kotlin.srcDir(source.generatedDir)
+                // KSP-generated JS registration files (JS-specific)
+                // These are in the same generated dir with @JsExport functions
             }
             
             dependencies {
@@ -126,7 +130,12 @@ tasks.register("createSourceIndex") {
     dependsOn("packageForDistribution")
     
     val outputDir = layout.buildDirectory.dir("js-dist")
-    val sourcesList = jsSources.map { Triple(it.name, it.lang, "init${it.name.replaceFirstChar { c -> c.uppercase() }}") }
+    // Init function name matches KSP-generated: init<Name>
+    val sourcesList = jsSources.map { source ->
+        // name is the @Extension name (e.g., "FreeWebNovelKmp")
+        // id is the lowercase identifier (e.g., "freewebnovelkmp")
+        Triple(source.id, source.lang, "init${source.name}")
+    }
     
     outputs.file(outputDir.map { it.file("index.json") })
     
