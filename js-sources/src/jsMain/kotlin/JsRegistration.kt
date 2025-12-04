@@ -3,26 +3,44 @@
  * 
  * This file contains the @JsExport functions that register sources
  * with the SourceRegistry from runtime.js.
- * 
- * Generated sources (JsExtension classes) are imported from the
- * individual source modules and registered here.
  */
 @file:OptIn(ExperimentalJsExport::class)
+@file:Suppress("UNUSED_VARIABLE")
 
 package ireader.js
 
-import kotlin.js.ExperimentalJsExport
-import kotlin.js.JsExport
-
-// Import generated JsExtension classes
+import ireader.core.source.Dependencies
 import ireader.freewebnovelkmp.js.JsExtension as FreeWebNovelKmpExtension
 import ireader.freewebnovelkmp.js.FreeWebNovelKmpInfo
+import kotlin.js.ExperimentalJsExport
+import kotlin.js.JsExport
+import kotlin.js.JsName
+
+/**
+ * Factory function to create FreeWebNovelKmp source.
+ * This ensures the class is included in the bundle.
+ */
+@JsExport
+@JsName("createFreeWebNovelKmp")
+fun createFreeWebNovelKmp(deps: Dependencies): FreeWebNovelKmpExtension {
+    return FreeWebNovelKmpExtension(deps)
+}
+
+/**
+ * Get the source class reference (ensures it's included in bundle)
+ */
+@JsExport
+@JsName("FreeWebNovelKmpClass")
+val freeWebNovelKmpClass: Any = FreeWebNovelKmpExtension::class
 
 /**
  * Initialize FreeWebNovelKmp source for iOS/JS runtime.
  */
 @JsExport
 fun initFreewebnovelkmp(): dynamic {
+    // Reference the class to ensure it's included
+    val sourceClass = FreeWebNovelKmpExtension::class
+    
     console.log("FreeWebNovelKmp: Initializing source...")
     js("""
         if (typeof SourceRegistry !== 'undefined') {

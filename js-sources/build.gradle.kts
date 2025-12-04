@@ -34,22 +34,23 @@ data class JsSourceConfig(
 
 kotlin {
     js(IR) {
-        // Use nodejs target for simpler module output (no webpack)
-        // The main app's runtime.js provides all dependencies
-        nodejs()
+        // Use browser target with webpack for bundling
+        browser {
+            webpackTask {
+                mainOutputFileName = "sources-bundle.js"
+            }
+        }
         
-        // Library mode - produces clean ES modules
-        binaries.library()
+        // Executable mode - bundles all code including dependencies
+        // This ensures SourceFactory and all base classes are included
+        binaries.executable()
         
-        // Generate TypeScript declarations for iOS interop
-        generateTypeScriptDefinitions()
-        
-        // Compiler options for smaller output
+        // Compiler options
         compilations.all {
             compileTaskProvider.configure {
                 compilerOptions {
-                    // Optimize for size
-                    freeCompilerArgs.add("-Xir-minimized-member-names")
+                    // Keep member names readable for debugging
+                    freeCompilerArgs.add("-Xir-minimized-member-names=false")
                 }
             }
         }
@@ -86,14 +87,14 @@ kotlin {
     }
 }
 
-// Build task
+// Build task - uses webpack to bundle everything into one file
 tasks.register("buildAllJsSources") {
     group = "js"
-    description = "Build JS source files for iOS"
-    dependsOn("jsBrowserProductionLibrary")
+    description = "Build JS source files for iOS (bundled with all dependencies)"
+    dependsOn("jsBrowserProductionWebpack")
     
     doLast {
-        val outputDir = file("$buildDir/dist/js/productionLibrary")
+        val outputDir = file("$buildDir/kotlin-webpack/js/productionExecutable")
         logger.lifecycle("JS sources built at: ${outputDir.absolutePath}")
         outputDir.listFiles()?.filter { it.extension == "js" }?.forEach {
             logger.lifecycle("  - ${it.name} (${it.length() / 1024}KB)")
@@ -101,28 +102,21 @@ tasks.register("buildAllJsSources") {
     }
 }
 
-// Package for distribution
+// Package for distribution - copies the webpack bundled output
 tasks.register<Copy>("packageForDistribution") {
     group = "js"
-    description = "Package JS sources for CDN distribution (source-only, no runtime deps)"
-    dependsOn("compileProductionLibraryKotlinJs")
+    description = "Package JS sources for CDN distribution (self-contained bundle)"
+    dependsOn("jsBrowserProductionWebpack")
     
     val outputDir = layout.buildDirectory.dir("js-dist")
-    val sourceDir = layout.buildDirectory.dir("compileSync/js/main/productionLibrary/kotlin")
+    val webpackDir = layout.buildDirectory.dir("kotlin-webpack/js/productionExecutable")
     
-    // Source files are in compileSync output (raw Kotlin/JS output)
-    from(sourceDir) {
-        // ONLY include the extension source file - NOT runtime dependencies
-        // Runtime deps (kotlin-stdlib, ktor, ksoup, etc.) come from main app's runtime.js
-        include("IReader-extensions-js-sources.js")
-        include("IReader-extensions-js-sources.js.map")
-        include("*.d.ts")
+    // Copy the webpack bundled output (single file with everything)
+    from(webpackDir) {
+        include("sources-bundle.js")
+        include("sources-bundle.js.map")
     }
     into(outputDir)
-    
-    // Rename to match source name
-    rename("IReader-extensions-js-sources.js", "sources-bundle.js")
-    rename("IReader-extensions-js-sources.js.map", "sources-bundle.js.map")
 }
 
 // Create index.json separately

@@ -88,30 +88,30 @@ open class RepoTask : DefaultTask() {
         jsDir.mkdirs()
         val jsSources = mutableListOf<JsSourceInfo>()
         
-        // Copy JS bundles from js-sources module
-        val jsSourcesKotlinDir = File(project.rootDir, "js-sources/build/compileSync/js/main/productionLibrary/kotlin")
+        // Copy webpack bundled JS from js-sources module (self-contained, includes all deps)
+        val webpackDir = File(project.rootDir, "js-sources/build/kotlin-webpack/js/productionExecutable")
         val jsSourcesDistDir = File(project.rootDir, "js-sources/build/js-dist")
         
-        if (jsSourcesKotlinDir.exists()) {
-            print("Copying JS sources from js-sources module...\n")
+        if (webpackDir.exists()) {
+            print("Copying JS sources from js-sources module (webpack bundle)...\n")
             
-            // Parse js-sources index.json to get source info and file names
+            // Parse js-sources index.json to get source info
             val indexFile = File(jsSourcesDistDir, "index.json")
             if (indexFile.exists()) {
                 try {
                     val indexJson = Json.decodeFromString<JsIndex>(indexFile.readText())
                     
-                    // Copy the main JS source file with extension name
-                    val mainJsFile = File(jsSourcesKotlinDir, "IReader-extensions-js-sources.js")
-                    if (mainJsFile.exists()) {
+                    // Copy the webpack bundled JS file with extension name
+                    val bundleFile = File(webpackDir, "sources-bundle.js")
+                    if (bundleFile.exists()) {
                         indexJson.sources.forEach { source ->
                             // Name file after the extension: freewebnovelkmp.js
                             val destName = "${source.id}.js"
                             val destFile = File(jsDir, destName)
-                            mainJsFile.copyTo(destFile, overwrite = true)
+                            bundleFile.copyTo(destFile, overwrite = true)
                             
                             // Copy source map with same name
-                            val mapFile = File(jsSourcesKotlinDir, "IReader-extensions-js-sources.js.map")
+                            val mapFile = File(webpackDir, "sources-bundle.js.map")
                             if (mapFile.exists()) {
                                 mapFile.copyTo(File(jsDir, "${source.id}.js.map"), overwrite = true)
                             }
@@ -131,16 +131,16 @@ open class RepoTask : DefaultTask() {
                     print("Warning: Could not parse js-sources index.json: ${e.message}\n")
                 }
             } else {
-                // Fallback: just copy the main file
-                val mainJsFile = File(jsSourcesKotlinDir, "IReader-extensions-js-sources.js")
-                if (mainJsFile.exists()) {
+                // Fallback: just copy the bundle file
+                val bundleFile = File(webpackDir, "sources-bundle.js")
+                if (bundleFile.exists()) {
                     val destFile = File(jsDir, "sources.js")
-                    mainJsFile.copyTo(destFile, overwrite = true)
+                    bundleFile.copyTo(destFile, overwrite = true)
                     print("  - ${destFile.name} (${destFile.length() / 1024}KB)\n")
                 }
             }
         } else {
-            print("No JS bundles found. Run ':js-sources:createSourceIndex' first to generate JS output.\n")
+            print("No JS bundles found. Run ':js-sources:jsBrowserProductionWebpack' first to generate JS output.\n")
         }
         
         return jsSources
