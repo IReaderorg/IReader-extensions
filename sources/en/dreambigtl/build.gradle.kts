@@ -6,6 +6,6 @@ listOf("en").map { lang ->
     lang = lang,
     description = "Novel source based on dreambigtl.com",
     nsfw = false,
-    icon = DEFAULT_ICON
+    icon = DEFAULT_ICON,enableJs = true,
   )
 }.also(::register)

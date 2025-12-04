@@ -6,7 +6,7 @@ register(
     lang = "en",
     description = "",
     nsfw = false,
-    icon = DEFAULT_ICON
+    icon = DEFAULT_ICON,enableJs = true,
   ),
   Extension(
     name = "WebNovelPub",

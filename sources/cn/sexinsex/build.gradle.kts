@@ -6,6 +6,6 @@ listOf("cn").map { lang ->
     lang = lang,
     description = "",
     nsfw = true,
-    icon = DEFAULT_ICON
+    icon = DEFAULT_ICON,enableJs = true,
   )
 }.also(::register)
