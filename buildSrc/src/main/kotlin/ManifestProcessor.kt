@@ -48,7 +48,7 @@ private fun ManifestProcessorTask.processExtension(extension: Extension) {
         // Using local res folder
         app.attributes().putIfAbsent("android:icon","@mipmap/ic_launcher")
     }
-    
+
     // Add source class metadata
     Node(
         app, "meta-data",
@@ -105,7 +105,7 @@ fun String.isAssetType() : Boolean {
 }
 
 const val DEFAULT_ICON = "default_icon"
-const val REPO_URL = "https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repo/icon"
+const val REPO_URL = "https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/icon"
 
 fun createExtensionIconLink(extension: Extension): String {
     return "$REPO_URL/ireader-${extension.lang}-${
