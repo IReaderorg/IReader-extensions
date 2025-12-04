@@ -7,6 +7,7 @@ cp -R ~/artifacts/ $PWD
 APKS=(**/apk/*.apk)
 JARS=(**/jar/*.jar)
 ICONS=(**/icon/*.png)
+JS_FILES=(**/js/*.js)
 
 # Fail if too few APKs have been found
 if [ "${#APKS[@]}" -le "10" ]; then
@@ -20,8 +21,9 @@ DEST_JSON=$PWD/repo
 DEST_APK=$PWD/repo/apk
 DEST_JAR=$PWD/repo/jar
 DEST_ICON=$PWD/repo/icon
+DEST_JS=$PWD/repo/js
 
-rm -rf "$DEST_JSON" "$DEST_APK" "$DEST_JAR" "$DEST_ICON" && mkdir -p "$DEST_JSON" "$DEST_APK" "$DEST_JAR" "$DEST_ICON"
+rm -rf "$DEST_JSON" "$DEST_APK" "$DEST_JAR" "$DEST_ICON" "$DEST_JS" && mkdir -p "$DEST_JSON" "$DEST_APK" "$DEST_JAR" "$DEST_ICON" "$DEST_JS"
 
 # Move APK files to apk folder
 for APK in "${APKS[@]}"; do
@@ -39,12 +41,21 @@ for JAR in "${JARS[@]}"; do
     cp "$JAR" "$JARDEST"
 done
 
-# Move JAR files to jar folder
+# Move Icon files to icon folder
 for ICON in "${ICONS[@]}"; do
     BASENAME=$(basename "$ICON")
     ICONSDEST="$DEST_ICON/$BASENAME"
 
     cp "$ICON" "$ICONSDEST"
+done
+
+# Move JS files to js folder
+echo "Moving ${#JS_FILES[@]} JS files"
+for JS in "${JS_FILES[@]}"; do
+    BASENAME=$(basename "$JS")
+    JSDEST="$DEST_JS/$BASENAME"
+
+    cp "$JS" "$JSDEST"
 done
 
 # Merge JSON arrays into a single JSON array

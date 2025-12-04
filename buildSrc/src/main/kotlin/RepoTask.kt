@@ -52,17 +52,52 @@ open class RepoTask : DefaultTask() {
         val repoDir = File(project.buildDir, "repo")
         val apkDir = File(repoDir, "apk")
         val iconDir = File(repoDir, "icon")
+        val jsDir = File(repoDir, "js")
 
         repoDir.deleteRecursively()
         repoDir.mkdirs()
 
         extractApks(apkDir)
         generateJars(apkDir, repoDir)
+        
+        // Generate JS bundles if common module has JS output
+        generateJsBundles(jsDir)
+        
         val badgings = parseBadgings(apkDir) ?: return
         ensureValidState(badgings)
         extractIcons(apkDir, iconDir, badgings)
 
         generateRepo(repoDir, badgings)
+    }
+    
+    private fun generateJsBundles(jsDir: File) {
+        jsDir.mkdirs()
+        
+        // Copy JS bundles from common module if they exist
+        val commonJsDir = File(project.rootDir, "common/build/dist/js/productionExecutable")
+        if (commonJsDir.exists()) {
+            print("Copying JS bundles from common module...\n")
+            project.copy {
+                from(commonJsDir)
+                include("**/*.js")
+                into(jsDir)
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            }
+        }
+        
+        // Copy JS bundles from any KMP source modules
+        project.subprojects.forEach { subproject ->
+            val subJsDir = File(subproject.buildDir, "dist/js/productionExecutable")
+            if (subJsDir.exists()) {
+                print("Copying JS bundles from ${subproject.name}...\n")
+                project.copy {
+                    from(subJsDir)
+                    include("**/*.js")
+                    into(jsDir)
+                    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+                }
+            }
+        }
     }
 
     private fun parseBadgings(apkDir: File): List<Badging>? {

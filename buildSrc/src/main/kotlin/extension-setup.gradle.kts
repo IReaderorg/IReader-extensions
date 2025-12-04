@@ -103,7 +103,31 @@ android {
     }
 }
 
-tasks.register("deploy",DeployTask::class.java)
+tasks.register("deploy", DeployTask::class.java)
+
+// Generate JAR for each extension (for Desktop/JVM use)
+tasks.register<Jar>("extensionJar") {
+    group = "build"
+    description = "Create JAR containing all extension classes"
+    
+    archiveBaseName.set("${project.name}-extensions")
+    archiveVersion.set("1.0.0")
+    
+    from(android.sourceSets.getByName("main").java.srcDirs)
+    extensionList.forEach { extension ->
+        from(android.sourceSets.getByName(extension.flavor).java.srcDirs)
+    }
+    
+    manifest {
+        attributes(
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to "1.0.0"
+        )
+    }
+}
+
+// Task to build repo artifacts including JAR
+tasks.findByName("repo")?.finalizedBy("extensionJar")
 
 
 
