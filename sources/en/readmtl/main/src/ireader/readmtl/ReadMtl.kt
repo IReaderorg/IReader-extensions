@@ -1,7 +1,6 @@
 package ireader.readmtl
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -9,9 +8,8 @@ import io.ktor.client.request.post
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import kotlinx.coroutines.Dispatchers
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
-import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -61,13 +59,6 @@ abstract class ReadMtl(private val deps: Dependencies) : ParsedHttpSource(deps) 
     override fun getListings(): List<Listing> {
         return listOf(LatestListing())
     }
-
-    override val client: HttpClient
-        get() = HttpClient(OkHttp) {
-            engine {
-                preconfigured = deps.httpClients.default.okhttp
-            }
-        }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
@@ -241,7 +232,7 @@ abstract class ReadMtl(private val deps: Dependencies) : ParsedHttpSource(deps) 
             return chaptersParse(Ksoup.parse(it.html)).reversed()
         }
         return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
+            return@runCatching withContext(DefaultDispatcher) {
                 var chapters =
                     chaptersParse(
                         client.post(requestBuilder(manga.key + "ajax/chapters/")).asJsoup(),

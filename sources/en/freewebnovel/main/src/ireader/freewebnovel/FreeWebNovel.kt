@@ -14,7 +14,9 @@ import ireader.core.source.asJsoup
 import ireader.core.source.findInstance
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
+import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
@@ -37,8 +39,16 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     override val baseUrl = "https://freewebnovel.com"
     override val lang = "en"
 
-    override fun getFilters() = FreeWebNovelGenerated.getFilters()
-    override fun getCommands() = FreeWebNovelGenerated.getCommands()
+    override fun getFilters(): FilterList = listOf(
+        Filter.Title(),
+        Filter.Sort("Sort By:", arrayOf("Latest", "Popular", "New Novels")),
+    )
+    
+    override fun getCommands(): CommandList = listOf(
+        Command.Detail.Fetch(),
+        Command.Chapter.Fetch(),
+        Command.Content.Fetch(),
+    )
 
     override fun getListings(): List<Listing> = listOf(LatestListing())
     class LatestListing : Listing("Latest")

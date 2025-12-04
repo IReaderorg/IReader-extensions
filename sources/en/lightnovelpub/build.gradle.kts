@@ -6,7 +6,7 @@ register(
     lang = "en",
     description = "",
     nsfw = false,
-    icon = DEFAULT_ICON,enableJs = true,
+    icon = DEFAULT_ICON,
   ),
   Extension(
     name = "WebNovelPub",
@@ -17,7 +17,7 @@ register(
     nsfw = false,
     icon = DEFAULT_ICON,
     assetsDir = "en/lightnovelpub/webnovelpub/assets",
-    sourceDir = "webnovelpub"
+    sourceDir = "webnovelpub",
   )
 )
 

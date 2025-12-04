@@ -4,7 +4,7 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
-import kotlinx.coroutines.Dispatchers
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
@@ -189,7 +189,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
+            return@runCatching withContext(DefaultDispatcher) {
 
                 val request = client.get(chaptersRequest(book = manga)).asJsoup()
 

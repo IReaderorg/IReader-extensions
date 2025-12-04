@@ -21,7 +21,7 @@ import ireader.core.source.model.ImageUrl
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import kotlinx.coroutines.Dispatchers
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
@@ -189,7 +189,7 @@ abstract class KissNovel(private val deps: Dependencies) : ParsedHttpSource(deps
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
+            return@runCatching withContext(DefaultDispatcher) {
                 var chapters =
                     chaptersParse(
                         client.post(requestBuilder(manga.key + "ajax/chapters/")).asJsoup(),

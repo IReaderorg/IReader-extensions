@@ -2,16 +2,12 @@ package ireader.ranobes
 
 import kotlinx.serialization.json.Json
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.BrowserUserAgent
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import ireader.core.http.okhttp
 import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
@@ -27,14 +23,12 @@ import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
 import ireader.core.source.model.Text
-import kotlinx.coroutines.Dispatchers
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
-import java.util.concurrent.TimeUnit
 
 @Extension
 abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -46,13 +40,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
     override val baseUrl = "https://ranobes.top"
 
     override val lang = "en"
-
-    override val client = HttpClient(OkHttp) {
-        engine {
-            preconfigured = clientBuilder()
-        }
-        BrowserUserAgent()
-    }
 
     override fun getFilters(): FilterList {
         return listOf(
@@ -69,12 +56,6 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 
     val agent =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
-
-    private fun clientBuilder(): OkHttpClient = deps.httpClients.default.okhttp
-        .newBuilder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     override fun getListings(): List<Listing> {
         return listOf(
@@ -349,7 +330,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         chapters.addAll(chaptersParse(json1))
         val maxPage: Int = json1.pages_count
         val list = mutableListOf<ChapterInfo>()
-        withContext(Dispatchers.IO) {
+        withContext(DefaultDispatcher) {
             for (i in 1..maxPage) {
                 val response = client.get(
                     "$baseUrl/chapters/${json1.book_id}/page/$i/"

@@ -7,7 +7,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import kotlinx.coroutines.Dispatchers
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
@@ -208,7 +208,7 @@ abstract class RealWebNovel(private val deps: Dependencies) : ParsedHttpSource(d
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
+            return@runCatching withContext(DefaultDispatcher) {
                 var chapters =
                     chaptersParse(
                         client.post(requestBuilder(book.key + "ajax/chapters/")).asJsoup()

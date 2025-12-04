@@ -1,8 +1,5 @@
 package ireader.qidianundergrond
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -10,8 +7,6 @@ import io.ktor.client.request.url
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import io.ktor.serialization.kotlinx.json.json
-import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.HttpSource
 import ireader.core.source.asJsoup
@@ -25,15 +20,11 @@ import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
 import ireader.core.source.model.Text
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import okhttp3.OkHttpClient
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import ireader.core.http.BrowserResult
 import tachiyomix.annotations.Extension
-import java.util.concurrent.TimeUnit
 
 @Extension
 abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(deps) {
@@ -44,24 +35,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         get() = 12
     override val baseUrl = "https://toc.qidianunderground.org"
 
-    override val client = HttpClient(OkHttp) {
-        engine {
-            preconfigured = clientBuilder()
-        }
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                }
-            )
-        }
-    }
     class LatestListing() : Listing("Latest")
-    private fun clientBuilder(): OkHttpClient = deps.httpClients.default.okhttp
-        .newBuilder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     override val lang = "en"
 
@@ -186,7 +160,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
         var html: BrowserResult? = null
-        withContext(Dispatchers.Main) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
             html = deps.httpClients.browser.fetch(chapter.key, selector = ".well")
         }
         return pageContentParse(Ksoup.parse(html?.responseBody ?: "")).map { Text(it) }

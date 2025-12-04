@@ -1,12 +1,8 @@
 package ireader.lightnovelreader
 
-import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.forms.submitForm
 import io.ktor.http.Parameters
-import io.ktor.serialization.kotlinx.json.json
 import ireader.core.source.Dependencies
 import ireader.core.source.findInstance
 import ireader.core.source.model.Command
@@ -16,7 +12,6 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.SourceFactory
-import kotlinx.serialization.json.Json
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -101,15 +96,7 @@ abstract class LightNovelReader(deps: Dependencies) : SourceFactory(
             pageContentSelector = "#chapterText p",
         )
 
-    override val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                }
-            )
-        }
-    }
+
 
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
         val query = filters.findInstance<Filter.Title>()?.value

@@ -16,7 +16,6 @@ import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
 import com.fleeksoft.ksoup.Ksoup
-import java.util.Locale
 
 /**
  * 🌍 RealmNovel - Arabic Novel Source
@@ -125,7 +124,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(deps = deps) {
             categorySelector = ".genres a, .tags a, .categories a, .post-tags a",
             statusSelector = ".status span, .novel-status, .post-meta .status",
             onStatus = { status ->
-                val lowerStatus = status.lowercase(Locale.ROOT)
+                val lowerStatus = status.lowercase()
                 when {
                     lowerStatus.contains("ongoing") || lowerStatus.contains("مستمرة") || lowerStatus.contains("جارية") -> ONGOING
                     lowerStatus.contains("hiatus") || lowerStatus.contains("متوقفة") || lowerStatus.contains("معلقة") -> ON_HIATUS

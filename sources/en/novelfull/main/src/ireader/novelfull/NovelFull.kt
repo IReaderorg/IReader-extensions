@@ -6,8 +6,8 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
@@ -199,7 +199,7 @@ abstract class NovelFull(deps: Dependencies) : ParsedHttpSource(deps) {
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
+            return@runCatching withContext(DefaultDispatcher) {
                 // val page = client.get<String>(chaptersRequest(book = book))
                 val maxPage = parseMaxPage(manga) + 1
                 val list = mutableListOf<Deferred<List<ChapterInfo>>>()

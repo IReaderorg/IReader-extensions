@@ -1,7 +1,6 @@
 package ireader.novelowlcom
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -9,7 +8,6 @@ import io.ktor.client.request.post
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -21,7 +19,7 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import kotlinx.coroutines.Dispatchers
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
@@ -57,13 +55,6 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
     override fun getListings(): List<Listing> {
         return listOf(LatestListing())
     }
-
-    override val client: HttpClient
-        get() = HttpClient(OkHttp) {
-            engine {
-                preconfigured = deps.httpClients.default.okhttp
-            }
-        }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
@@ -213,7 +204,7 @@ abstract class NovelOwl(private val deps: Dependencies) : ParsedHttpSource(deps)
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
+            return@runCatching withContext(DefaultDispatcher) {
                 var chapters =
                     chaptersParse(
                         client.post(requestBuilder(manga.key + "ajax/chapters/")).asJsoup(),

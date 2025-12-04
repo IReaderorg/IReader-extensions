@@ -1,14 +1,11 @@
 package ireader.comrademao
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.Url
-import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.HttpSource
 import ireader.core.source.asJsoup
@@ -22,13 +19,10 @@ import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
 import ireader.core.source.model.Text
-import okhttp3.Headers
-import okhttp3.OkHttpClient
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
 import ireader.common.utils.DateParser
-import java.util.concurrent.TimeUnit
 
 @Extension
 abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
@@ -99,12 +93,6 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         return MangasPageInfo(books, false)
     }
 
-    override val client: HttpClient = HttpClient(OkHttp) {
-        engine {
-            preconfigured = clientBuilder()
-        }
-    }
-
     fun selectors() = ".listupd .bsx"
     fun nextPageSelector() = "div.pagination a:nth-child(2)"
 
@@ -114,20 +102,6 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
         val url = element.select("a").attr("href")
 
         return MangaInfo(title = name, cover = img, key = url)
-    }
-
-    private fun clientBuilder(): OkHttpClient = deps.httpClients.default.okhttp
-        .newBuilder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
-
-    fun headersBuilder() = Headers.Builder().apply {
-        add(
-            "User-Agent",
-            "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
-        )
-        add("cache-control", "max-age=0")
     }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {

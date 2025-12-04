@@ -1,16 +1,9 @@
 package ireader.storyseedling
 
-import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
-import io.ktor.http.ContentType
-import io.ktor.http.Headers
-import io.ktor.http.HttpHeaders
-import io.ktor.serialization.kotlinx.json.json
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
@@ -27,8 +20,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
-import kotlinx.datetime.*
-// // import java.util.Locale - Not needed for KMP - Not needed for KMP
 
 @Extension
 abstract class StorySeedling(private val deps: Dependencies) : SourceFactory(
@@ -54,16 +45,6 @@ abstract class StorySeedling(private val deps: Dependencies) : SourceFactory(
             Command.Chapter.Fetch(),
             Command.Content.Fetch(),
         )
-    }
-
-    // This JSON client is needed to handle API responses
-    override val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                coerceInputValues = true
-            })
-        }
     }
 
     override val exploreFetchers: List<BaseExploreFetcher>

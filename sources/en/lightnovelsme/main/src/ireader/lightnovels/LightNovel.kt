@@ -2,24 +2,16 @@ package ireader.lightnovelsme
 
 import kotlinx.serialization.json.Json
 
-import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.BrowserUserAgent
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.cookies.ConstantCookiesStorage
-import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.headers
-import io.ktor.client.request.invoke
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.HttpSource
 import ireader.core.source.asJsoup
@@ -42,16 +34,13 @@ import ireader.lightnovels.detail_dto.PageProps
 import ireader.lightnovels.search_dto.ResultX
 import ireader.lightnovels.search_dto.SearchDTO
 import ireader.lightnovels.search_dto.SearchResult
-import kotlinx.coroutines.Dispatchers
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
-import io.ktor.serialization.kotlinx.json.json
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
 import ireader.common.utils.DateParser
-import java.util.concurrent.TimeUnit
 
 /**
  * 💡 LightNovels.me - JSON API Based Source
@@ -71,24 +60,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
     override val baseUrl = "https://lightnovels.me"
     override val lang = "en"
 
-    override val client = HttpClient(OkHttp) {
-        engine {
-            preconfigured = clientBuilder()
-        }
-        BrowserUserAgent()
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
-        }
-        install(HttpCookies) {
-            storage = ConstantCookiesStorage()
-        }
-    }
 
-    private fun clientBuilder(): OkHttpClient = deps.httpClients.default.okhttp
-        .newBuilder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
 
     override fun getFilters(): FilterList {
         return listOf(
@@ -204,8 +176,8 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         append("referer", baseUrl)
     }
 
-    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
-        return client to HttpRequestBuilder(url).apply {
+    override fun getCoverRequest(url: String): Pair<io.ktor.client.HttpClient, HttpRequestBuilder> {
+        return client to HttpRequestBuilder().apply {
             url(url)
             headers {
                 append(
@@ -302,7 +274,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        return withContext(Dispatchers.IO) {
+        return withContext(DefaultDispatcher) {
             val mainDoc = client.get(chaptersRequest(book = manga)).body<HttpResponse>().asJsoup()
             val json = mainDoc.select("#__NEXT_DATA__").html()
             val detail = Json { ignoreUnknownKeys = true }.decodeFromString<NovelDetail>(json)

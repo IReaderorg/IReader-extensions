@@ -1,12 +1,12 @@
 package ireader.pandanovel
 
-import android.util.Log
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
 import ireader.core.source.findInstance
 import ireader.core.source.model.*
-import kotlinx.coroutines.Dispatchers
+import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
@@ -70,7 +70,7 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(deps =
             descriptionSelector = "#detailsApp > div:nth-child(4) p",
             statusSelector = ".novel-attr li:last-child strong",
             onStatus = fun (status): Long {
-                Log.d("PandaNovel", status)
+                Log.debug { "PandaNovel status: $status" }
                 return when(status) {
                     "Ongoing" -> MangaInfo.ONGOING
                     "Completed" -> MangaInfo.COMPLETED
@@ -135,7 +135,7 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(deps =
             return chaptersParse(Ksoup.parse(command.html))
         }
         return kotlin.runCatching {
-            return@runCatching withContext(Dispatchers.IO) {
+            return@runCatching withContext(DefaultDispatcher) {
                 return@withContext chaptersParse(
                     getChapterListRequest(manga, commands),
                 )

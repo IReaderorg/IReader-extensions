@@ -2,14 +2,11 @@ package ireader.wnmtl
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
-import io.ktor.serialization.kotlinx.json.json
 import ireader.core.source.SourceFactory
 import ireader.wnmtl.chapter.ChapterDTO
 import ireader.wnmtl.content.ContentDTO
@@ -103,16 +100,6 @@ abstract class WnMtl(private val deps: Dependencies) : SourceFactory(
             pageTitleSelector = "#chapterContentTitle",
             pageContentSelector = "#chapterContent",
         )
-
-    override val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(
-                Json {
-                    ignoreUnknownKeys = true
-                }
-            )
-        }
-    }
 
     override suspend fun getMangaDetailsRequest(
         manga: MangaInfo,

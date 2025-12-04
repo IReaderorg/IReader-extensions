@@ -1,17 +1,13 @@
- package ireader.lightnovelpub
+package ireader.lightnovelpub
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.BrowserUserAgent
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.Parameters
-import io.ktor.serialization.kotlinx.json.json
 import ireader.core.source.Dependencies
 import ireader.core.source.asJsoup
 import ireader.core.source.findInstance
@@ -105,13 +101,6 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
                 content.filter { !it.contains("lightnovelpub", true) || !it.contains("no_vel_read_ing") }
             }
         )
-
-    override val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json()
-        }
-        BrowserUserAgent()
-    }
 
     private fun clientBuilder(): HeadersBuilder.() -> Unit = {
         append("site-domain", "www.lightnovelpub.com")

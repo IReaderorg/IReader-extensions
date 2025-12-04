@@ -1,15 +1,10 @@
 package ireader.libread
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
@@ -20,7 +15,6 @@ import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import kotlinx.serialization.json.Json
 import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 
@@ -151,15 +145,7 @@ abstract class LibRead(private val deps: Dependencies) : SourceFactory(
         )
     }
 
-    // This client is needed for search functionality
-    override val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                coerceInputValues = true
-            })
-        }
-    }
+
 
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(

@@ -1,8 +1,7 @@
 package ireader.wuxiaworldsiteco
 
-import android.util.Log
+import ireader.core.log.Log
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
@@ -11,7 +10,6 @@ import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import io.ktor.http.Parameters
-import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -57,13 +55,6 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
     override fun getListings(): List<Listing> {
         return listOf(LatestListing())
     }
-
-    override val client: HttpClient
-        get() = HttpClient(OkHttp) {
-            engine {
-                preconfigured = deps.httpClients.default.okhttp
-            }
-        }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return getLatest(page)
@@ -245,7 +236,7 @@ abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(dep
         val response =
             client.get(requestBuilder("$baseUrl/get-full-list.ajax?id=$bookId")).asJsoup()
         val parser = chaptersParse(response)
-        Log.d("TAG", "parser: $parser")
+        Log.debug { "parser: $parser" }
         return parser
     }
 

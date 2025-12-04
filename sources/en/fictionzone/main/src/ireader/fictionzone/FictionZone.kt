@@ -1,15 +1,11 @@
 package ireader.fictionzone
 
-import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import io.ktor.serialization.kotlinx.json.json
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
@@ -30,8 +26,6 @@ import kotlinx.serialization.json.putJsonObject
 import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
-import java.util.concurrent.TimeUnit
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 /**
@@ -66,15 +60,7 @@ abstract class FictionZone(private val deps: Dependencies) : SourceFactory(deps 
         )
     }
 
-    // This JSON client is needed to handle API responses
-    override val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                coerceInputValues = true
-            })
-        }
-    }
+
 
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
@@ -153,13 +139,15 @@ abstract class FictionZone(private val deps: Dependencies) : SourceFactory(deps 
         if (!dateStr.contains("ago")) return 0
 
         val timeAgo = dateStr.split(" ")[0].toIntOrNull() ?: return 0
-        val currentTime = Clock.System.now().toEpochMilliseconds()
+        val currentTime = kotlin.time.Clock.System.now().toEpochMilliseconds()
+        val hourMs = 60 * 60 * 1000L
+        val dayMs = 24 * hourMs
 
         return when {
-            dateStr.contains("hour") -> currentTime - TimeUnit.HOURS.toMillis(timeAgo.toLong())
-            dateStr.contains("day") -> currentTime - TimeUnit.DAYS.toMillis(timeAgo.toLong())
-            dateStr.contains("month") -> currentTime - TimeUnit.DAYS.toMillis(timeAgo.toLong() * 30)
-            dateStr.contains("year") -> currentTime - TimeUnit.DAYS.toMillis(timeAgo.toLong() * 365)
+            dateStr.contains("hour") -> currentTime - (timeAgo * hourMs)
+            dateStr.contains("day") -> currentTime - (timeAgo * dayMs)
+            dateStr.contains("month") -> currentTime - (timeAgo * 30 * dayMs)
+            dateStr.contains("year") -> currentTime - (timeAgo * 365 * dayMs)
             else -> 0
         }
     }
