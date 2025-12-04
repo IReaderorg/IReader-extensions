@@ -57,6 +57,9 @@ kotlin {
     
     sourceSets {
         val jsMain by getting {
+            // Include JS-specific registration code
+            kotlin.srcDir("src/jsMain/kotlin")
+            
             // Include source files and KSP-generated init files
             jsSources.forEach { source ->
                 kotlin.srcDir(source.sourceDir)

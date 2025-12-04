@@ -25,41 +25,14 @@ tasks.create<RepoTask>("repo")
 registerSourceIdTasks()
 
 // JS build tasks for iOS support
-tasks.register("buildAllJsSources") {
+// The js-sources module compiles all enabled sources to JS for iOS
+tasks.register("buildJsSources") {
   group = "build"
-  description = "Build all KMP-enabled sources as JS bundles for iOS"
-  
-  dependsOn(
-    subprojects
-      .filter { it.path.startsWith(":extensions:") }
-      .filter { it.plugins.hasPlugin("extension-js-setup") }
-      .map { "${it.path}:jsBrowserProductionWebpack" }
-  )
+  description = "Build JS bundles for iOS (uses js-sources module)"
+  dependsOn(":js-sources:createSourceIndex")
 }
 
-tasks.register("packageJsSources") {
-  group = "distribution"
-  description = "Package all JS sources for distribution"
-  
-  dependsOn("buildAllJsSources")
-  
-  doLast {
-    val outputDir = file("build/js-dist")
-    outputDir.mkdirs()
-    
-    // Copy all JS bundles
-    subprojects
-      .filter { it.path.startsWith(":extensions:") }
-      .forEach { project ->
-        val jsDir = project.file("build/dist/js/productionExecutable")
-        if (jsDir.exists()) {
-          copy {
-            from(jsDir)
-            into(outputDir.resolve(project.name))
-          }
-        }
-      }
-    
-    println("JS sources packaged to: ${outputDir.absolutePath}")
-  }
+// Make repo task also build JS sources
+tasks.named<RepoTask>("repo") {
+  dependsOn(":js-sources:createSourceIndex")
 }

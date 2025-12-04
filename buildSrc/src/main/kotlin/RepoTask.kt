@@ -60,44 +60,90 @@ open class RepoTask : DefaultTask() {
         extractApks(apkDir)
         generateJars(apkDir, repoDir)
         
-        // Generate JS bundles if common module has JS output
-        generateJsBundles(jsDir)
+        // Generate JS bundles for iOS
+        val jsSources = generateJsBundles(jsDir)
         
-        val badgings = parseBadgings(apkDir) ?: return
-        ensureValidState(badgings)
+        val rawBadgings = parseBadgings(apkDir) ?: return
+        val badgings = ensureValidState(rawBadgings)
         extractIcons(apkDir, iconDir, badgings)
 
-        generateRepo(repoDir, badgings)
+        // Generate repo index with JS info
+        generateRepo(repoDir, badgings, jsSources)
+        
+        // Create .gitignore
+        createGitignore(repoDir)
     }
     
-    private fun generateJsBundles(jsDir: File) {
+    private fun createGitignore(repoDir: File) {
+        File(repoDir, ".gitignore").writeText("""
+            # Ignore nothing - all files should be committed
+            !*
+        """.trimIndent())
+    }
+    
+    /**
+     * Generate JS bundles for iOS and return list of JS source info
+     */
+    private fun generateJsBundles(jsDir: File): List<JsSourceInfo> {
         jsDir.mkdirs()
+        val jsSources = mutableListOf<JsSourceInfo>()
         
-        // Copy JS bundles from common module if they exist
-        val commonJsDir = File(project.rootDir, "common/build/dist/js/productionExecutable")
-        if (commonJsDir.exists()) {
-            print("Copying JS bundles from common module...\n")
-            project.copy {
-                from(commonJsDir)
-                include("**/*.js")
-                into(jsDir)
-                duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            }
-        }
+        // Copy JS bundles from js-sources module
+        val jsSourcesKotlinDir = File(project.rootDir, "js-sources/build/compileSync/js/main/productionLibrary/kotlin")
+        val jsSourcesDistDir = File(project.rootDir, "js-sources/build/js-dist")
         
-        // Copy JS bundles from any KMP source modules
-        project.subprojects.forEach { subproject ->
-            val subJsDir = File(subproject.buildDir, "dist/js/productionExecutable")
-            if (subJsDir.exists()) {
-                print("Copying JS bundles from ${subproject.name}...\n")
-                project.copy {
-                    from(subJsDir)
-                    include("**/*.js")
-                    into(jsDir)
-                    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        if (jsSourcesKotlinDir.exists()) {
+            print("Copying JS sources from js-sources module...\n")
+            
+            // Parse js-sources index.json to get source info and file names
+            val indexFile = File(jsSourcesDistDir, "index.json")
+            if (indexFile.exists()) {
+                try {
+                    val indexJson = Json.decodeFromString<JsIndex>(indexFile.readText())
+                    
+                    // Copy the main JS source file with extension name
+                    val mainJsFile = File(jsSourcesKotlinDir, "IReader-extensions-js-sources.js")
+                    if (mainJsFile.exists()) {
+                        indexJson.sources.forEach { source ->
+                            // Name file after the extension: freewebnovelkmp.js
+                            val destName = "${source.id}.js"
+                            val destFile = File(jsDir, destName)
+                            mainJsFile.copyTo(destFile, overwrite = true)
+                            
+                            // Copy source map with same name
+                            val mapFile = File(jsSourcesKotlinDir, "IReader-extensions-js-sources.js.map")
+                            if (mapFile.exists()) {
+                                mapFile.copyTo(File(jsDir, "${source.id}.js.map"), overwrite = true)
+                            }
+                            
+                            print("  - ${destFile.name} (${destFile.length() / 1024}KB)\n")
+                            
+                            jsSources.add(JsSourceInfo(
+                                id = source.id,
+                                name = source.name,
+                                lang = source.lang,
+                                file = destName,
+                                initFunction = source.initFunction
+                            ))
+                        }
+                    }
+                } catch (e: Exception) {
+                    print("Warning: Could not parse js-sources index.json: ${e.message}\n")
+                }
+            } else {
+                // Fallback: just copy the main file
+                val mainJsFile = File(jsSourcesKotlinDir, "IReader-extensions-js-sources.js")
+                if (mainJsFile.exists()) {
+                    val destFile = File(jsDir, "sources.js")
+                    mainJsFile.copyTo(destFile, overwrite = true)
+                    print("  - ${destFile.name} (${destFile.length() / 1024}KB)\n")
                 }
             }
+        } else {
+            print("No JS bundles found. Run ':js-sources:createSourceIndex' first to generate JS output.\n")
         }
+        
+        return jsSources
     }
 
     private fun parseBadgings(apkDir: File): List<Badging>? {
@@ -184,25 +230,30 @@ open class RepoTask : DefaultTask() {
         )
     }
 
-    private fun ensureValidState(badgings: List<Badging>) {
+    private fun ensureValidState(badgings: List<Badging>): List<Badging> {
         val samePkgs = badgings.groupBy { it.pkg }
             .filter { it.value.size > 1 }
-            .map { it.key }
 
         if (samePkgs.isNotEmpty()) {
-            throw GradleException(
-                "${samePkgs.joinToString()} have duplicate package names. Check your " +
-                        "build"
-            )
+            print("WARNING: Duplicate package names found. Keeping latest version only:\n")
+            samePkgs.forEach { (pkg, dupes) ->
+                print("  - $pkg: ${dupes.map { it.apk }.joinToString(", ")}\n")
+            }
         }
 
         val sameIds = badgings.groupBy { it.id }
             .filter { it.value.size > 1 }
 
         if (sameIds.isNotEmpty()) {
-            val sameIdPkgs = sameIds.flatMap { it.value.map { it.pkg } }
-            throw GradleException("${sameIdPkgs.joinToString()} have duplicate ids. Check your build")
+            print("WARNING: Duplicate source IDs found. Keeping latest version only:\n")
+            sameIds.forEach { (id, dupes) ->
+                print("  - $id: ${dupes.map { it.apk }.joinToString(", ")}\n")
+            }
         }
+        
+        // Return deduplicated list - keep the one with highest version code
+        return badgings.groupBy { it.pkg }
+            .map { (_, versions) -> versions.maxByOrNull { it.code } ?: versions.first() }
     }
 
     private fun extractApks(destDir: File) {
@@ -280,15 +331,27 @@ open class RepoTask : DefaultTask() {
         }
     }
 
-    private fun generateRepo(repoDir: File, badgings: List<Badging>) {
+    private fun generateRepo(repoDir: File, badgings: List<Badging>, jsSources: List<JsSourceInfo>) {
         val sortedBadgings = badgings.sortedBy { it.pkg }
+        
+        // Create full repo index with both APK and JS info
+        val repoIndex = RepoIndex(
+            extensions = sortedBadgings,
+            js = if (jsSources.isNotEmpty()) JsSection(
+                note = "JS sources require runtime.js from the main IReader app",
+                sources = jsSources
+            ) else null
+        )
+        
         File(repoDir, "index.min.json").writer().use {
-            it.write(Json.encodeToString(sortedBadgings))
+            it.write(Json.encodeToString(repoIndex))
         }
 
         File(repoDir, "index.json").writer().use {
-            it.write(prettyJson.encodeToString(sortedBadgings))
+            it.write(prettyJson.encodeToString(repoIndex))
         }
+        
+        print("Generated repo index with ${sortedBadgings.size} extensions and ${jsSources.size} JS sources\n")
     }
 
     fun generateJars(apkDir: File, repoDir: File) {
@@ -369,5 +432,44 @@ open class RepoTask : DefaultTask() {
         val iconResourcePath: String? = null,
         val sourceDir: String? = null,
         val assetsDir: String? = null,
+    )
+    
+    // JS source info for iOS
+    @Serializable
+    private data class JsSourceInfo(
+        val id: String,
+        val name: String,
+        val lang: String,
+        val file: String,
+        val initFunction: String
+    )
+    
+    @Serializable
+    private data class JsSection(
+        val note: String,
+        val sources: List<JsSourceInfo>
+    )
+    
+    @Serializable
+    private data class RepoIndex(
+        val extensions: List<Badging>,
+        val js: JsSection? = null
+    )
+    
+    // For parsing js-sources index.json
+    @Serializable
+    private data class JsIndex(
+        val version: Int = 1,
+        val note: String? = null,
+        val sources: List<JsIndexSource> = emptyList()
+    )
+    
+    @Serializable
+    private data class JsIndexSource(
+        val id: String,
+        val name: String,
+        val lang: String,
+        val file: String,
+        val initFunction: String
     )
 }

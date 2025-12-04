@@ -40,14 +40,6 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
     override val baseUrl = "https://comrademao.com"
 
     override val lang = "en"
-
-    override fun getFilters(): FilterList {
-        return listOf(
-            Filter.Title(),
-            sorts,
-        )
-    }
-
     val sorts = Filter.Sort(
         "Sort By:",
         arrayOf(
@@ -56,6 +48,14 @@ abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {
             "Korean",
         )
     )
+    override fun getFilters(): FilterList {
+        return listOf(
+            Filter.Title(),
+            sorts,
+        )
+    }
+
+
 
     class Chinese : Listing("Chinese")
     class Japanese : Listing("Japanese")
