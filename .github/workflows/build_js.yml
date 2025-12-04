@@ -93,10 +93,15 @@ jobs:
             cp js-sources/build/kotlin-webpack/js/productionExecutable/*.js.map repo/js/ 2>/dev/null || true
           fi
           
-          # Copy JS index
-          if [ -f "js-sources/build/js-dist/index.json" ]; then
-            cp js-sources/build/js-dist/index.json repo/js/
+          # Copy JS index files (js-index.json and js-index.min.json)
+          if [ -d "js-sources/build/js-dist" ]; then
+            cp js-sources/build/js-dist/js-index.json repo/js/ 2>/dev/null || true
+            cp js-sources/build/js-dist/js-index.min.json repo/js/ 2>/dev/null || true
           fi
+          
+          # List what we're deploying
+          echo "JS files to deploy:"
+          ls -la repo/js/ || true
           
           # Commit and push
           cd repo

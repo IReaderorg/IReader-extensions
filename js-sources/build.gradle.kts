@@ -14,18 +14,28 @@
  *   ./gradlew :js-sources:jsBrowserProductionWebpack
  */
 
+import java.security.MessageDigest
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
 data class JsSourceConfig(
-    val name: String,      // Display name (matches @Extension)
-    val id: String,        // Lowercase ID for file naming
+    val name: String,           // Display name (matches @Extension)
+    val id: String,             // Lowercase ID for file naming
     val lang: String,
-    val projectPath: String,  // Gradle project path for dependency
+    val projectPath: String,    // Gradle project path for dependency
     val sourceDir: String,
-    val generatedDir: String
+    val generatedDir: String,
+    // Additional metadata for index
+    val versionCode: Int = 1,
+    val versionName: String = "1.0",
+    val description: String = "",
+    val nsfw: Boolean = false,
+    val sourceId: Long = 0,     // Numeric source ID
+    val pkg: String = "",       // Package name for icon reference
+    val assetsDir: String = ""  // Assets directory for icon
 )
 
 /**
@@ -86,8 +96,32 @@ fun parseExtensionConfig(buildFile: File, lang: String, sourceName: String, type
     val sourceDirMatch = sourceDirRegex.find(content)
     val sourceSubDir = sourceDirMatch?.groupValues?.get(1) ?: "main"
     
+    // Extract versionCode
+    val versionCodeRegex = """versionCode\s*=\s*(\d+)""".toRegex()
+    val versionCode = versionCodeRegex.find(content)?.groupValues?.get(1)?.toIntOrNull() ?: 1
+    
+    // Extract libVersion for versionName
+    val libVersionRegex = """libVersion\s*=\s*"([^"]+)"""".toRegex()
+    val libVersion = libVersionRegex.find(content)?.groupValues?.get(1) ?: "1"
+    val versionName = "$libVersion.$versionCode"
+    
+    // Extract description
+    val descriptionRegex = """description\s*=\s*"([^"]*)"""".toRegex()
+    val description = descriptionRegex.find(content)?.groupValues?.get(1) ?: ""
+    
+    // Extract nsfw
+    val nsfw = content.contains("nsfw = true") || content.contains("nsfw=true")
+    
+    // Extract assetsDir
+    val assetsDirRegex = """assetsDir\s*=\s*"([^"]+)"""".toRegex()
+    val assetsDir = assetsDirRegex.find(content)?.groupValues?.get(1) ?: ""
+    
     val projectPath = ":extensions:$type:$lang:$sourceName"
     val baseDir = if (type == "individual") "sources/$lang/$sourceName" else "sources/multisrc/$sourceName"
+    val pkg = "ireader.$sourceName.$lang".lowercase().replace(Regex("[^\\w\\d.]"), ".")
+    
+    // Generate source ID using same algorithm as Extension.kt
+    val sourceId = generateSourceId(extensionName, lang)
     
     return JsSourceConfig(
         name = extensionName,
@@ -95,8 +129,25 @@ fun parseExtensionConfig(buildFile: File, lang: String, sourceName: String, type
         lang = lang,
         projectPath = projectPath,
         sourceDir = "../$baseDir/$sourceSubDir/src",
-        generatedDir = "../$baseDir/build/generated/ksp/${lang}Release/kotlin"
+        generatedDir = "../$baseDir/build/generated/ksp/${lang}Release/kotlin",
+        versionCode = versionCode,
+        versionName = versionName,
+        description = description,
+        nsfw = nsfw,
+        sourceId = sourceId,
+        pkg = pkg,
+        assetsDir = assetsDir
     )
+}
+
+/**
+ * Generate source ID using MD5 hash (same algorithm as Extension.kt)
+ */
+fun generateSourceId(name: String, lang: String, versionId: Int = 1): Long {
+    val key = "${name.lowercase()}/$lang/$versionId"
+    val bytes = MessageDigest.getInstance("MD5").digest(key.toByteArray())
+    return (0..7).map { bytes[it].toLong() and 0xff shl 8 * (7 - it) }
+        .reduce(Long::or) and Long.MAX_VALUE
 }
 
 /**
@@ -124,7 +175,29 @@ fun parseMultisrcExtensionConfigs(buildFile: File, themeName: String): List<JsSo
         val sourceDirRegex = """sourceDir\s*=\s*"([^"]+)"""".toRegex()
         val sourceDir = sourceDirRegex.find(block)?.groupValues?.get(1) ?: "main"
         
+        // Extract versionCode
+        val versionCodeRegex = """versionCode\s*=\s*(\d+)""".toRegex()
+        val versionCode = versionCodeRegex.find(block)?.groupValues?.get(1)?.toIntOrNull() ?: 1
+        
+        // Extract libVersion
+        val libVersionRegex = """libVersion\s*=\s*"([^"]+)"""".toRegex()
+        val libVersion = libVersionRegex.find(block)?.groupValues?.get(1) ?: "1"
+        val versionName = "$libVersion.$versionCode"
+        
+        // Extract description
+        val descriptionRegex = """description\s*=\s*"([^"]*)"""".toRegex()
+        val description = descriptionRegex.find(block)?.groupValues?.get(1) ?: ""
+        
+        // Extract nsfw
+        val nsfw = block.contains("nsfw = true") || block.contains("nsfw=true")
+        
+        // Extract assetsDir
+        val assetsDirRegex = """assetsDir\s*=\s*"([^"]+)"""".toRegex()
+        val assetsDir = assetsDirRegex.find(block)?.groupValues?.get(1) ?: ""
+        
         val flavor = if (sourceDir == "main") lang else "$sourceDir-$lang"
+        val pkg = "ireader.$themeName.$flavor".lowercase().replace(Regex("[^\\w\\d.]"), ".")
+        val sourceId = generateSourceId(name, lang)
         
         configs.add(JsSourceConfig(
             name = name,
@@ -132,7 +205,14 @@ fun parseMultisrcExtensionConfigs(buildFile: File, themeName: String): List<JsSo
             lang = lang,
             projectPath = ":extensions:multisrc:$themeName",
             sourceDir = "../sources/multisrc/$themeName/$sourceDir/src",
-            generatedDir = "../sources/multisrc/$themeName/build/generated/ksp/${flavor}Release/kotlin"
+            generatedDir = "../sources/multisrc/$themeName/build/generated/ksp/${flavor}Release/kotlin",
+            versionCode = versionCode,
+            versionName = versionName,
+            description = description,
+            nsfw = nsfw,
+            sourceId = sourceId,
+            pkg = pkg,
+            assetsDir = assetsDir
         ))
     }
     
@@ -307,41 +387,68 @@ tasks.register<Copy>("packageForDistribution") {
     into(outputDir)
 }
 
-// Create index.json separately
+// Create js-index.json and js-index.min.json with full metadata (similar to APK index)
 tasks.register("createSourceIndex") {
     group = "js"
-    description = "Create index.json for JS sources"
+    description = "Create js-index.json and js-index.min.json for JS sources"
     dependsOn("packageForDistribution")
     
     val outputDir = layout.buildDirectory.dir("js-dist")
-    // Init function name matches KSP-generated: init<Name>
-    val sourcesList = jsSources.map { source ->
-        // name is the @Extension name (e.g., "FreeWebNovelKmp")
-        // id is the lowercase identifier (e.g., "freewebnovelkmp")
-        Triple(source.id, source.lang, "init${source.name}")
-    }
+    val iconBaseUrl = "https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/icon"
     
-    outputs.file(outputDir.map { it.file("index.json") })
+    outputs.file(outputDir.map { it.file("js-index.json") })
+    outputs.file(outputDir.map { it.file("js-index.min.json") })
     
     doLast {
-        val indexFile = outputDir.get().file("index.json").asFile
-        val sources = sourcesList.joinToString(",\n") { (name, lang, initFunc) ->
-            """    {
-      "id": "$name",
-      "name": "$name",
-      "lang": "$lang",
-      "file": "sources-bundle.js",
-      "initFunction": "$initFunc"
-    }"""
+        val outDir = outputDir.get().asFile
+        outDir.mkdirs()
+        
+        // Generate full index entries (similar to APK Badging structure)
+        val indexEntries = jsSources.map { source ->
+            // Icon filename follows APK naming: ireader-<lang>-<id>-v<version>.png
+            val iconFileName = "ireader-${source.lang}-${source.id}-v${source.versionName}.png"
+            val iconUrl = "$iconBaseUrl/$iconFileName"
+            
+            mapOf(
+                "pkg" to source.pkg,
+                "name" to source.name,
+                "id" to source.sourceId,
+                "lang" to source.lang,
+                "code" to source.versionCode,
+                "version" to source.versionName,
+                "description" to source.description,
+                "nsfw" to source.nsfw,
+                "file" to "sources-bundle.js",
+                "initFunction" to "init${source.name}",
+                "iconUrl" to iconUrl
+            )
         }
-        indexFile.writeText("""{
-  "version": 1,
-  "note": "These sources require runtime.js from the main IReader app",
-  "sources": [
-$sources
-  ]
-}""")
-        logger.lifecycle("Created index at: ${indexFile.absolutePath}")
+        
+        // Write minified JSON (array format for compatibility)
+        val minJson = indexEntries.joinToString(",") { entry ->
+            """{"pkg":"${entry["pkg"]}","name":"${entry["name"]}","id":${entry["id"]},"lang":"${entry["lang"]}","code":${entry["code"]},"version":"${entry["version"]}","description":"${entry["description"]}","nsfw":${entry["nsfw"]},"file":"${entry["file"]}","initFunction":"${entry["initFunction"]}","iconUrl":"${entry["iconUrl"]}"}"""
+        }
+        File(outDir, "js-index.min.json").writeText("[$minJson]")
+        
+        // Write pretty JSON
+        val prettyEntries = indexEntries.joinToString(",\n") { entry ->
+            """  {
+    "pkg": "${entry["pkg"]}",
+    "name": "${entry["name"]}",
+    "id": ${entry["id"]},
+    "lang": "${entry["lang"]}",
+    "code": ${entry["code"]},
+    "version": "${entry["version"]}",
+    "description": "${entry["description"]}",
+    "nsfw": ${entry["nsfw"]},
+    "file": "${entry["file"]}",
+    "initFunction": "${entry["initFunction"]}",
+    "iconUrl": "${entry["iconUrl"]}"
+  }"""
+        }
+        File(outDir, "js-index.json").writeText("[\n$prettyEntries\n]")
+        
+        logger.lifecycle("Created JS index with ${jsSources.size} sources at: ${outDir.absolutePath}")
     }
 }
 
