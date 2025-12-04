@@ -110,7 +110,7 @@ listOf("en").map { lang ->
   Extension(  
       name = "BoxNovelCom", // no space between letters
 	  versionCode = 4,  
-	  libVersion = "1",  
+	  libVersion = "2",  
 	  lang = lang,  
 	  description = "",  
 	  nsfw = false,  
@@ -344,7 +344,7 @@ Make sure that your new extension's `build.gradle` file follows the following st
 	     Extension(  
 		  name = "SiteA",  
 		  versionCode = 1,  
-		  libVersion = "1",  
+		  libVersion = "2",  
 		  lang = "en",  
 		  description = "",  
 		  nsfw = false,  
@@ -355,7 +355,7 @@ Make sure that your new extension's `build.gradle` file follows the following st
 		  Extension(  
 		        name = "SiteB",  
 		  versionCode = 1,  
-		  libVersion = "1",  
+		  libVersion = "2",  
 		  lang = "ar",  
 		  description = "",  
 		  nsfw = false,  

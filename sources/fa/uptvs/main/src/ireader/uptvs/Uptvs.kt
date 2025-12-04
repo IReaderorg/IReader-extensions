@@ -6,7 +6,7 @@ import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
 import ireader.core.source.model.*
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension

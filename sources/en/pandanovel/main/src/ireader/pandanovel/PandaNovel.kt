@@ -8,8 +8,8 @@ import ireader.core.source.findInstance
 import ireader.core.source.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -127,7 +127,7 @@ abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let { command ->
-            return chaptersParse(Jsoup.parse(command.html))
+            return chaptersParse(Ksoup.parse(command.html))
         }
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {

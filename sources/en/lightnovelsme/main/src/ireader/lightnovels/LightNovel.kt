@@ -45,11 +45,10 @@ import ireader.lightnovels.search_dto.SearchResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.Locale
+import ireader.common.utils.DateParser
 import java.util.concurrent.TimeUnit
 
 @Extension
@@ -377,10 +376,8 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     fun parseChapterDate(date: String): Long {
-        return dateFormat.parse(date)?.time ?: 0L
+        return DateParser.parseAbsoluteDate(date)
     }
-
-    private val dateFormat: SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
         return getContents(chapter).map { Text(it) }
@@ -398,7 +395,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
             "\\u003c/p\\u003e\\u003cp\\u003e\\u003c/p\\u003e\\u003cp\\u003e",
             "<p>",
             "<br>"
-        ).map { Jsoup.parse(it).text() }
+        ).map { Ksoup.parse(it).text() }
         return listOf(head) + par
     }
 

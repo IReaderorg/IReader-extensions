@@ -40,7 +40,7 @@ object ImageUrlHelper {
      * @return The image URL or empty string if not found
      */
     fun extractImageUrl(
-        element: org.jsoup.nodes.Element,
+        element: com.fleeksoft.ksoup.nodes.Element,
         attributes: List<String> = listOf("data-src", "data-lazy-src", "src", "data-original")
     ): String {
         for (attr in attributes) {

@@ -18,9 +18,9 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -229,7 +229,7 @@ abstract class Aixdzs(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override fun pageContentParse(document: Document): List<String> {
         return document.select("article.page-content").html().split("<br>", "<p>")
-            .map { Jsoup.parse(it).text() }
+            .map { Ksoup.parse(it).text() }
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {

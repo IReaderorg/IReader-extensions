@@ -23,12 +23,10 @@ import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import ireader.common.utils.DateParser
 
 @Extension
 abstract class KissNovel(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -179,41 +177,8 @@ abstract class KissNovel(private val deps: Dependencies) : ParsedHttpSource(deps
     }
 
     fun parseChapterDate(date: String): Long {
-        return if (date.contains("ago")) {
-            val value = date.split(' ')[0].toInt()
-            when {
-                "min" in date -> Calendar.getInstance().apply {
-                    add(Calendar.MINUTE, value * -1)
-                }.timeInMillis
-                "hour" in date -> Calendar.getInstance().apply {
-                    add(Calendar.HOUR_OF_DAY, value * -1)
-                }.timeInMillis
-                "day" in date -> Calendar.getInstance().apply {
-                    add(Calendar.DATE, value * -1)
-                }.timeInMillis
-                "week" in date -> Calendar.getInstance().apply {
-                    add(Calendar.DATE, value * 7 * -1)
-                }.timeInMillis
-                "month" in date -> Calendar.getInstance().apply {
-                    add(Calendar.MONTH, value * -1)
-                }.timeInMillis
-                "year" in date -> Calendar.getInstance().apply {
-                    add(Calendar.YEAR, value * -1)
-                }.timeInMillis
-                else -> {
-                    0L
-                }
-            }
-        } else {
-            try {
-                dateFormat.parse(date)?.time ?: 0
-            } catch (_: Exception) {
-                0L
-            }
-        }
+        return DateParser.parseRelativeOrAbsoluteDate(date)
     }
-
-    private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
 
     override fun chaptersSelector(): String {
         return "li.wp-manga-chapter"

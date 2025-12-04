@@ -150,9 +150,9 @@ jobs:
       - name: Checkout repo branch
         uses: actions/checkout@v4
         with:
-          ref: repo
+          # Using repov2 branch for KMP migration - old repo branch preserved for legacy users
+          ref: repov2
           path: repo
-
 
       - name: Deploy repo
         if: github.event_name == 'push' && github.repository == 'IReaderorg/IReader-extensions'

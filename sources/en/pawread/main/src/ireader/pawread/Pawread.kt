@@ -13,8 +13,8 @@ import ireader.core.source.SourceFactory
 import ireader.core.source.findInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -94,7 +94,7 @@ abstract class Pawread(deps: Dependencies) : SourceFactory(
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let { command ->
-            return chaptersParse(Jsoup.parse(command.html)).let { if (chapterFetcher.reverseChapterList) it.reversed() else it }
+            return chaptersParse(Ksoup.parse(command.html)).let { if (chapterFetcher.reverseChapterList) it.reversed() else it }
         }
         return kotlin.runCatching {
             return@runCatching withContext(Dispatchers.IO) {

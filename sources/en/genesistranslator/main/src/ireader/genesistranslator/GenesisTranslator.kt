@@ -8,7 +8,7 @@ import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.Page
 import ireader.core.source.model.Text
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension

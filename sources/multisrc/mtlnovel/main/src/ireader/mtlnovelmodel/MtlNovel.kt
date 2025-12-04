@@ -25,9 +25,9 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import java.util.concurrent.TimeUnit
 
 abstract class MtlNovelModel(private val deps: Dependencies) : ParsedHttpSource(deps) {
@@ -198,7 +198,7 @@ abstract class MtlNovelModel(private val deps: Dependencies) : ParsedHttpSource(
             item.results.forEach { res ->
                 books.add(
                     MangaInfo(
-                        title = Jsoup.parse(res.title).text(),
+                        title = Ksoup.parse(res.title).text(),
                         key = res.permalink,
                         author = res.cn,
                         cover = res.thumbnail

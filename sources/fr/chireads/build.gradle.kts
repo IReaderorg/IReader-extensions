@@ -2,7 +2,7 @@ listOf("fr").map { lang ->
   Extension(
     name = "Chireads",
     versionCode = 1,
-    libVersion = "1",
+    libVersion = "2",
     lang = lang,
     description = "",
     nsfw = false,

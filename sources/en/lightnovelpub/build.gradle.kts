@@ -2,7 +2,7 @@ register(
   Extension(
     name = "LightNovelPub",
     versionCode = 3,
-    libVersion = "1",
+    libVersion = "2",
     lang = "en",
     description = "",
     nsfw = false,
@@ -11,7 +11,7 @@ register(
   Extension(
     name = "WebNovelPub",
     versionCode = 1,
-    libVersion = "1",
+    libVersion = "2",
     lang = "en",
     description = "",
     nsfw = false,

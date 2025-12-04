@@ -2,7 +2,7 @@ listOf(
     Extension(
         name = "Readwn",
         versionCode = 1,
-        libVersion = "1",
+        libVersion = "2",
         lang = "en",
         description = "",
         nsfw = false,
@@ -13,7 +13,7 @@ listOf(
     Extension(
         name = "Novelmt",
         versionCode = 1,
-        libVersion = "1",
+        libVersion = "2",
         lang = "en",
         description = "",
         nsfw = false,
@@ -24,7 +24,7 @@ listOf(
     Extension(
         name = "Ltnovel",
         versionCode = 1,
-        libVersion = "1",
+        libVersion = "2",
         lang = "en",
         description = "",
         nsfw = false,

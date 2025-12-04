@@ -27,11 +27,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import kotlinx.datetime.*
+// // import java.util.Date - Use kotlinx.datetime - Use kotlinx.datetime
+// // import java.util.Locale - Not needed for KMP - Not needed for KMP
 import java.util.concurrent.TimeUnit
 
 @Extension
@@ -148,7 +148,7 @@ abstract class FictionZone(private val deps: Dependencies) : SourceFactory(
         if (!dateStr.contains("ago")) return 0
         
         val timeAgo = dateStr.split(" ")[0].toIntOrNull() ?: return 0
-        val currentTime = System.currentTimeMillis()
+        val currentTime = Clock.System.now().toEpochMilliseconds()
         
         return when {
             dateStr.contains("hour") -> currentTime - TimeUnit.HOURS.toMillis(timeAgo.toLong())

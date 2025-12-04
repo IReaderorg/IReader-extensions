@@ -24,9 +24,6 @@ import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 import kotlin.math.ceil
 
 @Extension
@@ -89,7 +86,6 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
             descriptionSelector = ".summary > .content"
         )
 
-    val dateFormatter = SimpleDateFormat("MMM dd,yyyy", Locale.US)
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
             selector = ".chapter-list li",

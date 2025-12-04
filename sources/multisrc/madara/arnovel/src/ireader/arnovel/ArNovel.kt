@@ -13,8 +13,8 @@ import ireader.core.source.model.Command
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.Page
 import ireader.core.source.model.Text
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -30,7 +30,7 @@ abstract class ArNovel(val deps: Dependencies) : Madara(
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let {
-            return chaptersParse(Jsoup.parse(it.html)).reversed()
+            return chaptersParse(Ksoup.parse(it.html)).reversed()
         }
     val html = client.post(
         "${manga.key}ajax/chapters/"

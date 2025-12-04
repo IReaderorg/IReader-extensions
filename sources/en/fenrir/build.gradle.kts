@@ -2,7 +2,7 @@ listOf("en").map { lang ->
     Extension(
         name = "Fenrir",
         versionCode = 10,
-        libVersion = "1",
+        libVersion = "2",
         lang = lang,
         description = "Read novels from Fenrir Realm",
         nsfw = false,

@@ -20,7 +20,7 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import org.jsoup.Jsoup
+import com.fleeksoft.ksoup.Ksoup
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -99,7 +99,7 @@ abstract class Wuxiaworld(deps: Dependencies) : SourceFactory(
                     key = "https://www.wuxiaworld.com/novel/${book.slug}",
                     title = book.name,
                     author = book.authorName ?: "",
-                    description = book.synopsis.let { Jsoup.parse(it ?: "").text() },
+                    description = book.synopsis.let { Ksoup.parse(it ?: "").text() },
                     status = if (book.description.contains(
                             "Complete",
                             true

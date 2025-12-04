@@ -8,12 +8,17 @@
  *   kotlin MigrateToKmp.kts sources/en/novelupdates
  *   kotlin MigrateToKmp.kts --all
  *   kotlin MigrateToKmp.kts --dry-run sources/en/novelupdates
+ *   kotlin MigrateToKmp.kts --all --multisrc --report
  */
 
 import java.io.File
 
-// Import replacements
+// ============================================
+// REPLACEMENT DEFINITIONS
+// ============================================
+
 val importReplacements = mapOf(
+    // Jsoup -> Ksoup
     "import org.jsoup.Jsoup" to "import com.fleeksoft.ksoup.Ksoup",
     "import org.jsoup.nodes.Document" to "import com.fleeksoft.ksoup.nodes.Document",
     "import org.jsoup.nodes.Element" to "import com.fleeksoft.ksoup.nodes.Element",
@@ -22,42 +27,82 @@ val importReplacements = mapOf(
     "import org.jsoup.parser.Parser" to "import com.fleeksoft.ksoup.parser.Parser",
     "import org.jsoup.safety.Safelist" to "import com.fleeksoft.ksoup.safety.Safelist",
     "import org.jsoup.safety.Whitelist" to "import com.fleeksoft.ksoup.safety.Safelist",
+    "import org.jsoup.nodes.Attribute" to "import com.fleeksoft.ksoup.nodes.Attribute",
+    "import org.jsoup.nodes.Node" to "import com.fleeksoft.ksoup.nodes.Node",
     "import org.jsoup.Connection" to "// import org.jsoup.Connection - Use Ktor HttpClient instead"
 )
 
-// Code replacements
 val codeReplacements = mapOf(
     "Jsoup.parse(" to "Ksoup.parse(",
     "Jsoup.clean(" to "Ksoup.clean(",
+    "Jsoup.parseBodyFragment(" to "Ksoup.parseBodyFragment(",
     "Whitelist." to "Safelist.",
     "System.currentTimeMillis()" to "Clock.System.now().toEpochMilliseconds()"
 )
 
-// Date replacements
 val dateReplacements = mapOf(
     "import java.text.SimpleDateFormat" to "import kotlinx.datetime.*",
+    "import java.text.DateFormat" to "// import java.text.DateFormat - Use kotlinx.datetime",
     "import java.util.Locale" to "// import java.util.Locale - Not needed for KMP",
-    "import java.util.Calendar" to "// import java.util.Calendar - Use kotlinx.datetime instead",
-    "import java.util.Date" to "// import java.util.Date - Use kotlinx.datetime instead"
+    "import java.util.Calendar" to "// import java.util.Calendar - Use kotlinx.datetime",
+    "import java.util.Date" to "// import java.util.Date - Use kotlinx.datetime",
+    "import java.util.TimeZone" to "// import java.util.TimeZone - Use kotlinx.datetime"
 )
+
+val collectionReplacements = mapOf(
+    "import java.util.ArrayList" to "// import java.util.ArrayList - Use mutableListOf()",
+    "import java.util.HashMap" to "// import java.util.HashMap - Use mutableMapOf()",
+    "import java.util.HashSet" to "// import java.util.HashSet - Use mutableSetOf()"
+)
+
+val urlReplacements = mapOf(
+    "import java.net.URLEncoder" to "// import java.net.URLEncoder - Use encodeURLParameter()",
+    "import java.net.URLDecoder" to "// import java.net.URLDecoder - Use decodeURLPart()",
+    "import java.net.URL" to "// import java.net.URL - Use Ktor Url"
+)
+
+// ============================================
+// DATA CLASSES
+// ============================================
+
+data class MigrationResult(
+    val source: String,
+    val file: String,
+    val changes: List<String>,
+    val warnings: List<String>
+)
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
 
 fun log(message: String, level: String = "INFO") {
     val color = when (level) {
         "SUCCESS" -> "\u001B[32m"
         "WARNING" -> "\u001B[33m"
         "ERROR" -> "\u001B[31m"
+        "DEBUG" -> "\u001B[90m"
         else -> "\u001B[0m"
     }
     println("$color[$level] $message\u001B[0m")
 }
 
-fun migrateKotlinFile(file: File, dryRun: Boolean = false): Boolean {
+// ============================================
+// MIGRATION FUNCTIONS
+// ============================================
+
+fun migrateKotlinFile(file: File, sourceName: String, dryRun: Boolean = false): MigrationResult {
     var content = file.readText()
     val original = content
     val changes = mutableListOf<String>()
+    val warnings = mutableListOf<String>()
     
-    // Apply all replacements
-    (importReplacements + codeReplacements + dateReplacements).forEach { (old, new) ->
+    // Combine all replacements
+    val allReplacements = importReplacements + codeReplacements + dateReplacements + 
+                          collectionReplacements + urlReplacements
+    
+    // Apply replacements
+    allReplacements.forEach { (old, new) ->
         if (content.contains(old)) {
             content = content.replace(old, new)
             changes.add("$old -> $new")
@@ -67,238 +112,185 @@ fun migrateKotlinFile(file: File, dryRun: Boolean = false): Boolean {
     // Remove duplicate kotlinx.datetime imports
     content = content.replace(Regex("(import kotlinx\\.datetime\\.\\*\\r?\\n)+"), "import kotlinx.datetime.*\n")
     
+    // Check for remaining JVM-only code
+    if (content.contains("SimpleDateFormat")) {
+        warnings.add("Contains SimpleDateFormat - needs manual migration")
+    }
+    if (content.contains("Calendar.getInstance")) {
+        warnings.add("Contains Calendar.getInstance - needs manual migration")
+    }
+    if (Regex("java\\.io\\.").containsMatchIn(content)) {
+        warnings.add("Contains java.io.* - may need KMP alternative")
+    }
+    if (Regex("java\\.net\\.").containsMatchIn(content)) {
+        warnings.add("Contains java.net.* - may need KMP alternative")
+    }
+    
+    // Write changes
     if (content != original) {
         if (dryRun) {
-            log("Would modify: ${file.path}", "INFO")
-            changes.forEach { log("  - $it", "INFO") }
+            log("Would modify: ${file.name}", "INFO")
+            changes.forEach { log("  - $it", "DEBUG") }
         } else {
             file.writeText(content)
-            log("Modified: ${file.path}", "SUCCESS")
-            changes.forEach { log("  - $it", "INFO") }
-        }
-        return true
-    }
-    return false
-}
-
-fun getPackageName(sourceDir: File): String? {
-    // Search in main/src first, then src/main/kotlin
-    val searchPaths = listOf(
-        File(sourceDir, "main/src"),
-        File(sourceDir, "src/main/kotlin"),
-        sourceDir
-    )
-    
-    val ktFiles = searchPaths
-        .filter { it.exists() }
-        .flatMap { it.walkTopDown().filter { f -> f.extension == "kt" && f.name != "Init.kt" }.toList() }
-        .take(1)
-    
-    if (ktFiles.isEmpty()) return null
-    
-    val content = ktFiles.first().readText()
-    // Find package declaration at start of file
-    for (line in content.lines()) {
-        val trimmed = line.trim()
-        val match = Regex("^package\\s+([\\w.]+)").find(trimmed)
-        if (match != null) return match.groupValues[1]
-        // Skip empty lines and comments
-        if (trimmed.isNotEmpty() && !trimmed.startsWith("//") && !trimmed.startsWith("/*")) break
-    }
-    return null
-}
-
-fun getClassName(sourceDir: File): String? {
-    // Search in main/src first
-    val searchPaths = listOf(
-        File(sourceDir, "main/src"),
-        File(sourceDir, "src/main/kotlin"),
-        sourceDir
-    )
-    
-    val ktFiles = searchPaths
-        .filter { it.exists() }
-        .flatMap { it.walkTopDown().filter { f -> f.extension == "kt" && f.name != "Init.kt" }.toList() }
-    
-    for (file in ktFiles) {
-        val content = file.readText()
-        // Match abstract class first (common pattern for sources)
-        Regex("abstract\\s+class\\s+(\\w+)\\s*[\\(:]").find(content)?.let { return it.groupValues[1] }
-        Regex("class\\s+(\\w+)\\s*[\\(:].*SourceFactory").find(content)?.let { return it.groupValues[1] }
-        Regex("class\\s+(\\w+)\\s*[\\(:]").find(content)?.let { return it.groupValues[1] }
-    }
-    return null
-}
-
-
-fun createKmpStructure(sourceDir: File, dryRun: Boolean = false): Boolean {
-    val srcDir = File(sourceDir, "src")
-    val commonMainDir = File(srcDir, "commonMain")
-    
-    if (commonMainDir.exists()) {
-        log("Source already has KMP structure: ${sourceDir.path}", "WARNING")
-        return false
-    }
-    
-    val packageName = getPackageName(sourceDir) ?: run {
-        log("Could not determine package name for: ${sourceDir.path}", "ERROR")
-        return false
-    }
-    
-    val packagePath = packageName.replace('.', '/')
-    val commonMainKotlinDir = File(srcDir, "commonMain/kotlin/$packagePath")
-    val jsMainKotlinDir = File(srcDir, "jsMain/kotlin/$packagePath")
-    
-    if (dryRun) {
-        log("Would create: $commonMainKotlinDir", "INFO")
-        log("Would create: $jsMainKotlinDir", "INFO")
-        return true
-    }
-    
-    commonMainKotlinDir.mkdirs()
-    jsMainKotlinDir.mkdirs()
-    log("Created KMP directory structure", "SUCCESS")
-    return true
-}
-
-fun moveSourcesToCommonMain(sourceDir: File, dryRun: Boolean = false): Boolean {
-    val packageName = getPackageName(sourceDir) ?: return false
-    val packagePath = packageName.replace('.', '/')
-    val commonMainDir = File(sourceDir, "src/commonMain/kotlin/$packagePath")
-    
-    // Find source files in old locations
-    val oldLocations = listOf(
-        File(sourceDir, "main/src"),
-        File(sourceDir, "src/main/kotlin")
-    )
-    
-    val ktFiles = oldLocations
-        .filter { it.exists() }
-        .flatMap { it.walkTopDown().filter { f -> f.extension == "kt" }.toList() }
-    
-    if (ktFiles.isEmpty()) {
-        log("No Kotlin files found to move", "WARNING")
-        return false
-    }
-    
-    ktFiles.forEach { file ->
-        val destFile = File(commonMainDir, file.name)
-        
-        if (dryRun) {
-            log("Would move: ${file.path} -> ${destFile.path}", "INFO")
-        } else {
-            // Migrate content first
-            migrateKotlinFile(file)
-            // Copy to new location
-            file.copyTo(destFile, overwrite = true)
-            log("Moved: ${file.name} -> commonMain", "SUCCESS")
+            log("Modified: ${file.name}", "SUCCESS")
         }
     }
-    return true
+    
+    warnings.forEach { log("  WARNING: $it", "WARNING") }
+    
+    return MigrationResult(sourceName, file.name, changes, warnings)
 }
 
-fun createJsInitFile(sourceDir: File, dryRun: Boolean = false): Boolean {
-    val packageName = getPackageName(sourceDir) ?: return false
-    val className = getClassName(sourceDir) ?: return false
-    val packagePath = packageName.replace('.', '/')
-    val jsMainDir = File(sourceDir, "src/jsMain/kotlin/$packagePath")
-    val initFile = File(jsMainDir, "Init.kt")
+fun migrateSource(sourceDir: File, dryRun: Boolean = false): List<MigrationResult> {
+    val sourceName = sourceDir.name
     
-    val sourceId = sourceDir.name.lowercase()
-    
-    val content = """
-package $packageName
-
-import kotlin.js.JsExport
-
-/**
- * Initialize $className source for iOS/JS runtime.
- */
-@JsExport
-@OptIn(ExperimentalJsExport::class)
-fun init$className() {
-    // Register source with JS runtime
-    // registerSource("$sourceId") { deps -> $className(deps.toDependencies()) }
-    console.log("$className source initialized")
-}
-""".trimIndent()
-    
-    if (dryRun) {
-        log("Would create Init.kt at: ${initFile.path}", "INFO")
-        return true
-    }
-    
-    jsMainDir.mkdirs()
-    initFile.writeText(content)
-    log("Created Init.kt for: $className", "SUCCESS")
-    return true
-}
-
-fun migrateSource(sourceDir: File, dryRun: Boolean = false) {
     log("========================================")
-    log("Migrating source: ${sourceDir.path}")
+    log("Migrating: $sourceName")
     log("========================================")
     
     if (!sourceDir.exists()) {
         log("Source directory not found: ${sourceDir.path}", "ERROR")
-        return
+        return emptyList()
     }
     
-    log("Step 1: Creating KMP directory structure...")
-    createKmpStructure(sourceDir, dryRun)
+    val ktFiles = sourceDir.walkTopDown()
+        .filter { it.extension == "kt" }
+        .toList()
     
-    log("Step 2: Moving and migrating source files...")
-    moveSourcesToCommonMain(sourceDir, dryRun)
+    log("Found ${ktFiles.size} Kotlin files")
     
-    log("Step 3: Creating JS Init file...")
-    createJsInitFile(sourceDir, dryRun)
+    val results = ktFiles.map { file ->
+        migrateKotlinFile(file, sourceName, dryRun)
+    }
     
-    log("Migration complete for: ${sourceDir.path}", "SUCCESS")
+    val modified = results.count { it.changes.isNotEmpty() }
+    log("Modified $modified / ${ktFiles.size} files", "SUCCESS")
+    
+    return results
 }
 
-fun migrateAllSources(rootDir: File, dryRun: Boolean = false) {
+fun migrateAllSources(rootDir: File, dryRun: Boolean = false, includeMultisrc: Boolean = false): List<MigrationResult> {
     val sourcesDir = File(rootDir, "sources")
     if (!sourcesDir.exists()) {
         log("Sources directory not found", "ERROR")
-        return
+        return emptyList()
     }
     
+    val allResults = mutableListOf<MigrationResult>()
     var migrated = 0
+    var skipped = 0
     var failed = 0
     
-    sourcesDir.listFiles()?.filter { it.isDirectory && it.name != "multisrc" }?.forEach { langDir ->
-        langDir.listFiles()?.filter { it.isDirectory }?.forEach { source ->
-            if (File(source, "build.gradle.kts").exists()) {
-                try {
-                    migrateSource(source, dryRun)
+    sourcesDir.listFiles()?.filter { it.isDirectory }?.forEach { langDir ->
+        if (langDir.name == "multisrc" && !includeMultisrc) return@forEach
+        if (langDir.name == "common") return@forEach
+        
+        log("Processing language: ${langDir.name}")
+        
+        langDir.listFiles()?.filter { it.isDirectory && it.name != "build" }?.forEach { source ->
+            val hasBuildFile = File(source, "build.gradle.kts").exists()
+            val hasKtFiles = source.walkTopDown().any { it.extension == "kt" }
+            
+            if (!hasBuildFile && !hasKtFiles) return@forEach
+            
+            try {
+                val results = migrateSource(source, dryRun)
+                allResults.addAll(results)
+                if (results.any { it.changes.isNotEmpty() }) {
                     migrated++
-                } catch (e: Exception) {
-                    log("Failed to migrate ${source.path}: ${e.message}", "ERROR")
-                    failed++
+                } else {
+                    skipped++
                 }
+            } catch (e: Exception) {
+                log("Failed to migrate ${source.path}: ${e.message}", "ERROR")
+                failed++
             }
         }
     }
     
+    // Summary
+    log("")
     log("========================================")
-    log("Migration Summary: Migrated=$migrated, Failed=$failed")
+    log("MIGRATION SUMMARY")
     log("========================================")
+    log("Migrated: $migrated", "SUCCESS")
+    log("Skipped:  $skipped", "WARNING")
+    log("Failed:   $failed", "ERROR")
+    log("========================================")
+    
+    return allResults
 }
 
-// Main
+fun exportReport(results: List<MigrationResult>, outputDir: File) {
+    if (results.isEmpty()) {
+        log("No migration data to report", "WARNING")
+        return
+    }
+    
+    // CSV report
+    val csvFile = File(outputDir, "migration-report.csv")
+    csvFile.writeText("Source,File,Change,Type\n")
+    results.forEach { result ->
+        result.changes.forEach { change ->
+            csvFile.appendText("${result.source},${result.file},\"$change\",Replaced\n")
+        }
+        result.warnings.forEach { warning ->
+            csvFile.appendText("${result.source},${result.file},\"$warning\",NeedsAttention\n")
+        }
+    }
+    log("Report saved to: ${csvFile.path}", "SUCCESS")
+    
+    // Summary
+    val summaryFile = File(outputDir, "migration-summary.txt")
+    val totalChanges = results.sumOf { it.changes.size }
+    val totalWarnings = results.sumOf { it.warnings.size }
+    val sourcesWithWarnings = results.filter { it.warnings.isNotEmpty() }
+        .groupBy { it.source }
+        .map { "${it.key}: ${it.value.flatMap { r -> r.warnings }.joinToString(", ")}" }
+    
+    summaryFile.writeText("""
+IReader KMP Migration Report
+============================
+Generated: ${java.time.LocalDateTime.now()}
+
+Total Changes: $totalChanges
+Total Warnings: $totalWarnings
+
+Sources Needing Attention:
+${sourcesWithWarnings.take(20).joinToString("\n") { "  - $it" }}
+    """.trimIndent())
+    log("Summary saved to: ${summaryFile.path}", "SUCCESS")
+}
+
+// ============================================
+// MAIN
+// ============================================
+
 val args = args.toMutableList()
 val dryRun = args.remove("--dry-run")
 val migrateAll = args.remove("--all")
+val includeMultisrc = args.remove("--multisrc")
+val generateReport = args.remove("--report")
 
 val scriptDir = File(System.getProperty("user.dir"))
+val rootDir = if (scriptDir.name == "scripts") scriptDir.parentFile else scriptDir
 
 when {
-    migrateAll -> migrateAllSources(scriptDir.parentFile ?: scriptDir, dryRun)
+    migrateAll -> {
+        val results = migrateAllSources(rootDir, dryRun, includeMultisrc)
+        if (generateReport) {
+            exportReport(results, rootDir)
+        }
+    }
     args.isNotEmpty() -> {
         val sourcePath = args.first()
         val sourceDir = if (File(sourcePath).isAbsolute) File(sourcePath) 
-                        else File(scriptDir.parentFile ?: scriptDir, sourcePath)
-        migrateSource(sourceDir, dryRun)
+                        else File(rootDir, sourcePath)
+        val results = migrateSource(sourceDir, dryRun)
+        if (generateReport) {
+            exportReport(results, rootDir)
+        }
     }
     else -> {
         println("""
@@ -309,11 +301,22 @@ Usage:
   kotlin MigrateToKmp.kts <source-path>
   kotlin MigrateToKmp.kts sources/en/novelupdates
   kotlin MigrateToKmp.kts --all
+  kotlin MigrateToKmp.kts --all --multisrc
+  kotlin MigrateToKmp.kts --all --report
   kotlin MigrateToKmp.kts --dry-run sources/en/novelupdates
 
 Options:
-  --all       Migrate all sources
-  --dry-run   Preview changes without making them
+  --all         Migrate all sources
+  --multisrc    Include multisrc sources
+  --dry-run     Preview changes without making them
+  --report      Generate migration report
+
+What this script does:
+  - Converts Jsoup imports to Ksoup (KMP-compatible HTML parser)
+  - Updates Jsoup.parse() calls to Ksoup.parse()
+  - Updates date parsing imports to kotlinx-datetime
+  - Converts java.util.* collections to Kotlin stdlib
+  - Flags JVM-only code that needs manual attention
         """.trimIndent())
     }
 }

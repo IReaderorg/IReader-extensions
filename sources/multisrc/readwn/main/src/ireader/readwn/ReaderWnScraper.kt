@@ -14,8 +14,8 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.Page
 import ireader.core.source.SourceFactory
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -102,7 +102,7 @@ abstract class ReaderWnScraper(private val deps: Dependencies, private val sourc
         ).filter { it.isNotBlank() }.let { par ->
             par.ifEmpty {
                 document.select(".chapter-content").html().split("<br>")
-                    .map { Jsoup.parse(it).text() }
+                    .map { Ksoup.parse(it).text() }
             }
         }.let {
             contentFetcher.onContent(it)

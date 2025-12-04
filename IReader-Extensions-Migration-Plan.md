@@ -623,12 +623,25 @@ kotlin scripts/MigrateToKmp.kts --dry-run sources/en/novelupdates
 
 ---
 
+## Repository Branch Changes
+
+**Important:** The CI/CD workflow now deploys to `repov2` branch instead of `repo` branch.
+
+- **`repo` branch** - Preserved for legacy users on older IReader versions
+- **`repov2` branch** - New KMP-compatible extensions
+
+Users should update their IReader app to use the new repository URL pointing to `repov2`.
+
+---
+
 ## Next Steps
 
 1. ✅ Review this plan
 2. ✅ Phase 1: Update dependencies in `gradle/libs.versions.toml`
 3. ✅ Phase 2: Migrate `common` module to multiplatform
-4. ⏳ Publish new source-api to Maven
-5. ⏳ Migrate sources using scripts
-6. ⏳ Test on iOS simulator
-7. ⏳ Deploy to production
+4. ✅ Phase 3: Create migration scripts
+5. ✅ Phase 4: Update CI/CD to use `repov2` branch
+6. ⏳ Publish new source-api to Maven
+7. ⏳ Migrate sources using scripts
+8. ⏳ Test on iOS simulator
+9. ⏳ Deploy to production

@@ -15,9 +15,9 @@ import ireader.core.source.model.MangaInfo.Companion.ONGOING
 import ireader.core.source.model.MangaInfo.Companion.ON_HIATUS
 import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
-import java.util.Locale
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Element
+// // import java.util.Locale - Not needed for KMP - Not needed for KMP
 
 @Extension
 abstract class RealmNovel(deps: Dependencies) : SourceFactory(
@@ -165,7 +165,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(
                     ).trim()
                     
                     if (cleaned.contains("<img", ignoreCase = true)) {
-                        val doc = Jsoup.parseBodyFragment(cleaned)
+                        val doc = Ksoup.parseBodyFragment(cleaned)
                         doc.setBaseUri(baseUrl)
                         val images = doc.select("img")
                         images.forEach { img ->

@@ -31,8 +31,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 import java.util.concurrent.TimeUnit
 
@@ -188,7 +188,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
     }
 
     fun pageContentParse(document: Document): List<String> {
-        return document.select("div > p,h2").eachText().map { Jsoup.parse(it).text() }
+        return document.select("div > p,h2").eachText().map { Ksoup.parse(it).text() }
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
@@ -196,7 +196,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         withContext(Dispatchers.Main) {
             html = deps.httpClients.browser.fetch(chapter.key, selector = ".well")
         }
-        return pageContentParse(Jsoup.parse(html?.responseBody ?: "")).map { Text(it) }
+        return pageContentParse(Ksoup.parse(html?.responseBody ?: "")).map { Text(it) }
     }
 
     suspend fun getContents(chapter: ChapterInfo): List<String> {

@@ -72,7 +72,7 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         mavenCentral()
         google()
@@ -80,6 +80,20 @@ dependencyResolutionManagement {
         maven { setUrl("https://jitpack.io") }
         maven { setUrl("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2") }
         maven { setUrl("https://s01.oss.sonatype.org/content/repositories/snapshots/") }
+        // Node.js distribution for Kotlin/JS
+        ivy("https://nodejs.org/dist") {
+            name = "Node.js Distributions"
+            patternLayout { artifact("v[revision]/[artifact](-v[revision]-[classifier]).[ext]") }
+            metadataSources { artifact() }
+            content { includeModule("org.nodejs", "node") }
+        }
+        // Yarn distribution for Kotlin/JS
+        ivy("https://github.com/yarnpkg/yarn/releases/download") {
+            name = "Yarn Distributions"
+            patternLayout { artifact("v[revision]/[artifact](-v[revision]).[ext]") }
+            metadataSources { artifact() }
+            content { includeModule("com.yarnpkg", "yarn") }
+        }
     }
 }
 inline fun File.eachDir(block: (File) -> Unit) {

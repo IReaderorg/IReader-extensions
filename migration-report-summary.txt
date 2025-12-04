@@ -1,0 +1,64 @@
+IReader KMP Migration Report
+============================
+Generated: 12/04/2025 14:02:19
+
+Total Changes: 157
+
+By Status:
+  Replaced: 137
+  NeedsAttention: 20
+
+By Source:
+  novelparadise: 1 changes
+  realmnovel: 5 changes
+  riwyat: 1 changes
+  sunovels: 4 changes
+  teamxnovel: 7 changes
+  aixdzs: 4 changes
+  sexinsex: 4 changes
+  allnovelfull: 1 changes
+  bestlightnovel: 1 changes
+  boxnovelcom: 2 changes
+  comrademao: 7 changes
+  dreambigtl: 1 changes
+  fanmtl: 1 changes
+  fastnovel: 1 changes
+  fenrir: 1 changes
+  fictionzone: 5 changes
+  genesistranslator: 1 changes
+  kissnovellove: 7 changes
+  koreanonline: 2 changes
+  libread: 1 changes
+  lightnovelpub: 4 changes
+  lightnovelsme: 6 changes
+  main: 2 changes
+  mtlnation: 1 changes
+  mylovenovel: 2 changes
+  novelbuddy: 1 changes
+  novelfire: 4 changes
+  novelfull: 2 changes
+  novelfullme: 1 changes
+  novelhall: 4 changes
+  novelonline: 1 changes
+  novelowlcom: 7 changes
+  novelsemperor: 1 changes
+  noveltop1net: 1 changes
+  pandanovel: 3 changes
+  pawread: 3 changes
+  qidianundergrond: 3 changes
+  ranobes: 4 changes
+  readmtl: 9 changes
+  realwebnovel: 7 changes
+  reaperscans: 2 changes
+  storyseedling: 3 changes
+  webnovelcom: 7 changes
+  wnmtl: 1 changes
+  wuxiaworld: 2 changes
+  wuxiaworldsite: 9 changes
+  wuxiaworldsiteco: 7 changes
+  uptvs: 1 changes
+  chireads: 1 changes
+  noveldeglace: 1 changes
+
+Items Needing Attention:
+  - teamxnovel/TeamXNovel.kt: Contains SimpleDateFormat - needs manual migration   - teamxnovel/TeamXNovel.kt: Contains Calendar.getInstance - needs manual migration   - comrademao/ComradeMao.kt: Contains SimpleDateFormat - needs manual migration   - comrademao/ComradeMao.kt: Contains Calendar.getInstance - needs manual migration   - kissnovellove/KissNovel.kt: Contains SimpleDateFormat - needs manual migration   - kissnovellove/KissNovel.kt: Contains Calendar.getInstance - needs manual migration   - lightnovelpub/LightNovelPub.kt: Contains SimpleDateFormat - needs manual migration   - lightnovelsme/LightNovel.kt: Contains SimpleDateFormat - needs manual migration   - novelowlcom/NovelOwl.kt: Contains SimpleDateFormat - needs manual migration   - novelowlcom/NovelOwl.kt: Contains Calendar.getInstance - needs manual migration   - readmtl/ReadMtl.kt: Contains SimpleDateFormat - needs manual migration   - readmtl/ReadMtl.kt: Contains Calendar.getInstance - needs manual migration   - realwebnovel/RealWebNovel.kt: Contains SimpleDateFormat - needs manual migration   - realwebnovel/RealWebNovel.kt: Contains Calendar.getInstance - needs manual migration   - webnovelcom/Webnovel.kt: Contains SimpleDateFormat - needs manual migration   - webnovelcom/Webnovel.kt: Contains Calendar.getInstance - needs manual migration   - wuxiaworldsite/WuxiaWorld.kt: Contains SimpleDateFormat - needs manual migration   - wuxiaworldsite/WuxiaWorld.kt: Contains Calendar.getInstance - needs manual migration   - wuxiaworldsiteco/WuxiaWorld.kt: Contains SimpleDateFormat - needs manual migration   - wuxiaworldsiteco/WuxiaWorld.kt: Contains Calendar.getInstance - needs manual migration

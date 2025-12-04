@@ -16,12 +16,10 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+import ireader.common.utils.DateParser
 
 @Extension
 abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
@@ -118,8 +116,6 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
         keywords = keywords.replace(' ', '+')
         return "/search?keywords=${keywords}&type=$type&pageIndex=$page"
     }
-
-    private val dateFormat: SimpleDateFormat = SimpleDateFormat("MMM dd,yyyy", Locale.US)
 
     private fun popularSelector() = "div.j_category_wrapper li.fl a.g_thumb"
 
@@ -220,38 +216,7 @@ abstract class Webnovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     private fun parseChapterDate(date: String): Long {
-        return if (date.contains("ago")) {
-            val value = date.split(' ')[0].toInt()
-            when {
-                "min" in date -> Calendar.getInstance().apply {
-                    add(Calendar.MINUTE, value * -1)
-                }.timeInMillis
-                "hour" in date -> Calendar.getInstance().apply {
-                    add(Calendar.HOUR_OF_DAY, value * -1)
-                }.timeInMillis
-                "day" in date -> Calendar.getInstance().apply {
-                    add(Calendar.DATE, value * -1)
-                }.timeInMillis
-                "week" in date -> Calendar.getInstance().apply {
-                    add(Calendar.DATE, value * 7 * -1)
-                }.timeInMillis
-                "month" in date -> Calendar.getInstance().apply {
-                    add(Calendar.MONTH, value * -1)
-                }.timeInMillis
-                "year" in date -> Calendar.getInstance().apply {
-                    add(Calendar.YEAR, value * -1)
-                }.timeInMillis
-                else -> {
-                    0L
-                }
-            }
-        } else {
-            try {
-                dateFormat.parse(date)?.time ?: 0
-            } catch (_: Exception) {
-                0L
-            }
-        }
+        return DateParser.parseRelativeOrAbsoluteDate(date)
     }
 
     private inline fun <reified T> Iterable<*>.findInstance() = find { it is T } as? T

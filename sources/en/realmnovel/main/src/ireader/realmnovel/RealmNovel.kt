@@ -18,7 +18,7 @@ import ireader.core.source.model.Page
 import ireader.core.source.model.Text
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.jsoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 
 @Extension

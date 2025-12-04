@@ -6,14 +6,15 @@ plugins {
 kotlin {
     jvm()
 
-    js(IR) {
-        browser {
-            webpackTask {
-                mainOutputFileName = "common.js"
-            }
-        }
-        binaries.library()
-    }
+    // JS target disabled for now - enable when needed for iOS/web
+    // js(IR) {
+    //     browser {
+    //         webpackTask {
+    //             mainOutputFileName = "common.js"
+    //         }
+    //     }
+    //     binaries.library()
+    // }
 
     sourceSets {
         commonMain.dependencies {
@@ -28,8 +29,8 @@ kotlin {
             compileOnly(libs.ktor.cio)
         }
 
-        jsMain.dependencies {
-            api(libs.ktor.client.js)
-        }
+        // jsMain.dependencies {
+        //     api(libs.ktor.client.js)
+        // }
     }
 }

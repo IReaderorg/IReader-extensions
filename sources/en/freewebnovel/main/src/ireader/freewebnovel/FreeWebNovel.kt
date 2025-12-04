@@ -1,5 +1,7 @@
 package ireader.freewebnovel
 
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -17,8 +19,6 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
 import tachiyomix.annotations.Extension
 
 @Extension

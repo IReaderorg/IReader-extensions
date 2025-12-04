@@ -2,7 +2,7 @@ listOf("en").map { lang ->
     Extension(
         name = "RealmNovel",
         versionCode = 1,
-        libVersion = "1",
+        libVersion = "2",
         lang = lang,
         description = "Read novels from RealmNovel",
         nsfw = false,

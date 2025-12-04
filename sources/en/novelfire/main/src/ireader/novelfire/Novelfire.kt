@@ -19,9 +19,9 @@ import ireader.core.source.model.Page
 import ireader.core.source.model.Text
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -129,7 +129,7 @@ abstract class Novelfire(deps: Dependencies) : SourceFactory(deps = deps) {
                 if (body.contains("You are being rate limited")) {
                     throw Exception("Rate limited")
                 }
-                val loadedCheerio = Jsoup.parse(body)
+                val loadedCheerio = Ksoup.parse(body)
 
                 loadedCheerio.select(".chapter-list li").forEach { ele ->
                     val chapterName = ele.select("a").attr("title").takeIf { it.isNotBlank() } ?: "No Title Found"

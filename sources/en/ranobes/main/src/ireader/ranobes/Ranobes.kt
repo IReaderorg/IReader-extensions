@@ -29,9 +29,9 @@ import ireader.core.source.model.Text
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
 import java.util.concurrent.TimeUnit
 
@@ -404,7 +404,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
 //            userAgent = agent,
 //            timeout = maxTimeout
 //        ).responseBody
-        return pageContentParse(Jsoup.parse(response)).map {
+        return pageContentParse(Ksoup.parse(response)).map {
             Text(
                 it
             )

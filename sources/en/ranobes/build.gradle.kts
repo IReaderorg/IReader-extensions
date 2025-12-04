@@ -2,7 +2,7 @@ listOf("en").map { lang ->
   Extension(
     name = "Ranobes",
     versionCode = 8,
-    libVersion = "1",
+    libVersion = "2",
     lang = lang,
     description = "",
     nsfw = false,
