@@ -1,6 +1,7 @@
 package ireader.lightnovelpub
-
 @kotlinx.serialization.Serializable
 data class SearchResponse(
-    val resultview: String = ""
+    val `$id`: String,
+    val resultview: String,
+    val success: Boolean
 )
