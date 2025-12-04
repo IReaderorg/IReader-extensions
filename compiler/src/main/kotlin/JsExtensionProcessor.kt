@@ -13,11 +13,9 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSVisitorVoid
 import com.google.devtools.ksp.validate
-import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -26,26 +24,20 @@ import com.squareup.kotlinpoet.ksp.writeTo
 /**
  * KSP Processor that generates JavaScript initialization files for iOS/Web support.
  * 
- * For each source annotated with @Extension, this processor generates:
- * 1. A concrete implementation class (JsExtension) that extends the abstract source
- * 2. An init function with @JsExport that registers the source with SourceRegistry
- * 3. Helper functions for standalone usage
+ * This processor generates TWO types of files:
  * 
- * Generated file structure:
- * ```
- * package <source.package>.js
+ * 1. Platform-agnostic code (always generated):
+ *    - JsExtension: Concrete implementation class
+ *    - SourceInfo: Metadata object
+ *    - createSource(): Factory function
  * 
- * class JsExtension(deps: Dependencies) : <SourceClass>(deps)
+ * 2. JS-specific registration code (only when target is JS):
+ *    - @JsExport annotated init functions
+ *    - SourceRegistry registration
+ *    - Dynamic type usage
  * 
- * @JsExport
- * fun init<SourceName>(): dynamic { ... }
- * 
- * @JsExport
- * fun createSource(deps: Dependencies): JsExtension { ... }
- * 
- * @JsExport
- * fun getSourceInfo(): dynamic { ... }
- * ```
+ * The processor detects the target platform by examining the build directory path
+ * and KSP options to determine if it's running for JS or Android compilation.
  */
 class JsExtensionProcessor(
     private val codeGenerator: CodeGenerator,
@@ -58,7 +50,6 @@ class JsExtensionProcessor(
     override fun process(resolver: Resolver): List<KSAnnotated> {
         if (processed) return emptyList()
         
-        // Get all classes annotated with the Extension annotation
         val extensions = resolver.getSymbolsWithAnnotation(EXTENSION_FQ_ANNOTATION)
             .filterIsInstance<KSClassDeclaration>()
             .filter { it.validate() }
@@ -68,7 +59,6 @@ class JsExtensionProcessor(
             return emptyList()
         }
 
-        // Find the most derived extension class
         val extension = getClassToGenerate(extensions) ?: return emptyList()
 
         val buildDir = getBuildDir()
@@ -77,7 +67,6 @@ class JsExtensionProcessor(
         // Only generate for release builds to avoid duplicates
         if (!buildDir.contains("Release", ignoreCase = true) && 
             !buildDir.contains("release", ignoreCase = true)) {
-            // Still mark as processed to avoid re-running
             processed = true
             return emptyList()
         }
@@ -97,18 +86,64 @@ class JsExtensionProcessor(
             return emptyList()
         }
 
-        // Generate the JS extension file
         val dependencies = resolver.getClassDeclarationByName(DEPENDENCIES_FQ_CLASS)
         if (dependencies == null) {
             logger.warn("Dependencies class not found, skipping JS generation")
             return emptyList()
         }
 
-        logger.info("Generating JS init file for ${arguments.name}")
-        extension.accept(JsSourceVisitor(arguments, dependencies), Unit)
+        // Detect if we're building for JS target
+        val isJsTarget = detectJsTarget(buildDir)
+        
+        logger.info("Generating JS files for ${arguments.name} (isJsTarget=$isJsTarget)")
+        extension.accept(JsSourceVisitor(arguments, dependencies, isJsTarget), Unit)
         processed = true
 
         return emptyList()
+    }
+
+    /**
+     * Detect if we're building for a JavaScript target.
+     * 
+     * JS builds typically have paths containing:
+     * - "jsMain", "jsTest" (Kotlin/JS source sets)
+     * - "js/" or "/js" in the KSP output path
+     * - "compileKotlinJs" task indicators
+     * 
+     * Android builds have paths containing:
+     * - "Debug", "Release" with Android variant names
+     * - "android" in the path
+     */
+    private fun detectJsTarget(buildDir: String): Boolean {
+        val normalizedPath = buildDir.lowercase().replace("\\", "/")
+        
+        // Positive indicators for JS target
+        val jsIndicators = listOf(
+            "/js/",
+            "/jsmain/",
+            "/jstest/",
+            "compilekotlinjs",
+            "/kotlin/js/"
+        )
+        
+        // Negative indicators (definitely not JS)
+        val androidIndicators = listOf(
+            "/android/",
+            "assembledebug",
+            "assemblerelease",
+            "ksp/endebug",
+            "ksp/enrelease",
+            "ksp/ardebug",
+            "ksp/arrelease"
+        )
+        
+        // Check for Android indicators first (more specific)
+        if (androidIndicators.any { normalizedPath.contains(it) }) {
+            return false
+        }
+        
+        // Check for JS indicators
+        return jsIndicators.any { normalizedPath.contains(it) }
     }
 
     /**
@@ -131,6 +166,7 @@ class JsExtensionProcessor(
     private inner class JsSourceVisitor(
         val arguments: Arguments,
         val dependencies: KSClassDeclaration,
+        val isJsTarget: Boolean
     ) : KSVisitorVoid() {
         
         override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
@@ -138,9 +174,29 @@ class JsExtensionProcessor(
             val sourcePackage = sourceClassName.packageName
             val jsPackage = "$sourcePackage.js"
             val sourceName = arguments.name.replace(" ", "").replace("(", "").replace(")", "")
+
+            // Always generate platform-agnostic code
+            generatePlatformAgnosticCode(classDeclaration, jsPackage, sourceName)
+            
+            // Only generate JS-specific code when building for JS target
+            if (isJsTarget) {
+                generateJsSpecificCode(classDeclaration, jsPackage, sourceName)
+            }
+        }
+        
+        /**
+         * Generate platform-agnostic code that works on Android, JVM, and JS.
+         * This includes the concrete JsExtension class, SourceInfo, and createSource function.
+         */
+        private fun generatePlatformAgnosticCode(
+            classDeclaration: KSClassDeclaration,
+            jsPackage: String,
+            sourceName: String
+        ) {
+            val sourceClassName = classDeclaration.toClassName()
             val sourceId = arguments.id
 
-            // 1. Create concrete JsExtension class (platform-agnostic, works on Android too)
+            // 1. Create concrete JsExtension class
             val jsExtensionClass = TypeSpec.classBuilder(JS_EXTENSION_CLASS)
                 .primaryConstructor(
                     FunSpec.constructorBuilder()
@@ -158,7 +214,7 @@ class JsExtensionProcessor(
                 """.trimIndent())
                 .build()
 
-            // 2. Create SourceInfo object (platform-agnostic)
+            // 2. Create SourceInfo object
             val sourceInfoObject = TypeSpec.objectBuilder("${sourceName}Info")
                 .addProperty(
                     PropertySpec.builder("id", String::class)
@@ -178,7 +234,7 @@ class JsExtensionProcessor(
                 .addKdoc("Source metadata for ${arguments.name}")
                 .build()
 
-            // 3. Create createSource function (platform-agnostic)
+            // 3. Create createSource function
             val createSourceFunction = FunSpec.builder("createSource")
                 .addParameter("deps", dependencies.toClassName())
                 .returns(ClassName(jsPackage, JS_EXTENSION_CLASS))
@@ -191,19 +247,19 @@ class JsExtensionProcessor(
                 .addStatement("return %T(deps)", ClassName(jsPackage, JS_EXTENSION_CLASS))
                 .build()
 
-            // Build the platform-agnostic file (works on Android, JVM, JS)
+            // Build the platform-agnostic file
             val fileSpec = FileSpec.builder(jsPackage, "JsInit")
                 .addFileComment("""
                     Source initialization for ${arguments.name}.
                     Generated by JsExtensionProcessor - DO NOT EDIT.
                     
-                    This file provides:
+                    This file provides platform-agnostic code:
                     - JsExtension: Concrete implementation class
                     - ${sourceName}Info: Source metadata
                     - createSource(): Create source instance
                     
-                    For JS/iOS usage, see the js-sources module which compiles
-                    these sources with JS-specific registration code.
+                    For JS/iOS, additional registration code is generated
+                    in JsRegistration.kt when building for JS target.
                 """.trimIndent())
                 .addType(jsExtensionClass)
                 .addType(sourceInfoObject)
@@ -212,106 +268,102 @@ class JsExtensionProcessor(
 
             fileSpec.writeTo(codeGenerator, Dependencies(false, classDeclaration.containingFile!!))
             
-            logger.info("Generated JS init file for ${arguments.name} at $jsPackage.JsInit")
-            
-            // Also generate JS-specific registration file for js-sources module
-            generateJsRegistration(classDeclaration, jsPackage, sourceName, sourceId)
+            logger.info("Generated platform-agnostic JS init file for ${arguments.name}")
         }
         
-        private fun generateJsRegistration(
+        /**
+         * Generate JS-specific registration code with @JsExport annotations.
+         * This code uses JS-only constructs (dynamic, js(), console) and should
+         * only be compiled when targeting JavaScript.
+         */
+        private fun generateJsSpecificCode(
             classDeclaration: KSClassDeclaration,
             jsPackage: String,
-            sourceName: String,
-            sourceId: Long
+            sourceName: String
         ) {
+            val sourceId = arguments.id
             val sourceNameLower = sourceName.lowercase()
             
-            // JS-specific registration code
-            val jsRegistrationCode = """
-                |/**
-                | * JS-specific registration for ${arguments.name} source.
-                | * Generated by JsExtensionProcessor - DO NOT EDIT.
-                | * 
-                | * This file is only compiled for JS target in js-sources module.
-                | */
-                |@file:OptIn(ExperimentalJsExport::class)
-                |@file:Suppress("UNUSED_VARIABLE")
-                |
-                |package ireader.js.generated
-                |
-                |import ireader.core.source.Dependencies
-                |import $jsPackage.JsExtension as ${sourceName}Extension
-                |import $jsPackage.${sourceName}Info
-                |import kotlin.js.ExperimentalJsExport
-                |import kotlin.js.JsExport
-                |import kotlin.js.JsName
-                |
-                |/**
-                | * Factory function to create ${arguments.name} source.
-                | * This ensures the class is included in the bundle.
-                | */
-                |@JsExport
-                |@JsName("create$sourceName")
-                |fun create$sourceName(deps: Dependencies): ${sourceName}Extension {
-                |    return ${sourceName}Extension(deps)
-                |}
-                |
-                |/**
-                | * Get the source class reference (ensures it's included in bundle)
-                | */
-                |@JsExport
-                |@JsName("${sourceName}Class")
-                |val ${sourceNameLower}Class: Any = ${sourceName}Extension::class
-                |
-                |/**
-                | * Initialize ${arguments.name} source for iOS/JS runtime.
-                | */
-                |@JsExport
-                |fun init${sourceName}(): dynamic {
-                |    // Reference the class to ensure it's included
-                |    val sourceClass = ${sourceName}Extension::class
-                |    
-                |    console.log("${arguments.name}: Initializing source...")
-                |    js(${'"'}${'"'}${'"'}
-                |        if (typeof SourceRegistry !== 'undefined') {
-                |            SourceRegistry.register('$sourceNameLower', function(deps) {
-                |                return new $jsPackage.JsExtension(deps);
-                |            });
-                |            console.log('${arguments.name}: Registered with SourceRegistry');
-                |        } else {
-                |            console.warn('${arguments.name}: SourceRegistry not found. Load runtime.js first.');
-                |        }
-                |    ${'"'}${'"'}${'"'})
-                |    return js(${'"'}${'"'}${'"'}({
-                |        id: "$sourceId",
-                |        name: "${arguments.name}",
-                |        lang: "${arguments.lang}",
-                |        registered: typeof SourceRegistry !== 'undefined'
-                |    })${'"'}${'"'}${'"'})
-                |}
-                |
-                |/**
-                | * Get source info for ${arguments.name}.
-                | */
-                |@JsExport
-                |fun get${sourceName}Info(): dynamic = js(${'"'}${'"'}${'"'}({
-                |    id: "$sourceId",
-                |    name: "${arguments.name}",
-                |    lang: "${arguments.lang}"
-                |})${'"'}${'"'}${'"'})
-            """.trimMargin()
+            // Generate JS-specific registration code as raw string
+            // This uses JS-only constructs that can't be generated with KotlinPoet
+            val jsRegistrationCode = buildString {
+                appendLine("/**")
+                appendLine(" * JS-specific registration for ${arguments.name} source.")
+                appendLine(" * Generated by JsExtensionProcessor - DO NOT EDIT.")
+                appendLine(" * ")
+                appendLine(" * This file contains @JsExport functions for iOS/Web runtime.")
+                appendLine(" * It is ONLY compiled when building for JavaScript target.")
+                appendLine(" */")
+                appendLine("@file:OptIn(ExperimentalJsExport::class)")
+                appendLine("@file:Suppress(\"UNUSED_VARIABLE\")")
+                appendLine()
+                appendLine("package $jsPackage")
+                appendLine()
+                appendLine("import ireader.core.source.Dependencies")
+                appendLine("import kotlin.js.ExperimentalJsExport")
+                appendLine("import kotlin.js.JsExport")
+                appendLine("import kotlin.js.JsName")
+                appendLine()
+                appendLine("/**")
+                appendLine(" * Initialize ${arguments.name} source for iOS/JS runtime.")
+                appendLine(" * Registers the source with SourceRegistry if available.")
+                appendLine(" */")
+                appendLine("@JsExport")
+                appendLine("@JsName(\"init$sourceName\")")
+                appendLine("fun init$sourceName(): dynamic {")
+                appendLine("    // Reference the class to ensure it's included in bundle")
+                appendLine("    val sourceClass = JsExtension::class")
+                appendLine("    ")
+                appendLine("    console.log(\"${arguments.name}: Initializing source...\")")
+                appendLine("    js(\"\"\"")
+                appendLine("        if (typeof SourceRegistry !== 'undefined') {")
+                appendLine("            SourceRegistry.register('$sourceNameLower', function(deps) {")
+                appendLine("                return new $jsPackage.JsExtension(deps);")
+                appendLine("            });")
+                appendLine("            console.log('${arguments.name}: Registered with SourceRegistry');")
+                appendLine("        } else {")
+                appendLine("            console.warn('${arguments.name}: SourceRegistry not found. Load runtime.js first.');")
+                appendLine("        }")
+                appendLine("    \"\"\")")
+                appendLine("    return js(\"\"\"({")
+                appendLine("        id: \"$sourceId\",")
+                appendLine("        name: \"${arguments.name}\",")
+                appendLine("        lang: \"${arguments.lang}\",")
+                appendLine("        registered: typeof SourceRegistry !== 'undefined'")
+                appendLine("    })\"\"\")")
+                appendLine("}")
+                appendLine()
+                appendLine("/**")
+                appendLine(" * Factory function to create ${arguments.name} source.")
+                appendLine(" */")
+                appendLine("@JsExport")
+                appendLine("@JsName(\"create$sourceName\")")
+                appendLine("fun create${sourceName}Js(deps: Dependencies): JsExtension {")
+                appendLine("    return JsExtension(deps)")
+                appendLine("}")
+                appendLine()
+                appendLine("/**")
+                appendLine(" * Get source info for ${arguments.name}.")
+                appendLine(" */")
+                appendLine("@JsExport")
+                appendLine("@JsName(\"get${sourceName}Info\")")
+                appendLine("fun get${sourceName}InfoJs(): dynamic = js(\"\"\"({")
+                appendLine("    id: \"$sourceId\",")
+                appendLine("    name: \"${arguments.name}\",")
+                appendLine("    lang: \"${arguments.lang}\"")
+                appendLine("})\"\"\")")
+            }
             
-            // Write to a file that will be picked up by js-sources module
-            // Using a special path that js-sources can include
+            // Write JS-specific registration file
             try {
                 codeGenerator.createNewFile(
                     Dependencies(false, classDeclaration.containingFile!!),
-                    "ireader.js.generated",
-                    "${sourceName}JsRegistration"
+                    jsPackage,
+                    "JsRegistration"
                 ).bufferedWriter().use { writer ->
                     writer.write(jsRegistrationCode)
                 }
-                logger.info("Generated JS registration file for ${arguments.name}")
+                logger.info("Generated JS-specific registration file for ${arguments.name}")
             } catch (e: Exception) {
                 logger.warn("Could not generate JS registration file: ${e.message}")
             }

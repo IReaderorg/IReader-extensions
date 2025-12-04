@@ -120,36 +120,57 @@ The `index.json` includes a `js` section for iOS sources:
 
 ## How KSP Generates JS Code
 
-The `JsExtensionProcessor` automatically generates registration code for each source:
+The `JsExtensionProcessor` generates code conditionally based on the target platform:
 
-**Input:** Source class with `@Extension` annotation
-```kotlin
-@Extension
-abstract class FreeWebNovelKmp(deps: Dependencies) : SourceFactory(deps) {
-    override val name = "FreeWebNovelKmp"
-    override val id = 4808063048038840027L
-    // ...
-}
-```
+### Platform Detection
 
-**Generated:** `JsInit.kt` with registration functions
+The processor detects the build target by examining the KSP output path:
+- **Android builds**: Paths contain `/ksp/enRelease/`, `/ksp/arDebug/`, etc.
+- **JS builds**: Paths contain `/js/`, `/jsMain/`, `/kotlin/js/`
+
+### Generated Files
+
+**1. Platform-Agnostic Code (always generated):** `JsInit.kt`
 ```kotlin
 package ireader.freewebnovelkmp.js
 
+// Concrete implementation class
 class JsExtension(deps: Dependencies) : FreeWebNovelKmp(deps)
 
+// Source metadata
+object FreeWebNovelKmpInfo {
+    val id = "4808063048038840027"
+    val name = "FreeWebNovelKmp"
+    val lang = "en"
+}
+
+// Factory function
+fun createSource(deps: Dependencies): JsExtension = JsExtension(deps)
+```
+
+**2. JS-Specific Code (only when building for JS target):** `JsRegistration.kt`
+```kotlin
+package ireader.freewebnovelkmp.js
+
 @JsExport
+@JsName("initFreeWebNovelKmp")
 fun initFreeWebNovelKmp(): dynamic {
-    SourceRegistry.register("freewebnovelkmp") { deps ->
-        JsExtension(deps)
-    }
-    return jsObject {
-        id = "4808063048038840027"
-        name = "FreeWebNovelKmp"
-        lang = "en"
-    }
+    console.log("FreeWebNovelKmp: Initializing source...")
+    js("""
+        if (typeof SourceRegistry !== 'undefined') {
+            SourceRegistry.register('freewebnovelkmp', function(deps) {
+                return new ireader.freewebnovelkmp.js.JsExtension(deps);
+            });
+        }
+    """)
+    return js("""({ id: "4808063048038840027", name: "FreeWebNovelKmp", lang: "en" })""")
 }
 ```
+
+This separation ensures:
+- Android builds compile successfully (no JS-only constructs like `dynamic`, `js()`, `console`)
+- JS builds get full registration functionality for iOS runtime
+- The same source code works across all platforms
 
 ## File Sizes
 
