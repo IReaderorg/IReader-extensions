@@ -13,6 +13,7 @@ plugins {
 dependencies {
   implementation(libs.kotlinpoet)
   implementation(libs.ksp.api)
+  implementation(libs.serialization.json)
 
   implementation(project(":annotations"))
 }

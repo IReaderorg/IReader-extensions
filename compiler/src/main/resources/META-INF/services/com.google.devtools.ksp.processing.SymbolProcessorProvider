@@ -1,1 +1,8 @@
 tachiyomix.compiler.ExtensionProcessorFactory
+tachiyomix.compiler.ThemeSourceProcessorProvider
+tachiyomix.compiler.SourceIndexProcessorProvider
+tachiyomix.compiler.SourceFactoryProcessorProvider
+tachiyomix.compiler.SelectorValidatorProcessorProvider
+tachiyomix.compiler.TestGeneratorProcessorProvider
+tachiyomix.compiler.HttpClientProcessorProvider
+tachiyomix.compiler.DeepLinkProcessorProvider
