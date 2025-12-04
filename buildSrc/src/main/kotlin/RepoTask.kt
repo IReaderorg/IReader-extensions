@@ -337,21 +337,26 @@ open class RepoTask : DefaultTask() {
     private fun generateRepo(repoDir: File, badgings: List<Badging>, jsSources: List<JsSourceInfo>) {
         val sortedBadgings = badgings.sortedBy { it.pkg }
         
-        // Create full repo index with both APK and JS info
-        val repoIndex = RepoIndex(
-            extensions = sortedBadgings,
-            js = if (jsSources.isNotEmpty()) JsSection(
-                note = "JS sources require runtime.js from the main IReader app",
-                sources = jsSources
-            ) else null
-        )
-        
+        // Generate index.min.json as a flat array for backward compatibility with merge script
+        // The merge script expects: [{"pkg":...}, {"pkg":...}]
         File(repoDir, "index.min.json").writer().use {
-            it.write(Json.encodeToString(repoIndex))
+            it.write(Json.encodeToString(sortedBadgings))
         }
 
         File(repoDir, "index.json").writer().use {
-            it.write(prettyJson.encodeToString(repoIndex))
+            it.write(prettyJson.encodeToString(sortedBadgings))
+        }
+        
+        // Generate separate JS index if there are JS sources
+        if (jsSources.isNotEmpty()) {
+            val jsIndex = JsIndex(
+                version = 1,
+                note = "JS sources require runtime.js from the main IReader app",
+                sources = jsSources.map { JsIndexSource(it.id, it.name, it.lang, it.file, it.initFunction) }
+            )
+            File(repoDir, "js-index.json").writer().use {
+                it.write(prettyJson.encodeToString(jsIndex))
+            }
         }
         
         print("Generated repo index with ${sortedBadgings.size} extensions and ${jsSources.size} JS sources\n")

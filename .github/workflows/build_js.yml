@@ -1,0 +1,112 @@
+name: Build JS Sources
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'sources/**/build.gradle.kts'
+      - 'js-sources/**'
+      - 'common/**'
+      - 'annotations/**'
+      - 'compiler/**'
+  workflow_dispatch:  # Allow manual trigger
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  build_js:
+    name: Build JS Sources for iOS
+    runs-on: ubuntu-latest
+    env:
+      CI_MODULE_GEN: true
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: adopt
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Copy CI gradle.properties
+        run: |
+          mkdir -p ~/.gradle
+          cp .github/runner-files/ci-gradle.properties ~/.gradle/gradle.properties
+
+      - name: Run KSP for all JS-enabled sources
+        run: |
+          # Find all sources with enableJs = true and run KSP for them
+          ./gradlew printKspCommands --quiet 2>/dev/null || true
+          
+          # Get list of JS-enabled source projects and run KSP
+          JS_SOURCES=$(grep -r "enableJs\s*=\s*true" sources/*/build.gradle.kts sources/*/*/build.gradle.kts 2>/dev/null | cut -d: -f1 | sort -u || true)
+          
+          for BUILD_FILE in $JS_SOURCES; do
+            # Extract lang and name from path like sources/en/freewebnovel/build.gradle.kts
+            DIR=$(dirname "$BUILD_FILE")
+            NAME=$(basename "$DIR")
+            LANG=$(basename "$(dirname "$DIR")")
+            
+            if [ "$LANG" != "multisrc" ]; then
+              echo "Running KSP for :extensions:individual:$LANG:$NAME"
+              ./gradlew ":extensions:individual:$LANG:$NAME:ksp${LANG^}ReleaseKotlin" --no-daemon || true
+            fi
+          done
+
+      - name: Build JS bundle
+        run: |
+          ./gradlew :js-sources:jsBrowserProductionWebpack :js-sources:createSourceIndex --no-daemon
+
+      - name: Upload JS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-sources
+          path: |
+            js-sources/build/js-dist/
+            js-sources/build/kotlin-webpack/js/productionExecutable/
+          retention-days: 7
+
+      - name: Checkout repo branch
+        uses: actions/checkout@v4
+        with:
+          ref: repov2
+          path: repo
+
+      - name: Deploy JS to repo
+        if: github.event_name == 'push' && github.repository == 'IReaderorg/IReader-extensions'
+        run: |
+          # Create js directory in repo
+          mkdir -p repo/js
+          
+          # Copy JS bundle
+          if [ -d "js-sources/build/kotlin-webpack/js/productionExecutable" ]; then
+            cp js-sources/build/kotlin-webpack/js/productionExecutable/*.js repo/js/ 2>/dev/null || true
+            cp js-sources/build/kotlin-webpack/js/productionExecutable/*.js.map repo/js/ 2>/dev/null || true
+          fi
+          
+          # Copy JS index
+          if [ -f "js-sources/build/js-dist/index.json" ]; then
+            cp js-sources/build/js-dist/index.json repo/js/
+          fi
+          
+          # Commit and push
+          cd repo
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Update JS sources"
+            git push
+          else
+            echo "No JS changes to commit"
+          fi
