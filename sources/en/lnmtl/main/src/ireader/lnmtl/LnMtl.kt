@@ -1,6 +1,5 @@
 package ireader.lnmtl
 
-import com.google.gson.Gson
 import io.ktor.client.request.get
 import ireader.core.log.Log
 import ireader.core.source.Dependencies
@@ -14,22 +13,28 @@ import ireader.core.source.model.MangaInfo
 import ireader.core.source.SourceFactory
 import ireader.lnmtl.chapters.LNMTLResponse
 import ireader.lnmtl.volume.LNMTLVolumeResponse
-import kotlinx.serialization.decodeFromString
+import ireader.lnmtl.volume.LNMTLVolumnResponseItem
 import kotlinx.serialization.json.Json
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
 
+/**
+ * 📚 LnMtl - Machine Translation Novel Source
+ * 
+ * Uses custom JSON parsing for chapters.
+ * Uses @AutoSourceId for automatic ID generation.
+ */
 @Extension
-abstract class LnMtl(deps: Dependencies) : SourceFactory(
-    deps = deps,
-) {
-    override val lang: String
-        get() = "en"
-    override val baseUrl: String
-        get() = "https://lnmtl.com/"
-    override val id: Long
-        get() = 82
-    override val name: String
-        get() = "LnMtl"
+@AutoSourceId(seed = "LnMtl")
+abstract class LnMtl(deps: Dependencies) : SourceFactory(deps = deps) {
+
+    // ═══════════════════════════════════════════════════════════════
+    // 📋 BASIC SOURCE INFO
+    // ═══════════════════════════════════════════════════════════════
+    override val lang: String get() = "en"
+    override val baseUrl: String get() = "https://lnmtl.com/"
+    override val id: Long get() = 82
+    override val name: String get() = "LnMtl"
 
     override fun getFilters(): FilterList = listOf(
 
@@ -99,32 +104,27 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         if (commands.isEmpty()) {
-            val detailHtml =  client.get(requestBuilder(manga.key)).asJsoup()
+            val detailHtml = client.get(requestBuilder(manga.key)).asJsoup()
             val scripts = detailHtml.select("script").html()
-            val chapters = mutableListOf<ChapterInfo>()
             val volumeJson = scripts.parseScriptTagVolumne()
-            val gson = Gson()
             val chaptersJson = scripts.parseScriptTagChapter()
-//            val firstPageChapterJson =jsonDecoder.decodeFromString<LNMTLResponse>(chaptersJson)
-//            val volume = jsonDecoder.decodeFromString<LNMTLVolumeResponse>(volumeJson)
-            val firstPageChapterJson =gson.fromJson(chaptersJson,LNMTLResponse::class.java)
-            val volume = gson.fromJson(volumeJson,LNMTLVolumeResponse::class.java)
-            chapters.addAll(firstPageChapterJson.parseResponse())
-            val allChapters = volume.map { item ->
+            val firstPageChapterJson = jsonDecoder.decodeFromString<LNMTLResponse>(chaptersJson)
+            val volume = jsonDecoder.decodeFromString<List<LNMTLVolumnResponseItem>>(volumeJson)
+            val allChapters = mutableListOf<ChapterInfo>()
+            allChapters.addAll(firstPageChapterJson.parseResponse())
+            for (item in volume) {
                 var currentPage = 1
                 var maxPage = 1
-                val volumeChapters = mutableListOf<ChapterInfo>()
-                while (currentPage <=maxPage) {
+                while (currentPage <= maxPage) {
                     val json = client.get(requestBuilder("https://lnmtl.com/chapter?page=$currentPage&volumeId=${item.id}")).asJsoup().body().html()
                     Log.error { json.toString() }
-                    val parsedJson = Gson().fromJson(json, LNMTLResponse::class.java)
+                    val parsedJson = jsonDecoder.decodeFromString<LNMTLResponse>(json)
                     maxPage = parsedJson.last_page
-                    volumeChapters.addAll(parsedJson.parseResponse())
+                    allChapters.addAll(parsedJson.parseResponse())
                     currentPage++
                 }
-                volumeChapters
             }
-            return allChapters.flatten()
+            return allChapters
         }
         return super.getChapterList(manga, commands)
     }

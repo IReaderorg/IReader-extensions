@@ -1,22 +1,16 @@
 package ireader.mysticalseries
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class MysticalSeries(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://mysticalmerries.com",
-    sourceName = "mysticalseries",
-    sourceId = 72,
-    language = "en",
-    paths = Path(
-        novel = "series",
-        novels = "series",
-        chapter = "series"
-    )
-
+/**
+ * ✨ MysticalSeries - Zero-code Madara source!
+ * 
+ * Just define the annotation - KSP generates everything else.
+ */
+@MadaraSource(
+    name = "MysticalSeries",
+    baseUrl = "https://mysticalseries.com",
+    lang = "en",
+    id = 71
 )
+object MysticalSeriesConfig

@@ -1,17 +1,14 @@
 package ireader.freenovel
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class Freenovel(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://freenovel.me",
-    sourceName = "freenovel",
-    sourceId = 59,
-    language = "en",
-
+/**
+ * 📖 FreeNovel - Zero-code Madara source
+ */
+@MadaraSource(
+    name = "FreeNovel",
+    baseUrl = "https://freenovel.me",
+    lang = "en",
+    id = 59
 )
+object FreeNovelConfig

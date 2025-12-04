@@ -13,20 +13,25 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
 
+/**
+ * 📖 Novel4Up - Arabic novel source using SourceFactory
+ * 
+ * Uses Madara-like structure but with custom chapter fetching.
+ * Uses @AutoSourceId for automatic ID generation.
+ */
 @Extension
-abstract class Novel4Up(private val deps: Dependencies) : SourceFactory(
-    deps = deps,
-) {
+@AutoSourceId(seed = "Novel4Up")
+abstract class Novel4Up(private val deps: Dependencies) : SourceFactory(deps = deps) {
 
-    override val lang: String
-        get() = "ar"
-    override val baseUrl: String
-        get() = "https://novel4up.com"
-    override val id: Long
-        get() = 43
-    override val name: String
-        get() = "Novel4Up"
+    // ═══════════════════════════════════════════════════════════════
+    // 📋 BASIC SOURCE INFO
+    // ═══════════════════════════════════════════════════════════════
+    override val lang: String get() = "ar"
+    override val baseUrl: String get() = "https://novel4up.com"
+    override val id: Long get() = 43
+    override val name: String get() = "Novel4Up"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),

@@ -29,24 +29,28 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
-import kotlinx.datetime.*
-// // import java.util.Date - Use kotlinx.datetime - Use kotlinx.datetime
-// // import java.util.Locale - Not needed for KMP - Not needed for KMP
+import tachiyomix.annotations.AutoSourceId
 import java.util.concurrent.TimeUnit
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
+/**
+ * 📖 FictionZone - Nuxt.js Based Source
+ *
+ * Uses JSON API for pagination.
+ * Uses @AutoSourceId for automatic ID generation.
+ */
 @Extension
-abstract class FictionZone(private val deps: Dependencies) : SourceFactory(
-    deps = deps,
-) {
+@AutoSourceId(seed = "FictionZone")
+abstract class FictionZone(private val deps: Dependencies) : SourceFactory(deps = deps) {
 
-    override val lang: String
-        get() = "en"
-    override val baseUrl: String
-        get() = "https://fictionzone.net"
-    override val id: Long
-        get() = 91 // Choose a unique ID
-    override val name: String
-        get() = "FictionZone"
+    // ═══════════════════════════════════════════════════════════════
+    // 📋 BASIC SOURCE INFO
+    // ═══════════════════════════════════════════════════════════════
+    override val lang: String get() = "en"
+    override val baseUrl: String get() = "https://fictionzone.net"
+    override val id: Long get() = 91
+    override val name: String get() = "FictionZone"
 
     private val cachedNovelIds = mutableMapOf<String, String>()
 
@@ -144,12 +148,13 @@ abstract class FictionZone(private val deps: Dependencies) : SourceFactory(
             pageContentSelector = "div.chapter-content",
         )
 
+    @OptIn(ExperimentalTime::class)
     private fun parseAgoDate(dateStr: String): Long {
         if (!dateStr.contains("ago")) return 0
-        
+
         val timeAgo = dateStr.split(" ")[0].toIntOrNull() ?: return 0
         val currentTime = Clock.System.now().toEpochMilliseconds()
-        
+
         return when {
             dateStr.contains("hour") -> currentTime - TimeUnit.HOURS.toMillis(timeAgo.toLong())
             dateStr.contains("day") -> currentTime - TimeUnit.DAYS.toMillis(timeAgo.toLong())
@@ -158,44 +163,44 @@ abstract class FictionZone(private val deps: Dependencies) : SourceFactory(
             else -> 0
         }
     }
-    
+
     // Get additional chapters through API for detail pages with pagination
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         if (commands.isEmpty()) {
             val baseChapters = super.getChapterList(manga, commands)
-            
+
             // Extract novel ID from the source HTML or cached values
             val htmlResponse = client.get(manga.key).asJsoup()
             var novelId = cachedNovelIds[manga.title]
-            
+
             if (novelId == null) {
                 val scriptData = htmlResponse.select("script#__NUXT_DATA__").html()
                 // This is a simplistic approach - in reality parsing this JSON might be more complex
                 val lastPageText = htmlResponse.select("div.chapters ul.el-pager > li:last-child").text()
                 val totalPages = lastPageText.toIntOrNull() ?: 1
-                
+
                 // Try to extract the novel ID from the script
                 novelId = try {
                     Regex("novel_covers/([^\"]+)").find(scriptData)?.groupValues?.get(1)
                 } catch (e: Exception) {
                     null
                 }
-                
+
                 if (novelId != null) {
                     cachedNovelIds[manga.title] = novelId
                 } else {
                     // If we can't extract the ID, return only the base chapters
                     return baseChapters
                 }
-                
+
                 // If there's only one page, return the base chapters
                 if (totalPages <= 1) {
                     return baseChapters
                 }
-                
+
                 // Otherwise, fetch additional pages
                 val allChapters = baseChapters.toMutableList()
-                
+
                 // Start from page 2 since we already have page 1
                 for (page in 2..totalPages) {
                     val requestBody = buildJsonObject {
@@ -208,22 +213,22 @@ abstract class FictionZone(private val deps: Dependencies) : SourceFactory(
                         }
                         put("method", "get")
                     }
-                    
+
                     val response = client.post(baseUrl + "/api/__api_party/api-v1") {
                         contentType(ContentType.Application.Json)
                         setBody(requestBody.toString())
                     }.body<JsonObject>()
-                    
+
                     // Parse the response and add chapters
                     val chaptersData = response["_data"]
                     // Process chapters from the API response
                     // This would need proper implementation based on the actual response format
                 }
-                
+
                 return allChapters
             }
         }
-        
+
         return super.getChapterList(manga, commands)
     }
-} 
+}

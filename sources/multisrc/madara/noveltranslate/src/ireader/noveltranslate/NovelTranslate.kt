@@ -1,22 +1,14 @@
 package ireader.noveltranslate
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class NovelTranslate(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://noveltranslate.com",
-    sourceName = "NovelTranslate",
-    sourceId = 55,
-    language = "en",
-    paths = Path(
-        novel = "novel",
-        novels = "novel",
-        chapter = "novel"
-    )
-
+/**
+ * 📝 NovelTranslate - Zero-code Madara source
+ */
+@MadaraSource(
+    name = "NovelTranslate",
+    baseUrl = "https://noveltranslate.com",
+    lang = "en",
+    id = 55
 )
+object NovelTranslateConfig

@@ -1,18 +1,14 @@
 package ireader.webnovelover
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class WebNovelLover(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://www.webnovelover.com",
-    sourceName = "webnovelover",
-    sourceId = 66,
-    language = "en",
-
-
+/**
+ * 💕 WebNovelLover - Zero-code Madara source
+ */
+@MadaraSource(
+    name = "WebNovelLover",
+    baseUrl = "https://www.webnovelover.com",
+    lang = "en",
+    id = 66
 )
+object WebNovelLoverConfig

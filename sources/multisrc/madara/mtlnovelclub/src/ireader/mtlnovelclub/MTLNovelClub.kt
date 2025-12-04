@@ -1,18 +1,16 @@
-package ireader.mtlnovel
+package ireader.mtlnovelclub
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class MTLNovelClub(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://mtlnovel.club",
-    sourceName = "mtlnovelclub",
-    sourceId = 78,
-    language = "en",
-
-
+/**
+ * 📖 MTLNovelClub - Zero-code Madara source!
+ * 
+ * Just define the annotation - KSP generates everything else.
+ */
+@MadaraSource(
+    name = "MTLNovelClub",
+    baseUrl = "https://mtlnovel.club",
+    lang = "en",
+    id = 78
 )
+object MTLNovelClubConfig

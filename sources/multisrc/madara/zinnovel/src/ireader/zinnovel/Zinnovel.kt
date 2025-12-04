@@ -1,22 +1,17 @@
 package ireader.zinnovel
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class Zinnovel(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://zinnovel.com",
-    sourceName = "zinnovel",
-    sourceId = 54,
-    language = "en",
-    paths = Path(
-        novel = "manga",
-        novels = "manga",
-        chapter = "novel"
-    )
-
+/**
+ * 📖 Zinnovel - Zero-code Madara source with custom paths
+ */
+@MadaraSource(
+    name = "Zinnovel",
+    baseUrl = "https://zinnovel.com",
+    lang = "en",
+    id = 54,
+    novelsPath = "manga",
+    novelPath = "manga",
+    chapterPath = "novel"
 )
+object ZinnovelConfig

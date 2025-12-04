@@ -11,20 +11,25 @@ import kotlinx.coroutines.withContext
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
 
+/**
+ * 🐼 PandaNovel - Cloudflare Protected Source
+ * 
+ * Uses browser client for Cloudflare bypass.
+ * Uses @AutoSourceId for automatic ID generation.
+ */
 @Extension
-abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(
-    deps = deps,
-) {
+@AutoSourceId(seed = "PandaNovel")
+abstract class PandaNovel(private val deps: Dependencies) : SourceFactory(deps = deps) {
 
-    override val lang: String
-        get() = "en"
-    override val baseUrl: String
-        get() = "https://www.panda-novel.com"
-    override val id: Long
-        get() = 29
-    override val name: String
-        get() = "PandaNovel"
+    // ═══════════════════════════════════════════════════════════════
+    // 📋 BASIC SOURCE INFO
+    // ═══════════════════════════════════════════════════════════════
+    override val lang: String get() = "en"
+    override val baseUrl: String get() = "https://www.panda-novel.com"
+    override val id: Long get() = 29
+    override val name: String get() = "PandaNovel"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),

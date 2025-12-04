@@ -9,8 +9,8 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -23,6 +23,9 @@ import com.squareup.kotlinpoet.ksp.writeTo
  * 
  * Processes @MadaraSource and @ThemeSource annotations to generate
  * source classes that extend theme base classes.
+ * 
+ * @MadaraSource generates a complete Madara-based source with zero code.
+ * @ThemeSource generates a source extending any specified theme class.
  */
 class ThemeSourceProcessor(
     private val codeGenerator: CodeGenerator,
@@ -30,50 +33,70 @@ class ThemeSourceProcessor(
     private val options: Map<String, String>
 ) : SymbolProcessor {
 
+    private val processedClasses = mutableSetOf<String>()
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        // Process @MadaraSource annotations
         val madaraSources = resolver.getSymbolsWithAnnotation(MADARA_SOURCE_ANNOTATION)
             .filterIsInstance<KSClassDeclaration>()
-            .filter { it.validate() }
             .toList()
 
-        madaraSources.forEach { generateMadaraSource(it) }
+        madaraSources.forEach { config ->
+            val key = config.qualifiedName?.asString() ?: return@forEach
+            if (key !in processedClasses) {
+                processedClasses.add(key)
+                generateMadaraSource(config)
+            }
+        }
 
-        // Process @ThemeSource annotations
         val themeSources = resolver.getSymbolsWithAnnotation(THEME_SOURCE_ANNOTATION)
             .filterIsInstance<KSClassDeclaration>()
-            .filter { it.validate() }
             .toList()
 
-        themeSources.forEach { generateThemeSource(it) }
+        themeSources.forEach { config ->
+            val key = config.qualifiedName?.asString() ?: return@forEach
+            if (key !in processedClasses) {
+                processedClasses.add(key)
+                generateThemeSource(config)
+            }
+        }
 
         return emptyList()
     }
 
     private fun generateMadaraSource(config: KSClassDeclaration) {
-        val annotation = config.annotations.first { 
+        val annotation = config.annotations.find { 
             it.shortName.asString() == "MadaraSource" 
-        }
+        } ?: return
         
         val args = annotation.arguments.associate { 
             it.name?.asString() to it.value 
         }
         
-        val name = args["name"] as String
-        val baseUrl = args["baseUrl"] as String
-        val lang = args["lang"] as String
-        val id = args["id"] as Long
+        val name = args["name"] as? String ?: return
+        val baseUrl = args["baseUrl"] as? String ?: return
+        val lang = args["lang"] as? String ?: return
+        val id = args["id"] as? Long ?: return
         val novelsPath = args["novelsPath"] as? String ?: "novel"
         val novelPath = args["novelPath"] as? String ?: "novel"
         val chapterPath = args["chapterPath"] as? String ?: "novel"
         
         val packageName = config.packageName.asString()
-        val className = "${name}Generated"
+        val configName = config.simpleName.asString()
+        val className = configName.removeSuffix("Config").ifEmpty { name.replace(" ", "") }
         
         val madaraClass = ClassName("ireader.madara", "Madara")
         val pathClass = ClassName("ireader.madara", "Path")
         val depsClass = ClassName("ireader.core.source", "Dependencies")
         val extensionAnnotation = ClassName("tachiyomix.annotations", "Extension")
+        
+        val superCallCode = CodeBlock.builder()
+            .add("deps,\n")
+            .add("sourceId = %LL,\n", id)
+            .add("key = %S,\n", baseUrl)
+            .add("sourceName = %S,\n", name)
+            .add("language = %S,\n", lang)
+            .add("paths = %T(%S, %S, %S)", pathClass, novelPath, novelsPath, chapterPath)
+            .build()
         
         val classSpec = TypeSpec.classBuilder(className)
             .addAnnotation(extensionAnnotation)
@@ -84,45 +107,41 @@ class ThemeSourceProcessor(
                     .build()
             )
             .superclass(madaraClass)
-            .addSuperclassConstructorParameter("deps")
-            .addSuperclassConstructorParameter("%L", id)
-            .addSuperclassConstructorParameter("%S", baseUrl)
-            .addSuperclassConstructorParameter("%S", name)
-            .addSuperclassConstructorParameter("%S", lang)
-            .addSuperclassConstructorParameter(
-                "%T(%S, %S, %S)", 
-                pathClass, novelsPath, novelPath, chapterPath
-            )
+            .addSuperclassConstructorParameter(superCallCode)
             .build()
         
-        FileSpec.builder(packageName, className)
-            .addType(classSpec)
-            .addFileComment("Generated by ThemeSourceProcessor - DO NOT EDIT")
-            .build()
-            .writeTo(codeGenerator, Dependencies(false, config.containingFile!!))
-        
-        logger.info("Generated Madara source: $packageName.$className")
+        try {
+            FileSpec.builder(packageName, className)
+                .addType(classSpec)
+                .addFileComment("Generated by ThemeSourceProcessor - DO NOT EDIT\n\nSource: $name\nBase URL: $baseUrl\nLanguage: $lang")
+                .build()
+                .writeTo(codeGenerator, Dependencies(false, config.containingFile!!))
+            
+            logger.info("ThemeSourceProcessor: Generated Madara source $className for $name")
+        } catch (e: Exception) {
+            logger.warn("ThemeSourceProcessor: Could not generate $className: ${e.message}")
+        }
     }
 
     private fun generateThemeSource(config: KSClassDeclaration) {
-        val annotation = config.annotations.first { 
+        val annotation = config.annotations.find { 
             it.shortName.asString() == "ThemeSource" 
-        }
+        } ?: return
         
         val args = annotation.arguments.associate { 
             it.name?.asString() to it.value 
         }
         
-        val name = args["name"] as String
-        val baseUrl = args["baseUrl"] as String
-        val lang = args["lang"] as String
-        val id = args["id"] as Long
-        val theme = args["theme"] as String
+        val name = args["name"] as? String ?: return
+        val baseUrl = args["baseUrl"] as? String ?: return
+        val lang = args["lang"] as? String ?: return
+        val id = args["id"] as? Long ?: return
+        val theme = args["theme"] as? String ?: return
         
         val packageName = config.packageName.asString()
-        val className = "${name}Generated"
+        val configName = config.simpleName.asString()
+        val className = configName.removeSuffix("Config").ifEmpty { name.replace(" ", "") }
         
-        // Parse theme class name
         val themePackage = theme.substringBeforeLast(".")
         val themeClass = theme.substringAfterLast(".")
         val themeClassName = ClassName(themePackage, themeClass)
@@ -140,13 +159,9 @@ class ThemeSourceProcessor(
             )
             .superclass(themeClassName)
             .addSuperclassConstructorParameter("deps")
-            .addSuperclassConstructorParameter("%L", id)
-            .addSuperclassConstructorParameter("%S", baseUrl)
-            .addSuperclassConstructorParameter("%S", name)
-            .addSuperclassConstructorParameter("%S", lang)
             .addProperty(
                 PropertySpec.builder("id", Long::class, KModifier.OVERRIDE)
-                    .initializer("%L", id)
+                    .initializer("%LL", id)
                     .build()
             )
             .addProperty(
@@ -166,13 +181,17 @@ class ThemeSourceProcessor(
             )
             .build()
         
-        FileSpec.builder(packageName, className)
-            .addType(classSpec)
-            .addFileComment("Generated by ThemeSourceProcessor - DO NOT EDIT")
-            .build()
-            .writeTo(codeGenerator, Dependencies(false, config.containingFile!!))
-        
-        logger.info("Generated theme source: $packageName.$className")
+        try {
+            FileSpec.builder(packageName, className)
+                .addType(classSpec)
+                .addFileComment("Generated by ThemeSourceProcessor - DO NOT EDIT\n\nSource: $name\nBase URL: $baseUrl\nLanguage: $lang\nTheme: $theme")
+                .build()
+                .writeTo(codeGenerator, Dependencies(false, config.containingFile!!))
+            
+            logger.info("ThemeSourceProcessor: Generated theme source $className for $name")
+        } catch (e: Exception) {
+            logger.warn("ThemeSourceProcessor: Could not generate $className: ${e.message}")
+        }
     }
 
     companion object {

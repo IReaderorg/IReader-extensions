@@ -1,22 +1,17 @@
 package ireader.lightnovelheaven
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class LightNovelHeaven(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://lightnovelheaven.com",
-    sourceName = "lightnovelheaven",
-    sourceId = 63,
-    language = "en",
-    paths = Path(
-        novel = "series",
-        novels = "series",
-        chapter = "series"
-    )
-
+/**
+ * 🌟 LightNovelHeaven - Zero-code Madara source with custom paths
+ */
+@MadaraSource(
+    name = "LightNovelHeaven",
+    baseUrl = "https://lightnovelheaven.com",
+    lang = "en",
+    id = 63,
+    novelsPath = "series",
+    novelPath = "series",
+    chapterPath = "series"
 )
+object LightNovelHeavenConfig

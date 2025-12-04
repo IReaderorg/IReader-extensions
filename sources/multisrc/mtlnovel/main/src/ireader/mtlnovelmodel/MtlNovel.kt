@@ -177,8 +177,7 @@ abstract class MtlNovelModel(private val deps: Dependencies) : ParsedHttpSource(
     override fun pageContentParse(document: Document): List<String> {
         val title = document.select("h1.main-title").text()
         val content = document.select("div.par p").eachText()
-        content.add(0, title)
-        return content
+        return listOf(title) + content
     }
 
     override suspend fun getContents(chapter: ChapterInfo): List<String> {

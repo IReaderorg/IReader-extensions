@@ -1,17 +1,16 @@
 package ireader.novel4up
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class Novel4Up(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://novel4up.com",
-    sourceName = "novel4up",
-    sourceId = 74,
-    language = "ar",
-
+/**
+ * 📖 Novel4Up (Madara) - Zero-code Arabic Madara source!
+ * 
+ * Just define the annotation - KSP generates everything else.
+ */
+@MadaraSource(
+    name = "Novel4Up",
+    baseUrl = "https://novel4up.com",
+    lang = "ar",
+    id = 74
 )
+object Novel4UpMadaraConfig

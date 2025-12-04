@@ -1,18 +1,14 @@
 package ireader.meionovel
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class MeioNovel(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://meionovel.id",
-    sourceName = "meionovel",
-    sourceId = 64,
-    language = "in",
-
-
+/**
+ * 📖 MeioNovel - Zero-code Indonesian Madara source
+ */
+@MadaraSource(
+    name = "MeioNovel",
+    baseUrl = "https://meionovel.id",
+    lang = "in",
+    id = 64
 )
+object MeioNovelConfig

@@ -1,18 +1,16 @@
 package ireader.cratenovel
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class CrateNovel(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://cratenovel.com",
-    sourceName = "cratenovel",
-    sourceId = 67,
-    language = "en",
-
-
+/**
+ * 📦 CrateNovel - Zero-code Madara source!
+ * 
+ * Just define the annotation - KSP generates everything else.
+ */
+@MadaraSource(
+    name = "CrateNovel",
+    baseUrl = "https://cratenovel.com",
+    lang = "en",
+    id = 67
 )
+object CrateNovelConfig

@@ -1,6 +1,7 @@
 package ireader.ranobes
 
-import com.google.gson.Gson
+import kotlinx.serialization.json.Json
+
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.BrowserUserAgent
@@ -320,7 +321,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
                 client.get(requestBuilder("$baseUrl/chapters/${bookId}/page/1/"))
             response = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
                 .substringBefore("</script>")
-            val chapters = Gson().fromJson(response, ChapterDTO::class.java)
+            val chapters = Json { ignoreUnknownKeys = true }.decodeFromString<ChapterDTO>(response)
 //            response = deps.httpClients.browser.fetch(
 //                        "https://ranobes.net/chapters/${bookId.first()}/page/1/",
 //                        selector = chaptersSelector(),
@@ -338,7 +339,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
         res = html.asJsoup().html().substringAfter("<script>window.__DATA__ = ")
             .substringBefore("</script>")
         Log.error { res }
-        val json1 = Gson().fromJson(res, ChapterDTO::class.java)
+        val json1 = Json { ignoreUnknownKeys = true }.decodeFromString<ChapterDTO>(res)
 //        res = deps.httpClients.browser.fetch(
 //                    "https://ranobes.net/chapters/${bookId.first()}/page/1/",
 //                    selector = chaptersSelector(),
@@ -355,7 +356,7 @@ abstract class Ranobes(private val deps: Dependencies) : ParsedHttpSource(deps) 
                 ).asJsoup().html().substringAfter("<script>window.__DATA__ = ")
                     .substringBefore("</script>")
 
-                val json2 = Gson().fromJson(response, ChapterDTO::class.java)
+                val json2 = Json { ignoreUnknownKeys = true }.decodeFromString<ChapterDTO>(response)
 
                 list.addAll(
                     chaptersParse(

@@ -1,6 +1,5 @@
 package ireader.qidianundergrond
 
-import com.google.gson.Gson
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -12,7 +11,6 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
-import ireader.core.http.Result
 import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.HttpSource
@@ -33,6 +31,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
+import ireader.core.http.BrowserResult
 import tachiyomix.annotations.Extension
 import java.util.concurrent.TimeUnit
 
@@ -95,10 +94,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         val res = requestBuilder("$baseUrl/api/v1/pages/public")
 
         return parseBooks(
-            Gson().fromJson<QUGroup>(
-                client.get(res).bodyAsText(),
-                QUGroup::class.java
-            )
+            Json { ignoreUnknownKeys = true }.decodeFromString<QUGroup>(client.get(res).bodyAsText())
         )
     }
 
@@ -121,10 +117,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
     suspend fun getSearch(query: String): MangasPageInfo {
         val res = requestBuilder("$baseUrl/api/v1/pages/public")
         return parseBooks(
-            Gson().fromJson<QUGroup>(
-                client.get(res).bodyAsText(),
-                QUGroup::class.java
-            ),
+            Json { ignoreUnknownKeys = true }.decodeFromString<QUGroup>(client.get(res).bodyAsText()),
             query
         )
     }
@@ -183,7 +176,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
         commands: List<Command<*>>
     ): List<ChapterInfo> {
         val request = client.get(chaptersRequest(manga)).bodyAsText()
-        val chapters = Gson().fromJson(request, ChapterGroup::class.java)
+        val chapters = Json { ignoreUnknownKeys = true }.decodeFromString<ChapterGroup>(request)
         return chapters.map { ChapterInfo(key = it.Href, name = it.Text) }
     }
 
@@ -192,7 +185,7 @@ abstract class QidianUnderground(private val deps: Dependencies) : HttpSource(de
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
-        var html: Result ? = null
+        var html: BrowserResult? = null
         withContext(Dispatchers.Main) {
             html = deps.httpClients.browser.fetch(chapter.key, selector = ".well")
         }

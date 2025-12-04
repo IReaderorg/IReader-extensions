@@ -1,22 +1,17 @@
 package ireader.lunarletters
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class LunarLetters(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://www.lunarletters.com",
-    sourceName = "LunarLetters",
-    sourceId = 81,
-    language = "en",
-    paths = Path(
-        novel = "series",
-        novels = "series",
-        chapter = "series"
-    )
-
+/**
+ * 🌙 LunarLetters - Zero-code Madara source with custom paths
+ */
+@MadaraSource(
+    name = "LunarLetters",
+    baseUrl = "https://www.lunarletters.com",
+    lang = "en",
+    id = 81,
+    novelsPath = "series",
+    novelPath = "series",
+    chapterPath = "series"
 )
+object LunarLettersConfig

@@ -20,8 +20,6 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
-import java.io.File
-import java.io.OutputStream
 
 /*
     Copyright (C) 2018 The Tachiyomi Open Source Project
@@ -31,26 +29,59 @@ import java.io.OutputStream
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+/**
+ * KSP Processor that generates the final Extension class from @Extension annotated sources.
+ * 
+ * This processor:
+ * 1. Finds classes annotated with @Extension
+ * 2. Validates they are open/abstract and implement Source
+ * 3. Generates a concrete Extension class with name, lang, id properties
+ * 
+ * Supports multi-round processing for sources that reference generated code
+ * (e.g., SunovelsGenerated from SourceFactoryProcessor).
+ */
 class ExtensionProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
     private val options: Map<String, String>
 ) : SymbolProcessor {
 
+    private var processed = false
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        // Get all classes annotated with the Extension annotation
-        val extensions = resolver.getSymbolsWithAnnotation(EXTENSION_FQ_ANNOTATION)
+        if (processed) return emptyList()
 
-        // Find the extension that will be instantiated by Tachiyomi
-        val extension = getClassToGenerate(extensions)
+        val allExtensions = resolver.getSymbolsWithAnnotation(EXTENSION_FQ_ANNOTATION)
+            .filterIsInstance<KSClassDeclaration>()
+            .toList()
 
-        // If no extension is found, we either have already processed it or we forgot to annotate our
-        // implementation, so make sure we always have one
+        if (allExtensions.isEmpty()) {
+            val extensionGenerated = resolver.getClassDeclarationByName(EXTENSION_FQ_CLASS) != null
+            if (!extensionGenerated) {
+                return emptyList()
+            }
+            processed = true
+            return emptyList()
+        }
+
+        val validExtensions = allExtensions.filter { it.validate() }
+        val deferredExtensions = allExtensions.filterNot { it.validate() }
+
+        if (validExtensions.isEmpty() && deferredExtensions.isNotEmpty()) {
+            return deferredExtensions
+        }
+
+        val extension = getClassToGenerate(validExtensions)
+
         if (extension == null) {
+            if (deferredExtensions.isNotEmpty()) {
+                return deferredExtensions
+            }
             val extensionGenerated = resolver.getClassDeclarationByName(EXTENSION_FQ_CLASS) != null
             check(extensionGenerated) {
                 "No extension found. Please ensure at least one Source is annotated with @Extension"
             }
+            processed = true
             return emptyList()
         }
 
@@ -60,19 +91,17 @@ class ExtensionProcessor(
         val variant = getVariant(buildDir)
         val arguments = parseArguments(variant)
 
-        // Check that the extension is open or abstract
         check(extension.isOpen()) {
             "[$extension] must be open or abstract"
         }
 
-        // Check that the extension implements the Source interface
-        val sourceClass = resolver.getClassDeclarationByName(SOURCE_FQ_CLASS) ?: throw Exception("This class in not implementing the Source")
+        val sourceClass = resolver.getClassDeclarationByName(SOURCE_FQ_CLASS) 
+            ?: throw Exception("This class is not implementing the Source interface")
 
         check(sourceClass.asStarProjectedType().isAssignableFrom(extensionType)) {
             "$extension doesn't implement $sourceClass"
         }
 
-        // Check that the extension implements the DeepLinkSource interface if the manifest has them
         if (arguments.hasDeeplinks) {
             val deepLinkClass = resolver.getClassDeclarationByName(DEEPLINKSOURCE_FQ_CLASS)!!
             check(deepLinkClass.asStarProjectedType().isAssignableFrom(extensionType)) {
@@ -80,49 +109,39 @@ class ExtensionProcessor(
             }
         }
 
-        // Check that the extension matches its package name
         checkMatchesPkgName(extension, buildDir)
 
-        // Generate the source implementation
         val dependencies = resolver.getClassDeclarationByName(DEPENDENCIES_FQ_CLASS)!!
         extension.accept(SourceVisitor(arguments, dependencies), Unit)
 
-        return emptyList()
+        processed = true
+        return deferredExtensions
     }
 
-    /**
-     * Returns the source class to generate, or null if more than one was detected and they don't
-     * inherit each other.
-     */
-    private fun getClassToGenerate(extensions: Sequence<KSAnnotated>): KSClassDeclaration? {
-        val candidates = extensions.filterIsInstance<KSClassDeclaration>()
-            .filter { it.validate() }
-            .toList()
-
-        val classToGenerate = when (candidates.size) {
-            0 -> return null
-            1 -> candidates.first()
+    private fun getClassToGenerate(extensions: List<KSClassDeclaration>): KSClassDeclaration? {
+        return when (extensions.size) {
+            0 -> null
+            1 -> extensions.first()
             else -> {
-                val candidate = candidates.find { candidate ->
+                val candidate = extensions.find { candidate ->
                     val type = candidate.asStarProjectedType()
-                    candidates.all { it === candidate || it.asStarProjectedType().isAssignableFrom(type) }
+                    extensions.all { it === candidate || it.asStarProjectedType().isAssignableFrom(type) }
                 }
                 checkNotNull(candidate) {
-                    "Found [${candidates.joinToString()}] annotated with @Extension but they don't" +
+                    "Found [${extensions.joinToString()}] annotated with @Extension but they don't" +
                         " inherit each other. Only one class can be generated"
                 }
                 candidate
             }
         }
-        return classToGenerate
     }
 
     private fun checkMatchesPkgName(source: KSClassDeclaration, buildDir: String) {
-        if ("/sources/multisrc" in buildDir) return // Disable pkgname checks for the multisrc
+        if ("/sources/multisrc" in buildDir || "\\sources\\multisrc" in buildDir) return
 
         val pkgName = source.packageName.asString()
-
-        val sourceDir = buildDir.substringBeforeLast("/build/").substringAfterLast("/")
+        val normalizedBuildDir = buildDir.replace("\\", "/")
+        val sourceDir = normalizedBuildDir.substringBeforeLast("/build/").substringAfterLast("/")
         val expectedPkgName = "ireader.$sourceDir"
 
         val isValidPackage = Regex("^$expectedPkgName\\.?.*?").matches(pkgName)
@@ -168,24 +187,25 @@ class ExtensionProcessor(
         }
     }
 
-    fun String.covertToOsPath() :String {
+    private fun String.convertToOsPath(): String {
         return if (System.getProperty("os.name").contains("win", true)) {
             this.replace("\\", "/")
         } else {
             this
         }
     }
+
     private fun CodeGenerator.collectVariantName(fileName: String): String {
         createNewFileByPath(Dependencies(false), fileName, "txt")
         return generatedFile.first().run {
             this.path.substringBefore("\\resources\\").substringBefore("/resources/")
         }
     }
+
     private fun getBuildDir(): String {
-        return codeGenerator.collectVariantName("").covertToOsPath()
+        return codeGenerator.collectVariantName("").convertToOsPath()
     }
 
-    // TODO: this is temporary until ksp configurations are applied per variant rather than globally
     private fun getVariant(buildDir: String): String {
         val build = buildDir.substringAfterLast("/ksp/").substringBefore('/')
         return build.removeSuffix("Debug").removeSuffix("Release")
@@ -219,7 +239,6 @@ class ExtensionProcessor(
 }
 
 class ExtensionProcessorFactory : SymbolProcessorProvider {
-
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
         return ExtensionProcessor(environment.codeGenerator, environment.logger, environment.options)
     }

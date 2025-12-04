@@ -1,18 +1,14 @@
 package ireader.firstkissnovel
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class FirstKissNovel(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://1stkissnovel.love",
-    sourceName = "Firstkissnovel",
-    sourceId = 57,
-    language = "en",
-
-
+/**
+ * 💋 FirstKissNovel - Zero-code Madara source
+ */
+@MadaraSource(
+    name = "FirstKissNovel",
+    baseUrl = "https://1stkissnovel.love",
+    lang = "en",
+    id = 57
 )
+object FirstKissNovelConfig

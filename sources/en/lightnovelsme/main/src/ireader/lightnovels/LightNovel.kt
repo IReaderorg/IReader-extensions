@@ -1,6 +1,7 @@
 package ireader.lightnovelsme
 
-import com.google.gson.Gson
+import kotlinx.serialization.json.Json
+
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.okhttp.OkHttp
@@ -18,7 +19,6 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import io.ktor.serialization.gson.gson
 import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.HttpSource
@@ -47,19 +47,28 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
+import io.ktor.serialization.kotlinx.json.json
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
 import ireader.common.utils.DateParser
 import java.util.concurrent.TimeUnit
 
+/**
+ * 💡 LightNovels.me - JSON API Based Source
+ *
+ * Uses Next.js API for fetching novels and chapters.
+ * Uses @AutoSourceId for automatic ID generation.
+ */
 @Extension
+@AutoSourceId(seed = "LightNovel.me")
 abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
 
+    // ═══════════════════════════════════════════════════════════════
+    // 📋 BASIC SOURCE INFO
+    // ═══════════════════════════════════════════════════════════════
     override val name = "LightNovel.me"
-
-    override val id: Long
-        get() = 6
+    override val id: Long get() = 6
     override val baseUrl = "https://lightnovels.me"
-
     override val lang = "en"
 
     override val client = HttpClient(OkHttp) {
@@ -68,7 +77,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         }
         BrowserUserAgent()
         install(ContentNegotiation) {
-            gson()
+            json(Json { ignoreUnknownKeys = true })
         }
         install(HttpCookies) {
             storage = ConstantCookiesStorage()
@@ -119,9 +128,9 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
     private suspend fun getSearch(query: String, filters: FilterList, page: Int): MangasPageInfo {
         val request = client.get(searchRequest(page, query, filters)).bodyAsText()
         val json = try {
-            Gson().fromJson(request, SearchResult::class.java)
+            Json { ignoreUnknownKeys = true }.decodeFromString<SearchResult>(request)
         } catch (e: Exception) {
-            Gson().fromJson(request, SearchDTO::class.java)
+            Json { ignoreUnknownKeys = true }.decodeFromString<SearchDTO>(request)
         }
         return searchParse(json)
     }
@@ -234,7 +243,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
     }
 
     private fun novelsParse(document: Document): MangasPageInfo {
-        val jsonBook = Gson().fromJson<BookListDTO>(document.text(), BookListDTO::class.java)
+        val jsonBook = Json { ignoreUnknownKeys = true }.decodeFromString<BookListDTO>(document.text())
 
         val books = jsonBook.results.map { element ->
             fromElement(element)
@@ -266,7 +275,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         val mainDoc = client.get(detailRequest(manga = manga)).body<HttpResponse>().asJsoup()
         val json = mainDoc.select("#__NEXT_DATA__").html()
-        val detail = Gson().fromJson(json, NovelDetail::class.java)
+        val detail = Json { ignoreUnknownKeys = true }.decodeFromString<NovelDetail>(json)
         return novelParsing(detail.props.pageProps)
     }
 
@@ -296,39 +305,14 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         return withContext(Dispatchers.IO) {
             val mainDoc = client.get(chaptersRequest(book = manga)).body<HttpResponse>().asJsoup()
             val json = mainDoc.select("#__NEXT_DATA__").html()
-            val detail = Gson().fromJson(json, NovelDetail::class.java)
+            val detail = Json { ignoreUnknownKeys = true }.decodeFromString<NovelDetail>(json)
             val novelId = detail.props.pageProps.novelInfo.novel_id
-            // val maxPage = parseMaxPage(manga)
-            // val list = mutableListOf<Deferred<List<ChapterInfo>>>()
+            val chaptersJson = client.get(
+                uniqueChaptersRequest(novelId = novelId, index = 0)
+            ).asJsoup().body().text()
             val chapters = chaptersParse(
-                Gson().fromJson(
-                    client.get(
-                        uniqueChaptersRequest(
-                            novelId = novelId,
-                            index = 0
-                        )
-                    ).asJsoup().body().text(),
-                    ChapterDTO::class.java
-                )
+                Json { ignoreUnknownKeys = true }.decodeFromString<ChapterDTO>(chaptersJson)
             )
-//            for (i in 0..maxPage) {
-//                val pChapters = async {
-//                    val docs = client.get(
-//                        uniqueChaptersRequest(
-//                            novelId = novelId,
-//                            index = i * 50
-//                        )
-//                    ).asJsoup().body().text()
-//                    chaptersParse(
-//                        Gson().fromJson(docs, ChapterDTO::class.java)
-//                    )
-//                }
-//
-//                list.addAll(listOf(pChapters))
-//            }
-            //  val request = client.get(chaptersRequest(book = book))
-
-            // return@withContext list.awaitAll().flatten()
             return@withContext chapters
         }
     }
@@ -389,7 +373,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
 
     fun pageContentParse(document: Document): List<String> {
         val json = document.select("#__NEXT_DATA__").html()
-        val parsedJson = Gson().fromJson(json, ContentDTO::class.java)
+        val parsedJson = Json { ignoreUnknownKeys = true }.decodeFromString<ContentDTO>(json)
         val head = parsedJson.props.pageProps.cachedChapterInfo.chapter_name
         val par = parsedJson.props.pageProps.cachedChapterInfo.content.split(
             "\\u003c/p\\u003e\\u003cp\\u003e\\u003c/p\\u003e\\u003cp\\u003e",

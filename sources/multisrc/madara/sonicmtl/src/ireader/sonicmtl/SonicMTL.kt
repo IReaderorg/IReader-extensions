@@ -1,18 +1,16 @@
 package ireader.sonicmtl
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class SonicMTL(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://www.sonicmtl.com",
-    sourceName = "sonicmtl",
-    sourceId = 77,
-    language = "en",
-
-
+/**
+ * 🔊 SonicMTL - Zero-code Madara source!
+ * 
+ * Just define the annotation - KSP generates everything else.
+ */
+@MadaraSource(
+    name = "SonicMTL",
+    baseUrl = "https://www.sonicmtl.com",
+    lang = "en",
+    id = 77
 )
+object SonicMTLConfig

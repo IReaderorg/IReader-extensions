@@ -1,18 +1,14 @@
 package ireader.novelmultiverse
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class NovelMultiverse(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://www.novelmultiverse.com",
-    sourceName = "novelmultiverse",
-    sourceId = 83,
-    language = "en",
-
-
+/**
+ * 🌌 NovelMultiverse - Zero-code Madara source
+ */
+@MadaraSource(
+    name = "NovelMultiverse",
+    baseUrl = "https://www.novelmultiverse.com",
+    lang = "en",
+    id = 83
 )
+object NovelMultiverseConfig

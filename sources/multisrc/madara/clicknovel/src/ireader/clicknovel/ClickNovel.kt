@@ -1,17 +1,16 @@
 package ireader.clicknovel
 
+import tachiyomix.annotations.MadaraSource
 
-import ireader.madara.Madara
-import ireader.core.source.Dependencies
-import ireader.madara.Path
-import tachiyomix.annotations.Extension
-
-@Extension
-abstract class ClickNovel(val deps: Dependencies) : Madara(
-    deps,
-    key = "https://clicknovel.net",
-    sourceName = "clicknovel",
-    sourceId = 68,
-    language = "en",
-
+/**
+ * 📖 ClickNovel - Zero-code Madara source!
+ * 
+ * Just define the annotation - KSP generates everything else.
+ */
+@MadaraSource(
+    name = "ClickNovel",
+    baseUrl = "https://clicknovel.net",
+    lang = "en",
+    id = 68
 )
+object ClickNovelConfig

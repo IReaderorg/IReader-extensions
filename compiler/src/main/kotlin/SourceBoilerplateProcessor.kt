@@ -56,11 +56,8 @@ class SourceBoilerplateProcessor(
         // Process @ValidatePackage annotations
         processPackageValidation(resolver)
 
-        // Process @GenerateFilters annotations
-        processGenerateFilters(resolver)
-
-        // Process @GenerateCommands annotations
-        processGenerateCommands(resolver)
+        // NOTE: @GenerateFilters and @GenerateCommands are handled by SourceFactoryProcessor
+        // which generates them inside the {ClassName}Generated object
 
         processed = true
         return emptyList()
@@ -372,9 +369,7 @@ class SourceBoilerplateProcessor(
         val packageName = classDecl.packageName.asString()
         val className = classDecl.simpleName.asString()
         
-        val filterClass = ClassName("ireader.core.source.model", "Filter")
-        val filterListType = ClassName("kotlin.collections", "List")
-            .parameterizedBy(filterClass)
+        val filterListType = ClassName("ireader.core.source.model", "FilterList")
         
         val filters = mutableListOf<String>()
         if (hasTitle) filters.add("Filter.Title()")
@@ -421,9 +416,7 @@ class SourceBoilerplateProcessor(
         val packageName = classDecl.packageName.asString()
         val className = classDecl.simpleName.asString()
         
-        val commandClass = ClassName("ireader.core.source.model", "Command")
-        val commandListType = ClassName("kotlin.collections", "List")
-            .parameterizedBy(commandClass)
+        val commandListType = ClassName("ireader.core.source.model", "CommandList")
         
         val commands = mutableListOf<String>()
         if (detailFetch) commands.add("Command.Detail.Fetch()")
