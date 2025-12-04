@@ -8,6 +8,13 @@
  * by the main IReader app's runtime.js (~800KB), NOT bundled here.
  * 
  * Output: Individual source JS files that register with SourceRegistry
+ * 
+ * USAGE: Run the Android KSP task first, then build JS:
+ *   ./gradlew :extensions:individual:en:freewebnovelkmp:kspEnReleaseKotlin
+ *   ./gradlew :js-sources:jsBrowserProductionWebpack
+ * 
+ * Or use the convenience task:
+ *   ./gradlew :js-sources:buildJsWithDeps
  */
 
 plugins {
@@ -22,6 +29,7 @@ val jsSources = listOf(
         name = "FreeWebNovelKmp",  // Must match @Extension name
         id = "freewebnovelkmp",    // Lowercase ID for file naming
         lang = "en",
+        projectPath = ":extensions:individual:en:freewebnovelkmp",
         sourceDir = "../sources/en/freewebnovelkmp/main/src",
         generatedDir = "../sources/en/freewebnovelkmp/build/generated/ksp/enRelease/kotlin"
     )
@@ -31,6 +39,7 @@ data class JsSourceConfig(
     val name: String,      // Display name (matches @Extension)
     val id: String,        // Lowercase ID for file naming
     val lang: String,
+    val projectPath: String,  // Gradle project path for dependency
     val sourceDir: String,
     val generatedDir: String
 )
@@ -97,8 +106,10 @@ tasks.register("buildAllJsSources") {
     description = "Build JS source files for iOS (bundled with all dependencies)"
     dependsOn("jsBrowserProductionWebpack")
     
+    val webpackOutputDir = layout.buildDirectory.dir("kotlin-webpack/js/productionExecutable")
+    
     doLast {
-        val outputDir = file("$buildDir/kotlin-webpack/js/productionExecutable")
+        val outputDir = webpackOutputDir.get().asFile
         logger.lifecycle("JS sources built at: ${outputDir.absolutePath}")
         outputDir.listFiles()?.filter { it.extension == "js" }?.forEach {
             logger.lifecycle("  - ${it.name} (${it.length() / 1024}KB)")
@@ -159,4 +170,79 @@ $sources
 }""")
         logger.lifecycle("Created index at: ${indexFile.absolutePath}")
     }
+}
+
+// ============================================================================
+// Task Dependencies & Verification
+// ============================================================================
+
+// Store paths as simple strings for configuration cache compatibility
+val generatedDirPaths = jsSources.map { it.name to it.generatedDir }
+val projectPaths = jsSources.map { it.name to it.projectPath }
+
+/**
+ * Task to verify KSP-generated files exist before JS compilation.
+ * 
+ * The JS build requires KSP-generated files from Android builds.
+ * These must be generated separately before running JS compilation.
+ * 
+ * Build order:
+ * 1. ./gradlew :extensions:individual:en:freewebnovelkmp:kspEnReleaseKotlin
+ * 2. ./gradlew :js-sources:jsBrowserProductionWebpack
+ */
+abstract class VerifyKspFilesTask : DefaultTask() {
+    @get:InputFiles
+    @get:Optional
+    abstract val generatedDirFiles: ConfigurableFileCollection
+    
+    @get:Input
+    abstract val sourceNames: ListProperty<String>
+    
+    @get:Input
+    abstract val projectPathsInput: ListProperty<String>
+    
+    @TaskAction
+    fun verify() {
+        val dirs = generatedDirFiles.files.toList()
+        val names = sourceNames.get()
+        val paths = projectPathsInput.get()
+        
+        val missingDirs = mutableListOf<String>()
+        dirs.forEachIndexed { index, dir ->
+            if (!dir.exists() || dir.listFiles()?.isEmpty() != false) {
+                missingDirs.add("${names[index]}: ${dir.absolutePath}")
+            }
+        }
+        
+        if (missingDirs.isNotEmpty()) {
+            val commands = paths.joinToString("\n") { projectPath ->
+                "  ./gradlew ${projectPath}:kspEnReleaseKotlin"
+            }
+            throw GradleException("""
+                |
+                |KSP-generated files not found for JS sources:
+                |${missingDirs.joinToString("\n") { "  - $it" }}
+                |
+                |Run the Android KSP tasks first:
+                |$commands
+                |
+                |Then run: ./gradlew :js-sources:jsBrowserProductionWebpack
+            """.trimMargin())
+        }
+        
+        logger.lifecycle("✓ All KSP-generated directories exist")
+    }
+}
+
+tasks.register<VerifyKspFilesTask>("verifyKspGeneratedFiles") {
+    group = "js"
+    description = "Verify that KSP-generated files exist"
+    generatedDirFiles.from(jsSources.map { file(it.generatedDir) })
+    sourceNames.set(jsSources.map { it.name })
+    projectPathsInput.set(jsSources.map { it.projectPath })
+}
+
+// Make JS compilation depend on verification
+tasks.matching { it.name == "compileKotlinJs" }.configureEach {
+    dependsOn("verifyKspGeneratedFiles")
 }
