@@ -10,30 +10,14 @@
  * Output: Individual source JS files that register with SourceRegistry
  * 
  * USAGE: Run the Android KSP task first, then build JS:
- *   ./gradlew :extensions:individual:en:freewebnovelkmp:kspEnReleaseKotlin
+ *   ./gradlew <project>:kspEnReleaseKotlin (for each JS-enabled source)
  *   ./gradlew :js-sources:jsBrowserProductionWebpack
- * 
- * Or use the convenience task:
- *   ./gradlew :js-sources:buildJsWithDeps
  */
 
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
-
-// Sources to compile (those with enableJs = true)
-// name should match the @Extension name for proper init function naming
-val jsSources = listOf(
-    JsSourceConfig(
-        name = "FreeWebNovelKmp",  // Must match @Extension name
-        id = "freewebnovelkmp",    // Lowercase ID for file naming
-        lang = "en",
-        projectPath = ":extensions:individual:en:freewebnovelkmp",
-        sourceDir = "../sources/en/freewebnovelkmp/main/src",
-        generatedDir = "../sources/en/freewebnovelkmp/build/generated/ksp/enRelease/kotlin"
-    )
-)
 
 data class JsSourceConfig(
     val name: String,      // Display name (matches @Extension)
@@ -43,6 +27,127 @@ data class JsSourceConfig(
     val sourceDir: String,
     val generatedDir: String
 )
+
+/**
+ * Auto-discover JS-enabled sources by scanning build.gradle.kts files.
+ * Looks for extensions with enableJs = true.
+ */
+fun discoverJsSources(): List<JsSourceConfig> {
+    val sources = mutableListOf<JsSourceConfig>()
+    val sourcesDir = rootDir.resolve("sources")
+    
+    // Scan individual sources (sources/<lang>/<name>)
+    sourcesDir.listFiles()?.filter { it.isDirectory && it.name != "multisrc" }?.forEach { langDir ->
+        langDir.listFiles()?.filter { it.isDirectory }?.forEach { sourceDir ->
+            val buildFile = sourceDir.resolve("build.gradle.kts")
+            if (buildFile.exists()) {
+                val config = parseExtensionConfig(buildFile, langDir.name, sourceDir.name, "individual")
+                if (config != null) {
+                    sources.add(config)
+                }
+            }
+        }
+    }
+    
+    // Scan multisrc sources (sources/multisrc/<theme>)
+    val multisrcDir = sourcesDir.resolve("multisrc")
+    if (multisrcDir.exists()) {
+        multisrcDir.listFiles()?.filter { it.isDirectory }?.forEach { themeDir ->
+            val buildFile = themeDir.resolve("build.gradle.kts")
+            if (buildFile.exists()) {
+                // Multisrc can have multiple extensions, parse each
+                val configs = parseMultisrcExtensionConfigs(buildFile, themeDir.name)
+                sources.addAll(configs)
+            }
+        }
+    }
+    
+    return sources
+}
+
+/**
+ * Parse a build.gradle.kts file to extract Extension config with enableJs = true.
+ */
+fun parseExtensionConfig(buildFile: File, lang: String, sourceName: String, type: String): JsSourceConfig? {
+    val content = buildFile.readText()
+    
+    // Check if enableJs = true is present
+    if (!content.contains("enableJs") || !content.contains("enableJs = true") && !content.contains("enableJs=true")) {
+        return null
+    }
+    
+    // Extract extension name from the Extension(...) block
+    val nameRegex = """Extension\s*\([^)]*name\s*=\s*"([^"]+)"""".toRegex()
+    val nameMatch = nameRegex.find(content)
+    val extensionName = nameMatch?.groupValues?.get(1) ?: sourceName
+    
+    // Determine source directory (default is "main")
+    val sourceDirRegex = """sourceDir\s*=\s*"([^"]+)"""".toRegex()
+    val sourceDirMatch = sourceDirRegex.find(content)
+    val sourceSubDir = sourceDirMatch?.groupValues?.get(1) ?: "main"
+    
+    val projectPath = ":extensions:$type:$lang:$sourceName"
+    val baseDir = if (type == "individual") "sources/$lang/$sourceName" else "sources/multisrc/$sourceName"
+    
+    return JsSourceConfig(
+        name = extensionName,
+        id = sourceName.lowercase(),
+        lang = lang,
+        projectPath = projectPath,
+        sourceDir = "../$baseDir/$sourceSubDir/src",
+        generatedDir = "../$baseDir/build/generated/ksp/${lang}Release/kotlin"
+    )
+}
+
+/**
+ * Parse multisrc build.gradle.kts for extensions with enableJs = true.
+ */
+fun parseMultisrcExtensionConfigs(buildFile: File, themeName: String): List<JsSourceConfig> {
+    val content = buildFile.readText()
+    val configs = mutableListOf<JsSourceConfig>()
+    
+    // Find all Extension blocks with enableJs = true
+    val extensionBlockRegex = """Extension\s*\(([^)]+enableJs\s*=\s*true[^)]*)\)""".toRegex()
+    
+    extensionBlockRegex.findAll(content).forEach { match ->
+        val block = match.groupValues[1]
+        
+        // Extract name
+        val nameRegex = """name\s*=\s*"([^"]+)"""".toRegex()
+        val name = nameRegex.find(block)?.groupValues?.get(1) ?: return@forEach
+        
+        // Extract lang
+        val langRegex = """lang\s*=\s*"([^"]+)"""".toRegex()
+        val lang = langRegex.find(block)?.groupValues?.get(1) ?: "en"
+        
+        // Extract sourceDir (for flavor)
+        val sourceDirRegex = """sourceDir\s*=\s*"([^"]+)"""".toRegex()
+        val sourceDir = sourceDirRegex.find(block)?.groupValues?.get(1) ?: "main"
+        
+        val flavor = if (sourceDir == "main") lang else "$sourceDir-$lang"
+        
+        configs.add(JsSourceConfig(
+            name = name,
+            id = name.lowercase().replace(" ", ""),
+            lang = lang,
+            projectPath = ":extensions:multisrc:$themeName",
+            sourceDir = "../sources/multisrc/$themeName/$sourceDir/src",
+            generatedDir = "../sources/multisrc/$themeName/build/generated/ksp/${flavor}Release/kotlin"
+        ))
+    }
+    
+    return configs
+}
+
+// Auto-discover JS-enabled sources
+val jsSources: List<JsSourceConfig> = discoverJsSources().also { sources ->
+    if (sources.isNotEmpty()) {
+        logger.lifecycle("Discovered ${sources.size} JS-enabled source(s):")
+        sources.forEach { logger.lifecycle("  - ${it.name} (${it.lang})") }
+    } else {
+        logger.lifecycle("No JS-enabled sources found. Set enableJs = true in Extension config to enable.")
+    }
+}
 
 kotlin {
     js(IR) {
@@ -76,9 +181,11 @@ kotlin {
                 kotlin.srcDir(source.sourceDir)
                 // KSP-generated JsInit.kt (platform-agnostic)
                 kotlin.srcDir(source.generatedDir)
-                // KSP-generated JS registration files (JS-specific)
-                // These are in the same generated dir with @JsExport functions
             }
+            
+            // Include JS-only registration files (renamed from .kt.txt to .kt)
+            // These are generated by KSP but stored with .kt.txt extension to avoid Android compilation
+            kotlin.srcDir(layout.buildDirectory.dir("js-registration-sources"))
             
             dependencies {
                 // These are compile-time only - runtime provides them
@@ -98,6 +205,30 @@ kotlin {
             }
         }
     }
+}
+
+// Task to copy and rename JS registration files from .kt.txt to .kt
+// These files are generated by KSP with .kt.txt extension to avoid Android compilation
+tasks.register<Copy>("copyJsRegistrationFiles") {
+    group = "js"
+    description = "Copy JS registration files and rename from .kt.txt to .kt"
+    
+    val outputDir = layout.buildDirectory.dir("js-registration-sources")
+    
+    jsSources.forEach { source ->
+        val jsOnlyDir = file("${source.generatedDir}/../resources/js-only")
+        from(jsOnlyDir) {
+            include("**/*.kt.txt")
+            rename { it.removeSuffix(".txt") }
+        }
+    }
+    
+    into(outputDir)
+}
+
+// Make sure JS registration files are copied before compilation
+tasks.matching { it.name == "compileKotlinJs" }.configureEach {
+    dependsOn("copyJsRegistrationFiles")
 }
 
 // Build task - uses webpack to bundle everything into one file

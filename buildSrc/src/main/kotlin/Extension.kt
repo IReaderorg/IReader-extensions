@@ -22,10 +22,10 @@ data class Extension(
     val sourceDir: String = "main",
     /**
      * Source ID. If not specified, auto-generated from name + lang.
-     * 
+     *
      * For new sources: Leave as default (auto-generated)
      * For existing sources: Keep the existing ID for backward compatibility
-     * 
+     *
      * The ID is a stable hash generated from: "${name.lowercase()}/$lang/1"
      * This ensures the same source always gets the same ID.
      */
@@ -36,18 +36,18 @@ data class Extension(
     val assetsDir: String = "",
     val projectDependencies: Set<String> = emptySet(),
     val remoteDependencies: Set<String> = emptySet(),
-    /** 
+    /**
      * Enable JS build for iOS support.
      * When true, KSP will generate JsInit.kt with @JsExport functions
      * that can be compiled to JavaScript for iOS JavaScriptCore runtime.
      */
-    val enableJs: Boolean = false,
+    val enableJs: Boolean = true,
     /**
      * Enable auto source ID generation via KSP @AutoSourceId annotation.
      * When true, the source class should use @AutoSourceId and reference
      * the generated ID constant instead of overriding id directly.
      */
-    val useAutoSourceId: Boolean = false,
+    val useAutoSourceId: Boolean = true,
 )
 
 private val packageRegex = Regex("[^\\w\\d.]")

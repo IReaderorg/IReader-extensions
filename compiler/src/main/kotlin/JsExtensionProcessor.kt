@@ -175,13 +175,12 @@ class JsExtensionProcessor(
             val jsPackage = "$sourcePackage.js"
             val sourceName = arguments.name.replace(" ", "").replace("(", "").replace(")", "")
 
-            // Always generate platform-agnostic code
+            // Always generate platform-agnostic code (compiled by both Android and JS)
             generatePlatformAgnosticCode(classDeclaration, jsPackage, sourceName)
             
-            // Only generate JS-specific code when building for JS target
-            if (isJsTarget) {
-                generateJsSpecificCode(classDeclaration, jsPackage, sourceName)
-            }
+            // Generate JS-specific code to a separate directory
+            // This will be picked up by js-sources module but not compiled by Android
+            generateJsSpecificCode(classDeclaration, jsPackage, sourceName)
         }
         
         /**
@@ -273,8 +272,13 @@ class JsExtensionProcessor(
         
         /**
          * Generate JS-specific registration code with @JsExport annotations.
-         * This code uses JS-only constructs (dynamic, js(), console) and should
-         * only be compiled when targeting JavaScript.
+         * 
+         * This code uses JS-only constructs (dynamic, js(), console) and is written
+         * to a separate 'js-generated' directory that:
+         * - Is included by js-sources module for JS compilation
+         * - Is NOT included by Android source sets (avoiding compilation errors)
+         * 
+         * The file is written using createNewFileByPath to place it in a custom location.
          */
         private fun generateJsSpecificCode(
             classDeclaration: KSClassDeclaration,
@@ -293,6 +297,7 @@ class JsExtensionProcessor(
                 appendLine(" * ")
                 appendLine(" * This file contains @JsExport functions for iOS/Web runtime.")
                 appendLine(" * It is ONLY compiled when building for JavaScript target.")
+                appendLine(" * Android builds should NOT include this file.")
                 appendLine(" */")
                 appendLine("@file:OptIn(ExperimentalJsExport::class)")
                 appendLine("@file:Suppress(\"UNUSED_VARIABLE\")")
@@ -354,12 +359,15 @@ class JsExtensionProcessor(
                 appendLine("})\"\"\")")
             }
             
-            // Write JS-specific registration file
+            // Write JS-specific registration file to a separate js-only directory
+            // This uses resources output which is NOT compiled by Kotlin
+            // The js-sources module will include this directory for JS compilation
             try {
-                codeGenerator.createNewFile(
+                val packagePath = jsPackage.replace(".", "/")
+                codeGenerator.createNewFileByPath(
                     Dependencies(false, classDeclaration.containingFile!!),
-                    jsPackage,
-                    "JsRegistration"
+                    "js-only/$packagePath/JsRegistration",
+                    "kt.txt"  // Use .kt.txt extension so Android doesn't compile it
                 ).bufferedWriter().use { writer ->
                     writer.write(jsRegistrationCode)
                 }
