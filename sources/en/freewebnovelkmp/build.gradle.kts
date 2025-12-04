@@ -8,5 +8,7 @@ listOf("en").map { lang ->
         nsfw = false,
         icon = DEFAULT_ICON,
         assetsDir = "en/freewebnovelkmp/main/assets",
+        // Enable JS build for iOS support
+        enableJs = true,
     )
 }.also(::register)

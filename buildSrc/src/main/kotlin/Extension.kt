@@ -27,8 +27,12 @@ data class Extension(
     val assetsDir: String = "",
     val projectDependencies: Set<String> = emptySet(),
     val remoteDependencies: Set<String> = emptySet(),
-    /** Enable KMP/JS build for iOS support */
-    val kmpEnabled: Boolean = false,
+    /** 
+     * Enable JS build for iOS support.
+     * When true, KSP will generate JsInit.kt with @JsExport functions
+     * that can be compiled to JavaScript for iOS JavaScriptCore runtime.
+     */
+    val enableJs: Boolean = false,
 )
 
 private val packageRegex = Regex("[^\\w\\d.]")

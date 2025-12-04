@@ -14,7 +14,6 @@ kotlin {
         }
         nodejs()
         binaries.library()
-        binaries.executable()
     }
 
     sourceSets {
@@ -24,6 +23,7 @@ kotlin {
             api(libs.ireader.core)
             api(libs.ktor.core)
             api(libs.kotlinx.datetime)
+            api(libs.serialization.json)
         }
 
         jvmMain.dependencies {

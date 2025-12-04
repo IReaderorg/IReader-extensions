@@ -14,6 +14,7 @@ include(":compiler")
 include(":deeplink")
 include(":defaultRes")
 include(":common")
+include(":js-sources")
 
 if (System.getenv("CI") == null || System.getenv("CI_MODULE_GEN") == "true") {
     File(rootDir, "sources").eachDir { dir ->

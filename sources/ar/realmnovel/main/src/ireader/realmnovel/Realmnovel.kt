@@ -17,6 +17,8 @@ import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Element
+import java.util.Locale
+
 // // import java.util.Locale - Not needed for KMP - Not needed for KMP
 
 @Extension
@@ -25,10 +27,10 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(
 ) {
     override val lang: String
         get() = "ar"  // الموقع يدعم المحتوى العربي
-    
+
     override val baseUrl: String
         get() = "https://www.realmnovel.com"
-    
+
     override val id: Long
         get() = 44
     override val name: String
@@ -163,7 +165,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(
                         Regex("<div class=\"[^\"]*ad[^\"]*\">[^<]*</div>"),  // إزالة الإعلانات الشائعة
                         ""
                     ).trim()
-                    
+
                     if (cleaned.contains("<img", ignoreCase = true)) {
                         val doc = Ksoup.parseBodyFragment(cleaned)
                         doc.setBaseUri(baseUrl)

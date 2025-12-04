@@ -24,6 +24,8 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
 
+
+
     override val lang: String
         get() = "en"
     override val baseUrl: String

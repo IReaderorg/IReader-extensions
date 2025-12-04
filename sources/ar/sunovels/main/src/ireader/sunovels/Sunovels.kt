@@ -17,6 +17,8 @@ import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Element
+import java.util.Locale
+
 // // import java.util.Locale - Not needed for KMP - Not needed for KMP
 
 @Extension
@@ -25,10 +27,10 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(
 ) {
     override val lang: String
         get() = "ar"
-    
+
     override val baseUrl: String
         get() = "https://sunovels.com"
-    
+
     override val id: Long
         get() = 42
     override val name: String
@@ -159,7 +161,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(
                         Regex("(?i)(?:(?:إقرأ|اقرأ)\\s*رواياتنا\\s*فقط\\s*على\\s*موقع\\s*(?:sunovels|الروايات|novel)\\.?\\s*(?:com|site)?(?:\\s*\\*?)+)"),
                         ""
                     ).trim()
-                    
+
                     if (cleaned.contains("<img", ignoreCase = true)) {
                         val doc = Ksoup.parseBodyFragment(cleaned)
                         doc.setBaseUri(baseUrl)

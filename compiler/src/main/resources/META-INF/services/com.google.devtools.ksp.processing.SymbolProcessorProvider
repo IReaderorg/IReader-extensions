@@ -1,4 +1,5 @@
 tachiyomix.compiler.ExtensionProcessorFactory
+tachiyomix.compiler.JsExtensionProcessorFactory
 tachiyomix.compiler.ThemeSourceProcessorProvider
 tachiyomix.compiler.SourceIndexProcessorProvider
 tachiyomix.compiler.SourceFactoryProcessorProvider
