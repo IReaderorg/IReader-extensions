@@ -1,5 +1,5 @@
 [versions]
-ireader = "1.4.0"
+ireader = "1.5.0"
 ktor = "3.3.2"
 ktlint = "0.45.1"
 kotlin = "2.2.21"
@@ -7,7 +7,10 @@ serialization = "1.9.0"
 ksp = "2.3.2"
 serializationkotlinVersion = "1.7.10"
 junitAndroidExtVersion = "1.1.4-alpha03"
-dex2jar = "2.4.32"
+dex2jar = "2.4.33"
+ksoup = "0.2.5"
+kotlinx-datetime = "0.7.1"
+
 [libraries]
 
 android-sdklib = "com.android.tools:sdklib:31.13.1"
@@ -16,6 +19,7 @@ android-gradle = "com.android.tools.build:gradle:8.13.1"
 
 ktor-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 
 
 kotlinpoet = "com.squareup:kotlinpoet-ksp:2.2.0"
@@ -26,6 +30,13 @@ ireader-core = { module = "io.github.ireaderorg:source-api", version.ref = "irea
 
 okhttp = "com.squareup.okhttp3:okhttp:5.3.1"
 jsoup = "org.jsoup:jsoup:1.21.2"
+
+# Ksoup (KMP replacement for Jsoup)
+ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
+ksoup-network = { module = "com.fleeksoft.ksoup:ksoup-network", version.ref = "ksoup" }
+
+# KotlinX DateTime (KMP date/time)
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 
 junit4 = "junit:junit:4.13.2"
@@ -66,6 +77,9 @@ dex2jar-tools = { module = "de.femtopedia.dex2jar:dex-tools", version.ref = "dex
 [bundles]
 common = ["stdlib","okhttp","jsoup", "ktor-core","ktor-cio","ktor-android","ktor-okhttp","ktor-contentNegotiation","ktor-serialization","ktor-gson","ktor-jackson","ireader-core"]
 commonTesting = ["junit4","extJunit","espresso","espresso","junitAndroidExt","truth","testRunner","robolectric"]
+
+# KMP common dependencies (for multiplatform sources)
+kmp-common = ["ksoup", "ktor-core", "kotlinx-datetime", "ireader-core"]
 
 [plugins]
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

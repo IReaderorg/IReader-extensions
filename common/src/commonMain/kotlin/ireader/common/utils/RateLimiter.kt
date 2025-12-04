@@ -3,7 +3,7 @@ package ireader.common.utils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.ExperimentalTime
 
 /**
  * Rate limiter for controlling request frequency to sources.
@@ -15,20 +15,21 @@ class RateLimiter(
 ) {
     private val mutex = Mutex()
     private val timestamps = ArrayDeque<Long>(permits)
-    
+
     /**
      * Acquires a permit, waiting if necessary.
      * Suspends until a permit is available.
      */
+    @OptIn(ExperimentalTime::class)
     suspend fun acquire() {
         mutex.withLock {
-            val now = System.currentTimeMillis()
-            
+            val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
+
             // Remove old timestamps outside the time window
             while (timestamps.isNotEmpty() && now - timestamps.first() >= periodMillis) {
                 timestamps.removeFirst()
             }
-            
+
             // If we've hit the limit, wait
             if (timestamps.size >= permits) {
                 val oldestTimestamp = timestamps.first()
@@ -39,12 +40,12 @@ class RateLimiter(
                 // Remove the oldest after waiting
                 timestamps.removeFirst()
             }
-            
+
             // Add current timestamp
-            timestamps.addLast(System.currentTimeMillis())
+            timestamps.addLast(kotlin.time.Clock.System.now().toEpochMilliseconds())
         }
     }
-    
+
     /**
      * Executes a block with rate limiting.
      */
@@ -58,36 +59,43 @@ class RateLimiter(
  * Global rate limiter manager for managing per-source rate limits.
  */
 object RateLimiterManager {
-    private val limiters = ConcurrentHashMap<String, RateLimiter>()
-    
+    private val limiters = mutableMapOf<String, RateLimiter>()
+    private val mutex = Mutex()
+
     /**
      * Gets or creates a rate limiter for a source.
-     * 
+     *
      * @param sourceId Unique identifier for the source
      * @param permits Number of permits per period
      * @param periodMillis Time period in milliseconds
      */
-    fun getOrCreate(
+    suspend fun getOrCreate(
         sourceId: String,
         permits: Int = 2,
         periodMillis: Long = 1000
     ): RateLimiter {
-        return limiters.getOrPut(sourceId) {
-            RateLimiter(permits, periodMillis)
+        return mutex.withLock {
+            limiters.getOrPut(sourceId) {
+                RateLimiter(permits, periodMillis)
+            }
         }
     }
-    
+
     /**
      * Removes a rate limiter for a source.
      */
-    fun remove(sourceId: String) {
-        limiters.remove(sourceId)
+    suspend fun remove(sourceId: String) {
+        mutex.withLock {
+            limiters.remove(sourceId)
+        }
     }
-    
+
     /**
      * Clears all rate limiters.
      */
-    fun clear() {
-        limiters.clear()
+    suspend fun clear() {
+        mutex.withLock {
+            limiters.clear()
+        }
     }
 }

@@ -1,16 +1,16 @@
 package ireader.common.utils
 
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
-import org.jsoup.safety.Safelist
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
+import com.fleeksoft.ksoup.safety.Safelist
 
 /**
  * Utilities for cleaning and processing HTML content.
  * Removes unwanted elements, scripts, and normalizes text.
  */
 object HtmlCleaner {
-    
+
     /**
      * Common unwanted selectors to remove from content.
      */
@@ -33,7 +33,7 @@ object HtmlCleaner {
         "[id*='disqus']",
         "[class*='disqus']"
     )
-    
+
     /**
      * Common phrases to remove from chapter content.
      */
@@ -48,10 +48,10 @@ object HtmlCleaner {
         "Advertisement",
         "ADVERTISEMENT"
     )
-    
+
     /**
      * Cleans HTML content by removing unwanted elements and text.
-     * 
+     *
      * @param html Raw HTML content
      * @param additionalSelectors Additional CSS selectors to remove
      * @return Cleaned HTML string
@@ -60,19 +60,19 @@ object HtmlCleaner {
         html: String,
         additionalSelectors: List<String> = emptyList()
     ): String {
-        val doc = Jsoup.parse(html)
-        
+        val doc = Ksoup.parse(html)
+
         // Remove unwanted elements
         (unwantedSelectors + additionalSelectors).forEach { selector ->
             doc.select(selector).remove()
         }
-        
+
         return doc.body().html()
     }
-    
+
     /**
      * Cleans text content by removing unwanted phrases.
-     * 
+     *
      * @param text Raw text content
      * @param additionalPhrases Additional phrases to remove
      * @return Cleaned text
@@ -82,30 +82,30 @@ object HtmlCleaner {
         additionalPhrases: List<String> = emptyList()
     ): String {
         var cleaned = text
-        
+
         (unwantedPhrases + additionalPhrases).forEach { phrase ->
             cleaned = cleaned.replace(phrase, "", ignoreCase = true)
         }
-        
+
         return cleaned
             .replace("&nbsp;", " ")
             .replace(Regex("\\s+"), " ")
             .trim()
     }
-    
+
     /**
      * Extracts clean text from HTML, removing all tags.
-     * 
+     *
      * @param html HTML content
      * @return Plain text
      */
     fun htmlToText(html: String): String {
-        return Jsoup.parse(html).text()
+        return Ksoup.parse(html).text()
     }
-    
+
     /**
      * Sanitizes HTML to only allow safe tags.
-     * 
+     *
      * @param html HTML content
      * @param safelist Custom safelist (defaults to basic formatting)
      * @return Sanitized HTML
@@ -114,13 +114,13 @@ object HtmlCleaner {
         html: String,
         safelist: Safelist = Safelist.basic()
     ): String {
-        return Jsoup.clean(html, safelist)
+        return Ksoup.clean(html, safelist)
     }
-    
+
     /**
      * Removes empty paragraphs and normalizes whitespace.
-     * 
-     * @param document Jsoup document
+     *
+     * @param document Ksoup document
      */
     fun normalizeDocument(document: Document) {
         // Remove empty paragraphs
@@ -129,16 +129,16 @@ object HtmlCleaner {
                 p.remove()
             }
         }
-        
+
         // Normalize whitespace in text nodes
         document.select("p, div, span").forEach { element ->
             element.text(element.text().trim())
         }
     }
-    
+
     /**
      * Extracts paragraphs from content, filtering empty ones.
-     * 
+     *
      * @param element Content element
      * @param selector Paragraph selector
      * @return List of non-empty paragraph texts

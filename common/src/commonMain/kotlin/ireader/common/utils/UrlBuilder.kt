@@ -1,7 +1,5 @@
 package ireader.common.utils
 
-import java.net.URLEncoder
-
 /**
  * Utilities for building and manipulating URLs.
  * Provides type-safe URL construction with query parameters.
@@ -9,7 +7,7 @@ import java.net.URLEncoder
 class UrlBuilder(private val baseUrl: String) {
     private val queryParams = mutableMapOf<String, String>()
     private var pathSegments = mutableListOf<String>()
-    
+
     /**
      * Adds a path segment to the URL.
      */
@@ -17,7 +15,7 @@ class UrlBuilder(private val baseUrl: String) {
         pathSegments.add(segment.trim('/'))
         return this
     }
-    
+
     /**
      * Adds multiple path segments.
      */
@@ -25,7 +23,7 @@ class UrlBuilder(private val baseUrl: String) {
         segments.forEach { addPath(it) }
         return this
     }
-    
+
     /**
      * Adds a query parameter.
      */
@@ -33,7 +31,7 @@ class UrlBuilder(private val baseUrl: String) {
         queryParams[key] = value
         return this
     }
-    
+
     /**
      * Adds a query parameter if the value is not null or blank.
      */
@@ -43,7 +41,7 @@ class UrlBuilder(private val baseUrl: String) {
         }
         return this
     }
-    
+
     /**
      * Adds multiple query parameters.
      */
@@ -51,34 +49,34 @@ class UrlBuilder(private val baseUrl: String) {
         queryParams.putAll(params)
         return this
     }
-    
+
     /**
      * Builds the final URL string.
      */
     fun build(): String {
         val url = StringBuilder(baseUrl.trimEnd('/'))
-        
+
         // Add path segments
         if (pathSegments.isNotEmpty()) {
             url.append('/')
             url.append(pathSegments.joinToString("/"))
         }
-        
+
         // Add query parameters
         if (queryParams.isNotEmpty()) {
             url.append('?')
             url.append(
                 queryParams.entries.joinToString("&") { (key, value) ->
-                    "${URLEncoder.encode(key, "UTF-8")}=${URLEncoder.encode(value, "UTF-8")}"
+                    "${encodeUrl(key)}=${encodeUrl(value)}"
                 }
             )
         }
-        
+
         return url.toString()
     }
-    
+
     override fun toString(): String = build()
-    
+
     companion object {
         /**
          * Creates a new URL builder.
@@ -86,12 +84,27 @@ class UrlBuilder(private val baseUrl: String) {
         fun from(baseUrl: String): UrlBuilder {
             return UrlBuilder(baseUrl)
         }
-        
+
         /**
          * Encodes a string for use in URLs.
+         * Simple percent-encoding for common characters.
          */
-        fun encode(value: String): String {
-            return URLEncoder.encode(value, "UTF-8")
+        fun encodeUrl(value: String): String {
+            return buildString {
+                for (char in value) {
+                    when {
+                        char.isLetterOrDigit() || char in "-_.~" -> append(char)
+                        char == ' ' -> append("+")
+                        else -> {
+                            val bytes = char.toString().encodeToByteArray()
+                            for (byte in bytes) {
+                                append('%')
+                                append(byte.toInt().and(0xFF).toString(16).uppercase().padStart(2, '0'))
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
