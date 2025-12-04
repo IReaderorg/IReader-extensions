@@ -209,21 +209,26 @@ kotlin {
     }
 }
 
+// Build list of KSP task paths for dependency declaration
+val kspTaskPaths = jsSources.map { source ->
+    "${source.projectPath}:ksp${source.lang.replaceFirstChar { it.uppercase() }}ReleaseKotlin"
+}
+
 // Task to copy KSP-generated files, excluding Extension.kt (which conflicts between sources)
 // Only copies JsInit.kt and other source-specific generated files
 val copyKspGeneratedFiles by tasks.registering(Copy::class) {
     group = "js"
     description = "Copy KSP-generated files for JS compilation (excludes Extension.kt)"
     
+    // Declare explicit dependencies on KSP tasks from other projects
+    kspTaskPaths.forEach { taskPath ->
+        dependsOn(taskPath)
+    }
+    
     val outputDir = layout.buildDirectory.dir("ksp-js-sources")
     
     jsSources.forEach { source ->
-        // Use inputs.dir to declare the dependency on the generated directory
-        // This tells Gradle about the implicit dependency without requiring task lookup
-        val generatedDir = file(source.generatedDir)
-        inputs.dir(generatedDir).optional().withPropertyName("ksp-${source.id}")
-        
-        from(generatedDir) {
+        from(source.generatedDir) {
             // Include only JS-related generated files
             include("**/js/**/*.kt")  // JsInit.kt and related
             // Exclude Extension.kt which is Android-specific and conflicts
@@ -241,13 +246,15 @@ val copyJsRegistrationFiles by tasks.registering(Copy::class) {
     group = "js"
     description = "Copy JS registration files and rename from .kt.txt to .kt"
     
+    // Declare explicit dependencies on KSP tasks from other projects
+    kspTaskPaths.forEach { taskPath ->
+        dependsOn(taskPath)
+    }
+    
     val outputDir = layout.buildDirectory.dir("js-registration-sources")
     
     jsSources.forEach { source ->
         val jsOnlyDir = file("${source.generatedDir}/../resources/js-only")
-        // Use inputs.dir to declare the dependency on the js-only directory
-        inputs.dir(jsOnlyDir).optional().withPropertyName("js-only-${source.id}")
-        
         from(jsOnlyDir) {
             include("**/*.kt.txt")
             rename { it.removeSuffix(".txt") }
