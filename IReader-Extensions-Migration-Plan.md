@@ -583,11 +583,52 @@ If migration causes issues:
 
 ---
 
+## Migration Scripts
+
+Migration scripts are available in the `scripts/` directory:
+
+### PowerShell Script (Windows)
+```powershell
+# Migrate a single source
+.\scripts\migrate-source-to-kmp.ps1 -SourcePath "sources/en/novelupdates"
+
+# Migrate all sources
+.\scripts\migrate-source-to-kmp.ps1 -All
+
+# Preview changes without making them
+.\scripts\migrate-source-to-kmp.ps1 -SourcePath "sources/en/novelupdates" -DryRun
+
+# Quick import-only migration
+.\scripts\migrate-imports.ps1 -Path "sources/en/novelupdates" -Recursive
+```
+
+### Kotlin Script (Cross-platform)
+```bash
+# Migrate a single source
+kotlin scripts/MigrateToKmp.kts sources/en/novelupdates
+
+# Migrate all sources
+kotlin scripts/MigrateToKmp.kts --all
+
+# Preview changes
+kotlin scripts/MigrateToKmp.kts --dry-run sources/en/novelupdates
+```
+
+### What the scripts do:
+1. Convert Jsoup imports to Ksoup
+2. Update `System.currentTimeMillis()` to `Clock.System.now().toEpochMilliseconds()`
+3. Create KMP directory structure (`commonMain`, `jsMain`)
+4. Move source files to `commonMain`
+5. Create JS `Init.kt` file for each source
+
+---
+
 ## Next Steps
 
 1. ✅ Review this plan
-2. ⏳ Publish new source-api to Maven
-3. ⏳ Start Phase 1 in IReader-extensions
-4. ⏳ Migrate sources incrementally
-5. ⏳ Test on iOS simulator
-6. ⏳ Deploy to production
+2. ✅ Phase 1: Update dependencies in `gradle/libs.versions.toml`
+3. ✅ Phase 2: Migrate `common` module to multiplatform
+4. ⏳ Publish new source-api to Maven
+5. ⏳ Migrate sources using scripts
+6. ⏳ Test on iOS simulator
+7. ⏳ Deploy to production

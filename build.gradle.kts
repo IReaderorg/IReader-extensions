@@ -20,3 +20,43 @@ tasks.register("delete", Delete::class) {
   delete(rootProject.buildDir)
 }
 tasks.create<RepoTask>("repo")
+
+// JS build tasks for iOS support
+tasks.register("buildAllJsSources") {
+  group = "build"
+  description = "Build all KMP-enabled sources as JS bundles for iOS"
+  
+  dependsOn(
+    subprojects
+      .filter { it.path.startsWith(":extensions:") }
+      .filter { it.plugins.hasPlugin("extension-js-setup") }
+      .map { "${it.path}:jsBrowserProductionWebpack" }
+  )
+}
+
+tasks.register("packageJsSources") {
+  group = "distribution"
+  description = "Package all JS sources for distribution"
+  
+  dependsOn("buildAllJsSources")
+  
+  doLast {
+    val outputDir = file("build/js-dist")
+    outputDir.mkdirs()
+    
+    // Copy all JS bundles
+    subprojects
+      .filter { it.path.startsWith(":extensions:") }
+      .forEach { project ->
+        val jsDir = project.file("build/dist/js/productionExecutable")
+        if (jsDir.exists()) {
+          copy {
+            from(jsDir)
+            into(outputDir.resolve(project.name))
+          }
+        }
+      }
+    
+    println("JS sources packaged to: ${outputDir.absolutePath}")
+  }
+}

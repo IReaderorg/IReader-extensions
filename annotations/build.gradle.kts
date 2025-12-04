@@ -1,7 +1,18 @@
 plugins {
-  id("kotlin")
+    kotlin("multiplatform")
 }
 
-dependencies {
-  compileOnly(libs.stdlib)
+kotlin {
+    jvm()
+    
+    js(IR) {
+        browser()
+        nodejs()
+    }
+    
+    sourceSets {
+        commonMain.dependencies {
+            // No dependencies needed for annotations
+        }
+    }
 }

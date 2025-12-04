@@ -26,7 +26,6 @@ kotlin {
 
         jvmMain.dependencies {
             compileOnly(libs.ktor.cio)
-            compileOnly(libs.jsoup)
         }
 
         jsMain.dependencies {

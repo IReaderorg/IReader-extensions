@@ -23,10 +23,12 @@ data class Extension(
     val sourceId: Long = generateSourceId(name, lang),
     val flavor: String = getFlavorName(sourceDir, lang),
     val applicationId: String = generateApplicationId(name, flavor),
-    val icon :String = "",
-    val assetsDir :String = "",
+    val icon: String = "",
+    val assetsDir: String = "",
     val projectDependencies: Set<String> = emptySet(),
     val remoteDependencies: Set<String> = emptySet(),
+    /** Enable KMP/JS build for iOS support */
+    val kmpEnabled: Boolean = false,
 )
 
 private val packageRegex = Regex("[^\\w\\d.]")

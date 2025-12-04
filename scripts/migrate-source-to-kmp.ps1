@@ -1,15 +1,12 @@
 <#
 .SYNOPSIS
-    Migrates IReader extension sources from JVM-only to Kotlin Multiplatform (KMP).
+    Migrates IReader extension sources from Jsoup to Ksoup (KMP-compatible).
 
 .DESCRIPTION
-    This script automates the migration of source extensions to support both JVM (Android/Desktop) 
-    and JS (iOS) targets by:
+    This script automates the migration of source extensions by:
     1. Converting Jsoup imports to Ksoup
-    2. Updating date parsing to kotlinx-datetime
-    3. Restructuring source directories to KMP layout
-    4. Creating JS init files
-    5. Updating build.gradle.kts for multiplatform
+    2. Updating Jsoup.parse() to Ksoup.parse()
+    3. Updating date parsing to kotlinx-datetime
 
 .PARAMETER SourcePath
     Path to the source directory (e.g., "sources/en/novelupdates")
@@ -25,6 +22,9 @@
     
 .EXAMPLE
     .\migrate-source-to-kmp.ps1 -All
+
+.EXAMPLE
+    .\migrate-source-to-kmp.ps1 -SourcePath "sources/en/novelupdates" -DryRun
 #>
 
 param(
@@ -77,34 +77,6 @@ function Write-Log {
     }
     Write-Host "[$Level] $Message" -ForegroundColor $color
 }
-
-function Get-SourcePackageName {
-    param([string]$SourceDir)
-    
-    # Find the main Kotlin file to extract package name
-    $ktFiles = Get-ChildItem -Path $SourceDir -Filter "*.kt" -Recurse | Where-Object { $_.Name -ne "Init.kt" }
-    if ($ktFiles.Count -eq 0) { return $null }
-    
-    $content = Get-Content $ktFiles[0].FullName -Raw
-    if ($content -match 'package\s+([\w.]+)') {
-        return $matches[1]
-    }
-    return $null
-}
-
-function Get-SourceClassName {
-    param([string]$SourceDir)
-    
-    $ktFiles = Get-ChildItem -Path $SourceDir -Filter "*.kt" -Recurse | Where-Object { $_.Name -ne "Init.kt" }
-    foreach ($file in $ktFiles) {
-        $content = Get-Content $file.FullName -Raw
-        if ($content -match 'class\s+(\w+)\s*[:(]') {
-            return $matches[1]
-        }
-    }
-    return $null
-}
-
 
 function Migrate-KotlinFile {
     param(
@@ -180,56 +152,111 @@ function Migrate-KotlinFile {
     return $false
 }
 
-function Create-KmpDirectoryStructure {
+function Migrate-Source {
     param(
         [string]$SourceDir,
         [switch]$DryRun
     )
     
-    $mainSrcDir = Join-Path $SourceDir "main\src"
-    $srcDir = Join-Path $SourceDir "src"
+    Write-Log "========================================" "INFO"
+    Write-Log "Migrating source: $SourceDir" "INFO"
+    Write-Log "========================================" "INFO"
     
-    # Check if already migrated
-    if (Test-Path (Join-Path $srcDir "commonMain")) {
-        Write-Log "Source already has KMP structure: $SourceDir" "WARNING"
+    if (-not (Test-Path $SourceDir)) {
+        Write-Log "Source directory not found: $SourceDir" "ERROR"
         return $false
     }
     
-    # Check if old structure exists
-    if (-not (Test-Path $mainSrcDir)) {
-        # Try alternative structure: src/main/kotlin
-        $altMainSrcDir = Join-Path $SourceDir "src\main\kotlin"
-        if (Test-Path $altMainSrcDir) {
-            $mainSrcDir = Join-Path $SourceDir "src\main"
-        } else {
-            Write-Log "No source files found in: $SourceDir" "WARNING"
-            return $false
+    # Find all Kotlin files
+    $ktFiles = Get-ChildItem -Path $SourceDir -Filter "*.kt" -Recurse
+    $modified = 0
+    
+    foreach ($file in $ktFiles) {
+        if (Migrate-KotlinFile -FilePath $file.FullName -DryRun:$DryRun) {
+            $modified++
         }
     }
     
-    $packageName = Get-SourcePackageName $SourceDir
-    $className = Get-SourceClassName $SourceDir
-    
-    if (-not $packageName) {
-        Write-Log "Could not determine package name for: $SourceDir" "ERROR"
-        return $false
-    }
-    
-    $packagePath = $packageName -replace '\.', '/'
-    $commonMainDir = Join-Path $srcDir "commonMain\kotlin\$packagePath"
-    $jsMainDir = Join-Path $srcDir "jsMain\kotlin\$packagePath"
-    
-    if ($DryRun) {
-        Write-Log "Would create directory structure:" "INFO"
-        Write-Log "  - $commonMainDir" "INFO"
-        Write-Log "  - $jsMainDir" "INFO"
-        return $true
-    }
-    
-    # Create new directories
-    New-Item -ItemType Directory -Path $commonMainDir -Force | Out-Null
-    New-Item -ItemType Directory -Path $jsMainDir -Force | Out-Null
-    
-    Write-Log "Created KMP directory structure for: $SourceDir" "SUCCESS"
+    Write-Log "Modified $modified Kotlin files" "SUCCESS"
     return $true
+}
+
+function Migrate-AllSources {
+    param([switch]$DryRun)
+    
+    $sourcesDir = Join-Path $PSScriptRoot "..\sources"
+    
+    if (-not (Test-Path $sourcesDir)) {
+        Write-Log "Sources directory not found: $sourcesDir" "ERROR"
+        return
+    }
+    
+    $migrated = 0
+    $failed = 0
+    $skipped = 0
+    
+    # Get all language directories
+    $langDirs = Get-ChildItem -Path $sourcesDir -Directory
+    
+    foreach ($langDir in $langDirs) {
+        if ($langDir.Name -eq "multisrc" -or $langDir.Name -eq "common") { continue }
+        
+        # Get all source directories in this language
+        $sources = Get-ChildItem -Path $langDir.FullName -Directory
+        
+        foreach ($source in $sources) {
+            $buildFile = Join-Path $source.FullName "build.gradle.kts"
+            if (-not (Test-Path $buildFile)) { continue }
+            
+            try {
+                if (Migrate-Source -SourceDir $source.FullName -DryRun:$DryRun) {
+                    $migrated++
+                } else {
+                    $skipped++
+                }
+            } catch {
+                Write-Log "Failed to migrate $($source.FullName): $_" "ERROR"
+                $failed++
+            }
+        }
+    }
+    
+    Write-Log "========================================" "INFO"
+    Write-Log "Migration Summary:" "INFO"
+    Write-Log "  Migrated: $migrated" "SUCCESS"
+    Write-Log "  Skipped:  $skipped" "WARNING"
+    Write-Log "  Failed:   $failed" "ERROR"
+    Write-Log "========================================" "INFO"
+}
+
+# Main execution
+if ($All) {
+    Migrate-AllSources -DryRun:$DryRun
+} elseif ($SourcePath) {
+    # Resolve relative path
+    if (-not [System.IO.Path]::IsPathRooted($SourcePath)) {
+        $SourcePath = Join-Path $PSScriptRoot "..\$SourcePath"
+    }
+    Migrate-Source -SourceDir $SourcePath -DryRun:$DryRun
+} else {
+    Write-Host @"
+IReader Source KMP Migration Script
+====================================
+
+Usage:
+  .\migrate-source-to-kmp.ps1 -SourcePath "sources/en/novelupdates"
+  .\migrate-source-to-kmp.ps1 -All
+  .\migrate-source-to-kmp.ps1 -SourcePath "sources/en/novelupdates" -DryRun
+
+Options:
+  -SourcePath   Path to a specific source to migrate
+  -All          Migrate all sources
+  -DryRun       Preview changes without making them
+
+What this script does:
+  - Converts Jsoup imports to Ksoup (KMP-compatible HTML parser)
+  - Updates Jsoup.parse() calls to Ksoup.parse()
+  - Updates date parsing imports to kotlinx-datetime
+
+"@
 }
