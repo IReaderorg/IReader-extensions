@@ -140,12 +140,19 @@ fun parseMultisrcExtensionConfigs(buildFile: File, themeName: String): List<JsSo
 }
 
 // Auto-discover JS-enabled sources
-val jsSources: List<JsSourceConfig> = discoverJsSources().also { sources ->
+// Filter to only include sources whose projects exist in the current build (important for CI chunking)
+val jsSources: List<JsSourceConfig> = discoverJsSources().filter { source ->
+    val projectExists = rootProject.findProject(source.projectPath) != null
+    if (!projectExists) {
+        logger.lifecycle("Skipping JS source ${source.name} - project ${source.projectPath} not in current build")
+    }
+    projectExists
+}.also { sources ->
     if (sources.isNotEmpty()) {
-        logger.lifecycle("Discovered ${sources.size} JS-enabled source(s):")
+        logger.lifecycle("Discovered ${sources.size} JS-enabled source(s) in current build:")
         sources.forEach { logger.lifecycle("  - ${it.name} (${it.lang})") }
     } else {
-        logger.lifecycle("No JS-enabled sources found. Set enableJs = true in Extension config to enable.")
+        logger.lifecycle("No JS-enabled sources found in current build. Set enableJs = true in Extension config to enable.")
     }
 }
 
@@ -210,8 +217,21 @@ kotlin {
 }
 
 // Build list of KSP task paths for dependency declaration
-val kspTaskPaths = jsSources.map { source ->
-    "${source.projectPath}:ksp${source.lang.replaceFirstChar { it.uppercase() }}ReleaseKotlin"
+// Only include tasks for projects that exist in the current build (important for CI chunking)
+val kspTaskPaths = jsSources.mapNotNull { source ->
+    val taskPath = "${source.projectPath}:ksp${source.lang.replaceFirstChar { it.uppercase() }}ReleaseKotlin"
+    // Check if the project exists in the current build
+    try {
+        if (rootProject.findProject(source.projectPath) != null) {
+            taskPath
+        } else {
+            logger.lifecycle("Skipping KSP task for ${source.name} - project ${source.projectPath} not in current build")
+            null
+        }
+    } catch (e: Exception) {
+        logger.lifecycle("Skipping KSP task for ${source.name} - project ${source.projectPath} not found")
+        null
+    }
 }
 
 // Task to copy KSP-generated files, excluding Extension.kt (which conflicts between sources)
