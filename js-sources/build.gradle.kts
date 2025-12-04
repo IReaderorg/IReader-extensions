@@ -1,12 +1,13 @@
 /**
  * JS Sources Compilation Module
  * 
- * This module compiles extension sources to JavaScript for iOS.
- * It includes:
- * - Source code from sources/
- * - KSP-generated JsInit.kt files
+ * Compiles extension sources to JavaScript for iOS.
  * 
- * Output: build/dist/js/<source-name>.js
+ * IMPORTANT: This module produces source-only JS files (~10-30KB each).
+ * Runtime dependencies (Kotlin stdlib, Ktor, Ksoup, source-api) are provided
+ * by the main IReader app's runtime.js (~800KB), NOT bundled here.
+ * 
+ * Output: Individual source JS files that register with SourceRegistry
  */
 
 plugins {
@@ -14,7 +15,7 @@ plugins {
     kotlin("plugin.serialization")
 }
 
-// List of sources to compile to JS (sources with enableJs = true)
+// Sources to compile (those with enableJs = true)
 val jsSources = listOf(
     JsSourceConfig(
         name = "freewebnovelkmp",
@@ -33,24 +34,22 @@ data class JsSourceConfig(
 
 kotlin {
     js(IR) {
-        browser {
-            webpackTask {
-                mainOutputFileName = "sources-bundle.js"
-            }
-            distribution {
-                outputDirectory = file("$buildDir/dist/js")
-            }
-        }
-        binaries.executable()
+        // Use nodejs target for simpler module output (no webpack)
+        // The main app's runtime.js provides all dependencies
+        nodejs()
         
-        // Generate TypeScript declarations
+        // Library mode - produces clean ES modules
+        binaries.library()
+        
+        // Generate TypeScript declarations for iOS interop
         generateTypeScriptDefinitions()
         
-        // Use ES2015 to support Long as BigInt
+        // Compiler options for smaller output
         compilations.all {
             compileTaskProvider.configure {
                 compilerOptions {
-                    target.set("es2015")
+                    // Optimize for size
+                    freeCompilerArgs.add("-Xir-minimized-member-names")
                 }
             }
         }
@@ -58,19 +57,21 @@ kotlin {
     
     sourceSets {
         val jsMain by getting {
-            // Include source files
+            // Include source files and KSP-generated init files
             jsSources.forEach { source ->
                 kotlin.srcDir(source.sourceDir)
                 kotlin.srcDir(source.generatedDir)
             }
             
             dependencies {
+                // These are compile-time only - runtime provides them
                 implementation(project(":common"))
                 implementation(project(":annotations"))
                 
                 val libs = project.extensions.getByType<VersionCatalogsExtension>()
                     .named("libs")
                 
+                // source-api provides base classes
                 implementation(libs.findLibrary("ireader-core").get())
                 implementation(libs.findLibrary("ksoup").get())
                 implementation(libs.findLibrary("ktor-core").get())
@@ -82,21 +83,74 @@ kotlin {
     }
 }
 
-// Task to build individual source JS files
-jsSources.forEach { source ->
-    tasks.register("build${source.name.replaceFirstChar { it.uppercase() }}Js") {
-        group = "js"
-        description = "Build JS bundle for ${source.name}"
-        dependsOn("jsBrowserProductionWebpack")
-        
-        doLast {
-            logger.lifecycle("Built JS for ${source.name}")
+// Build task
+tasks.register("buildAllJsSources") {
+    group = "js"
+    description = "Build JS source files for iOS"
+    dependsOn("jsBrowserProductionLibrary")
+    
+    doLast {
+        val outputDir = file("$buildDir/dist/js/productionLibrary")
+        logger.lifecycle("JS sources built at: ${outputDir.absolutePath}")
+        outputDir.listFiles()?.filter { it.extension == "js" }?.forEach {
+            logger.lifecycle("  - ${it.name} (${it.length() / 1024}KB)")
         }
     }
 }
 
-tasks.register("buildAllJsSources") {
+// Package for distribution
+tasks.register<Copy>("packageForDistribution") {
     group = "js"
-    description = "Build all JS source bundles"
-    dependsOn("jsBrowserProductionWebpack")
+    description = "Package JS sources for CDN distribution (source-only, no runtime deps)"
+    dependsOn("compileProductionLibraryKotlinJs")
+    
+    val outputDir = layout.buildDirectory.dir("js-dist")
+    val sourceDir = layout.buildDirectory.dir("compileSync/js/main/productionLibrary/kotlin")
+    
+    // Source files are in compileSync output (raw Kotlin/JS output)
+    from(sourceDir) {
+        // ONLY include the extension source file - NOT runtime dependencies
+        // Runtime deps (kotlin-stdlib, ktor, ksoup, etc.) come from main app's runtime.js
+        include("IReader-extensions-js-sources.js")
+        include("IReader-extensions-js-sources.js.map")
+        include("*.d.ts")
+    }
+    into(outputDir)
+    
+    // Rename to match source name
+    rename("IReader-extensions-js-sources.js", "sources-bundle.js")
+    rename("IReader-extensions-js-sources.js.map", "sources-bundle.js.map")
+}
+
+// Create index.json separately
+tasks.register("createSourceIndex") {
+    group = "js"
+    description = "Create index.json for JS sources"
+    dependsOn("packageForDistribution")
+    
+    val outputDir = layout.buildDirectory.dir("js-dist")
+    val sourcesList = jsSources.map { Triple(it.name, it.lang, "init${it.name.replaceFirstChar { c -> c.uppercase() }}") }
+    
+    outputs.file(outputDir.map { it.file("index.json") })
+    
+    doLast {
+        val indexFile = outputDir.get().file("index.json").asFile
+        val sources = sourcesList.joinToString(",\n") { (name, lang, initFunc) ->
+            """    {
+      "id": "$name",
+      "name": "$name",
+      "lang": "$lang",
+      "file": "sources-bundle.js",
+      "initFunction": "$initFunc"
+    }"""
+        }
+        indexFile.writeText("""{
+  "version": 1,
+  "note": "These sources require runtime.js from the main IReader app",
+  "sources": [
+$sources
+  ]
+}""")
+        logger.lifecycle("Created index at: ${indexFile.absolutePath}")
+    }
 }

@@ -7,3 +7,6 @@ tachiyomix.compiler.SelectorValidatorProcessorProvider
 tachiyomix.compiler.TestGeneratorProcessorProvider
 tachiyomix.compiler.HttpClientProcessorProvider
 tachiyomix.compiler.DeepLinkProcessorProvider
+tachiyomix.compiler.SourceBoilerplateProcessorProvider
+tachiyomix.compiler.PackageAutoCorrectProcessorProvider
+tachiyomix.compiler.SourceIdProcessorProvider

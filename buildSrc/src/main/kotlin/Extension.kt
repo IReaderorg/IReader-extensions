@@ -20,6 +20,15 @@ data class Extension(
     val nsfw: Boolean = false,
     val deepLinks: List<DeepLink> = emptyList(),
     val sourceDir: String = "main",
+    /**
+     * Source ID. If not specified, auto-generated from name + lang.
+     * 
+     * For new sources: Leave as default (auto-generated)
+     * For existing sources: Keep the existing ID for backward compatibility
+     * 
+     * The ID is a stable hash generated from: "${name.lowercase()}/$lang/1"
+     * This ensures the same source always gets the same ID.
+     */
     val sourceId: Long = generateSourceId(name, lang),
     val flavor: String = getFlavorName(sourceDir, lang),
     val applicationId: String = generateApplicationId(name, flavor),
@@ -33,6 +42,12 @@ data class Extension(
      * that can be compiled to JavaScript for iOS JavaScriptCore runtime.
      */
     val enableJs: Boolean = false,
+    /**
+     * Enable auto source ID generation via KSP @AutoSourceId annotation.
+     * When true, the source class should use @AutoSourceId and reference
+     * the generated ID constant instead of overriding id directly.
+     */
+    val useAutoSourceId: Boolean = false,
 )
 
 private val packageRegex = Regex("[^\\w\\d.]")

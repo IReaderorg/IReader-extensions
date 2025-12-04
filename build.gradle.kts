@@ -21,6 +21,9 @@ tasks.register("delete", Delete::class) {
 }
 tasks.create<RepoTask>("repo")
 
+// Source ID management tasks
+registerSourceIdTasks()
+
 // JS build tasks for iOS support
 tasks.register("buildAllJsSources") {
   group = "build"

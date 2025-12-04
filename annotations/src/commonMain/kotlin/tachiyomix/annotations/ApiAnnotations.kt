@@ -1,30 +1,50 @@
 package tachiyomix.annotations
 
 /**
- * Annotation to define an API endpoint for code generation.
- * KSP will generate Ktor request builder functions.
+ * 🌐 API ENDPOINT - Define HTTP endpoints for code generation
+ * 
+ * For sources with REST/JSON APIs. KSP generates Ktor request builders.
+ * 
+ * ```kotlin
+ * @Extension
+ * @ApiEndpoint(
+ *     name = "getNovelList",
+ *     path = "/api/novels?page={page}",
+ *     method = "GET",
+ *     params = ["page"]
+ * )
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * ```
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
 @Repeatable
 annotation class ApiEndpoint(
-    /** Endpoint name (used for function naming) */
+    /** Endpoint name (used for generated function name) */
     val name: String,
-    /** URL path (can include {param} placeholders) */
+    /** URL path with placeholders like {page}, {query} */
     val path: String,
-    /** HTTP method (GET, POST, etc.) */
+    /** HTTP method: "GET", "POST", "PUT", "DELETE" */
     val method: String = "GET",
-    /** Parameter names that appear in the path */
+    /** Parameter names in the path */
     val params: Array<String> = [],
-    /** Request body type (for POST/PUT) */
+    /** Request body type for POST/PUT */
     val bodyType: String = "",
     /** Response type for parsing */
     val responseType: String = ""
 )
 
 /**
- * Annotation to define deep link handling for a source.
- * KSP will generate URL matchers and handlers.
+ * 🔗 SOURCE DEEP LINK - Handle URLs opened from browser
+ * 
+ * Let users open novels directly from their browser.
+ * 
+ * ```kotlin
+ * @Extension
+ * @SourceDeepLink(host = "www.example.com", pathPattern = "/novel/.*")
+ * @SourceDeepLink(host = "example.com", pathPattern = "/novel/.*")
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * ```
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
@@ -32,30 +52,42 @@ annotation class ApiEndpoint(
 annotation class SourceDeepLink(
     /** Host to match (e.g., "www.example.com") */
     val host: String,
-    /** URL scheme (default: "https") */
+    /** URL scheme: "https" or "http" */
     val scheme: String = "https",
-    /** Path pattern to match (regex-like, e.g., "/novel/.*") */
+    /** Path pattern (regex-like): "/novel/.*" */
     val pathPattern: String = "",
-    /** Type of content this deep link points to */
-    val type: String = "MANGA"  // MANGA, CHAPTER, SEARCH
+    /** Content type: "MANGA", "CHAPTER", or "SEARCH" */
+    val type: String = "MANGA"
 )
 
 /**
- * Annotation to configure rate limiting for a source.
+ * ⏱️ RATE LIMIT - Prevent getting blocked
+ * 
+ * ```kotlin
+ * @Extension
+ * @RateLimit(permits = 2, periodMs = 1000)  // 2 requests per second
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * ```
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
 annotation class RateLimit(
-    /** Number of requests allowed per period */
+    /** Requests allowed per period */
     val permits: Int = 2,
-    /** Time period in milliseconds */
+    /** Period in milliseconds */
     val periodMs: Long = 1000,
-    /** Whether to apply rate limiting to all requests */
+    /** Apply to all requests */
     val applyToAll: Boolean = true
 )
 
 /**
- * Annotation to define custom headers for requests.
+ * 📨 CUSTOM HEADER - Add headers to requests
+ * 
+ * ```kotlin
+ * @Extension
+ * @CustomHeader(name = "Referer", value = "https://example.com/")
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * ```
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
@@ -68,45 +100,63 @@ annotation class CustomHeader(
 )
 
 /**
- * Annotation to configure Cloudflare bypass settings.
+ * ☁️ CLOUDFLARE CONFIG - Handle Cloudflare protection
+ * 
+ * ```kotlin
+ * @Extension
+ * @CloudflareConfig(enabled = true, timeoutMs = 30000)
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * ```
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
 annotation class CloudflareConfig(
-    /** Whether the source uses Cloudflare protection */
+    /** Source uses Cloudflare */
     val enabled: Boolean = true,
-    /** Custom user agent for bypass */
+    /** Custom user agent */
     val userAgent: String = "",
-    /** Timeout for WebView bypass in milliseconds */
+    /** WebView timeout (ms) */
     val timeoutMs: Long = 30000
 )
 
 /**
- * Annotation to mark a source as requiring authentication.
+ * 🔐 REQUIRES AUTH - Mark source as requiring login
+ * 
+ * ```kotlin
+ * @Extension
+ * @RequiresAuth(type = "COOKIE", loginUrl = "https://example.com/login")
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * ```
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
 annotation class RequiresAuth(
-    /** Type of authentication (COOKIE, TOKEN, BASIC) */
+    /** Auth type: "COOKIE", "TOKEN", "BASIC" */
     val type: String = "COOKIE",
-    /** Login URL */
+    /** Login page URL */
     val loginUrl: String = "",
-    /** Whether login is required for all operations */
+    /** Is login required? */
     val required: Boolean = false
 )
 
 /**
- * Annotation to define pagination configuration.
+ * 📄 PAGINATION - Configure pagination
+ * 
+ * ```kotlin
+ * @Extension
+ * @Pagination(startPage = 1, itemsPerPage = 20)
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * ```
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
 annotation class Pagination(
-    /** Starting page number (usually 0 or 1) */
+    /** First page number (0 or 1) */
     val startPage: Int = 1,
-    /** Maximum pages to fetch (0 = unlimited) */
+    /** Max pages (0 = unlimited) */
     val maxPages: Int = 0,
-    /** Items per page (for offset calculation) */
+    /** Items per page */
     val itemsPerPage: Int = 20,
-    /** Whether pagination uses offset instead of page number */
+    /** Use offset instead of page */
     val useOffset: Boolean = false
 )
