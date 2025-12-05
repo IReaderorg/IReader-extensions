@@ -1,0 +1,6 @@
+# Repo branch - allow all built files
+# Only ignore OS/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*~
