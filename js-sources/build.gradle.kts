@@ -396,33 +396,31 @@ tasks.register("createSourceIndex") {
     val outputDir = layout.buildDirectory.dir("js-dist")
     val iconBaseUrl = "https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/icon"
     
+    // Capture jsSources data at configuration time for configuration cache compatibility
+    val indexEntries = jsSources.map { source ->
+        val iconFileName = "ireader-${source.lang}-${source.id}-v${source.versionName}.png"
+        val iconUrl = "$iconBaseUrl/$iconFileName"
+        mapOf(
+            "pkg" to source.pkg,
+            "name" to source.name,
+            "id" to source.sourceId,
+            "lang" to source.lang,
+            "code" to source.versionCode,
+            "version" to source.versionName,
+            "description" to source.description,
+            "nsfw" to source.nsfw,
+            "file" to "sources-bundle.js",
+            "initFunction" to "init${source.name}",
+            "iconUrl" to iconUrl
+        )
+    }
+    
     outputs.file(outputDir.map { it.file("js-index.json") })
     outputs.file(outputDir.map { it.file("js-index.min.json") })
     
     doLast {
         val outDir = outputDir.get().asFile
         outDir.mkdirs()
-        
-        // Generate full index entries (similar to APK Badging structure)
-        val indexEntries = jsSources.map { source ->
-            // Icon filename follows APK naming: ireader-<lang>-<id>-v<version>.png
-            val iconFileName = "ireader-${source.lang}-${source.id}-v${source.versionName}.png"
-            val iconUrl = "$iconBaseUrl/$iconFileName"
-            
-            mapOf(
-                "pkg" to source.pkg,
-                "name" to source.name,
-                "id" to source.sourceId,
-                "lang" to source.lang,
-                "code" to source.versionCode,
-                "version" to source.versionName,
-                "description" to source.description,
-                "nsfw" to source.nsfw,
-                "file" to "sources-bundle.js",
-                "initFunction" to "init${source.name}",
-                "iconUrl" to iconUrl
-            )
-        }
         
         // Write minified JSON (array format for compatibility)
         val minJson = indexEntries.joinToString(",") { entry ->
@@ -557,4 +555,23 @@ tasks.register("printKspCommands") {
         val allTasks = jsSources.joinToString(" ") { "${it.projectPath}:ksp${it.lang.replaceFirstChar { c -> c.uppercase() }}ReleaseKotlin" }
         logger.lifecycle("./gradlew $allTasks")
     }
+}
+
+// ============================================================================
+// Disable JS tasks during Android builds
+// ============================================================================
+
+// When running in CI chunked mode (Android builds), disable all JS-related tasks
+// JS builds should only run via the separate build_js.yml workflow
+if (skipJsBuild) {
+    tasks.configureEach {
+        if (name.contains("Js") || name.contains("js") || 
+            name == "compileKotlinJs" || name == "jsBrowserProductionWebpack" ||
+            name == "packageForDistribution" || name == "createSourceIndex" ||
+            name == "buildAllJsSources" || name == "verifyKspGeneratedFiles" ||
+            name == "copyKspGeneratedFiles" || name == "copyJsRegistrationFiles") {
+            enabled = false
+        }
+    }
+    logger.lifecycle("JS tasks disabled - running in Android build mode")
 }
