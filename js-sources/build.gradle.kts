@@ -253,4 +253,14 @@ tasks.register("createSourceIndex") {
 // Disable ALL tasks when in Android CI build mode
 if (isAndroidCiBuild) {
     tasks.configureEach { enabled = false }
+    
+    // Also disable root-level Kotlin/JS tasks that get triggered
+    rootProject.tasks.matching { 
+        it.name == "kotlinNpmInstall" || 
+        it.name == "kotlinStoreYarnLock" ||
+        it.name == "kotlinNpmCachesSetup" ||
+        it.name == "kotlinRestoreYarnLock"
+    }.configureEach { 
+        enabled = false 
+    }
 }
