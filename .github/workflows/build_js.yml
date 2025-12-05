@@ -44,27 +44,41 @@ jobs:
 
       - name: Run KSP for all JS-enabled sources
         run: |
-          # Find all sources with enableJs = true and run KSP for them
-          ./gradlew printKspCommands --quiet 2>/dev/null || true
+          # Build list of all KSP tasks for JS-enabled sources
+          KSP_TASKS=""
           
-          # Get list of JS-enabled source projects and run KSP
-          JS_SOURCES=$(grep -r "enableJs\s*=\s*true" sources/*/build.gradle.kts sources/*/*/build.gradle.kts 2>/dev/null | cut -d: -f1 | sort -u || true)
-          
-          for BUILD_FILE in $JS_SOURCES; do
-            # Extract lang and name from path like sources/en/freewebnovel/build.gradle.kts
+          # Find all sources with enableJs = true
+          for BUILD_FILE in $(grep -rl "enableJs\s*=\s*true" sources/ 2>/dev/null || true); do
             DIR=$(dirname "$BUILD_FILE")
             NAME=$(basename "$DIR")
-            LANG=$(basename "$(dirname "$DIR")")
+            PARENT=$(basename "$(dirname "$DIR")")
             
-            if [ "$LANG" != "multisrc" ]; then
-              echo "Running KSP for :extensions:individual:$LANG:$NAME"
-              ./gradlew ":extensions:individual:$LANG:$NAME:ksp${LANG^}ReleaseKotlin" --no-daemon || true
+            # Skip if parent is 'sources' (multisrc case) or if it's the multisrc folder itself
+            if [ "$PARENT" = "sources" ] || [ "$PARENT" = "multisrc" ]; then
+              continue
             fi
+            
+            # LANG is the parent folder (e.g., 'en', 'ar')
+            LANG="$PARENT"
+            
+            # Capitalize first letter of lang for task name
+            LANG_CAP="$(echo ${LANG:0:1} | tr '[:lower:]' '[:upper:]')${LANG:1}"
+            
+            TASK=":extensions:individual:$LANG:$NAME:ksp${LANG_CAP}ReleaseKotlin"
+            KSP_TASKS="$KSP_TASKS $TASK"
+            echo "Found JS source: $NAME ($LANG)"
           done
+          
+          if [ -n "$KSP_TASKS" ]; then
+            echo "Running all KSP tasks in single Gradle invocation..."
+            ./gradlew $KSP_TASKS --parallel || true
+          else
+            echo "No JS-enabled sources found"
+          fi
 
       - name: Build JS bundle
         run: |
-          ./gradlew :js-sources:jsBrowserProductionWebpack :js-sources:createSourceIndex --no-daemon
+          ./gradlew :js-sources:jsBrowserProductionWebpack :js-sources:createSourceIndex --parallel
 
       - name: Upload JS artifacts
         uses: actions/upload-artifact@v4
