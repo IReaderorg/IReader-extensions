@@ -156,22 +156,24 @@ val jsSources: List<JsSourceConfig> = discoverJsSources().filter { source ->
     }
 }
 
-// Capture index data at configuration time as serializable strings
-data class JsIndexEntry(
-    val pkg: String, val name: String, val id: Long, val lang: String,
-    val code: Int, val version: String, val description: String, val nsfw: Boolean,
-    val file: String, val initFunction: String, val iconUrl: String
-)
-
-val jsIndexEntries: List<JsIndexEntry> = jsSources.map { source ->
+// Pre-generate JSON strings at configuration time for configuration cache compatibility
+val jsIndexMinJson: String = run {
     val iconBaseUrl = "https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/icon"
-    JsIndexEntry(
-        pkg = source.pkg, name = source.name, id = source.sourceId, lang = source.lang,
-        code = source.versionCode, version = source.versionName, description = source.description,
-        nsfw = source.nsfw, file = "sources-bundle.js", initFunction = "init${source.name}",
-        iconUrl = "$iconBaseUrl/ireader-${source.lang}-${source.id}-v${source.versionName}.png"
-    )
+    "[" + jsSources.joinToString(",") { source ->
+        val iconUrl = "$iconBaseUrl/ireader-${source.lang}-${source.id}-v${source.versionName}.png"
+        """{"pkg":"${source.pkg}","name":"${source.name}","id":${source.sourceId},"lang":"${source.lang}","code":${source.versionCode},"version":"${source.versionName}","description":"${source.description}","nsfw":${source.nsfw},"file":"sources-bundle.js","initFunction":"init${source.name}","iconUrl":"$iconUrl"}"""
+    } + "]"
 }
+
+val jsIndexPrettyJson: String = run {
+    val iconBaseUrl = "https://raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/icon"
+    "[\n" + jsSources.joinToString(",\n") { source ->
+        val iconUrl = "$iconBaseUrl/ireader-${source.lang}-${source.id}-v${source.versionName}.png"
+        """  {"pkg":"${source.pkg}","name":"${source.name}","id":${source.sourceId},"lang":"${source.lang}","code":${source.versionCode},"version":"${source.versionName}","description":"${source.description}","nsfw":${source.nsfw},"file":"sources-bundle.js","initFunction":"init${source.name}","iconUrl":"$iconUrl"}"""
+    } + "\n]"
+}
+
+val jsSourceCount: Int = jsSources.size
 
 kotlin {
     js(IR) {
@@ -234,19 +236,20 @@ tasks.register("createSourceIndex") {
     group = "js"
     dependsOn("packageForDistribution")
     val outputDir = layout.buildDirectory.dir("js-dist")
+    
+    // Use pre-generated strings (captured at configuration time)
+    val minJsonContent = jsIndexMinJson
+    val prettyJsonContent = jsIndexPrettyJson
+    val sourceCount = jsSourceCount
+    
     outputs.file(outputDir.map { it.file("js-index.json") })
     outputs.file(outputDir.map { it.file("js-index.min.json") })
     
     doLast {
         val outDir = outputDir.get().asFile.apply { mkdirs() }
-        val minJson = jsIndexEntries.joinToString(",") { e ->
-            """{"pkg":"${e.pkg}","name":"${e.name}","id":${e.id},"lang":"${e.lang}","code":${e.code},"version":"${e.version}","description":"${e.description}","nsfw":${e.nsfw},"file":"${e.file}","initFunction":"${e.initFunction}","iconUrl":"${e.iconUrl}"}"""
-        }
-        File(outDir, "js-index.min.json").writeText("[$minJson]")
-        File(outDir, "js-index.json").writeText("[\n${jsIndexEntries.joinToString(",\n") { e ->
-            """  {"pkg":"${e.pkg}","name":"${e.name}","id":${e.id},"lang":"${e.lang}","code":${e.code},"version":"${e.version}","description":"${e.description}","nsfw":${e.nsfw},"file":"${e.file}","initFunction":"${e.initFunction}","iconUrl":"${e.iconUrl}"}"""
-        }}\n]")
-        logger.lifecycle("Created JS index with ${jsIndexEntries.size} sources")
+        File(outDir, "js-index.min.json").writeText(minJsonContent)
+        File(outDir, "js-index.json").writeText(prettyJsonContent)
+        logger.lifecycle("Created JS index with $sourceCount sources")
     }
 }
 
