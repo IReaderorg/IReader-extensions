@@ -1,7 +1,7 @@
 listOf(
     Extension(
         name = "MtlNovelEn",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -12,7 +12,7 @@ listOf(
     ),
     Extension(
         name = "MtlNovelFr",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "fr",
         description = "",
@@ -23,7 +23,7 @@ listOf(
     ),
     Extension(
         name = "MtlNovelEs",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "es",
         description = "",
@@ -34,7 +34,7 @@ listOf(
     ),
     Extension(
         name = "MtlNovelIn",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "in",
         description = "",

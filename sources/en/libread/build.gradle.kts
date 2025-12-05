@@ -1,7 +1,7 @@
 listOf("en").map { lang ->
   Extension(
     name = "LibRead",
-    versionCode = 1,
+    versionCode = 2,
     libVersion = "2",
     lang = lang,
     description = "Novel source based on libread.com",

@@ -1,7 +1,7 @@
 listOf("en").map { lang ->
   Extension(
     name = "WuxiaWorldSiteco",
-    versionCode = 7,
+    versionCode = 8,
     libVersion = "1.0",
     lang = lang,
     description = "",

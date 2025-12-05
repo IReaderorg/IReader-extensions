@@ -1,7 +1,7 @@
 listOf("en").map { lang ->
   Extension(
     name = "ReaperScans",
-    versionCode = 3,
+    versionCode = 4,
     libVersion = "2",
     lang = lang,
     description = "",

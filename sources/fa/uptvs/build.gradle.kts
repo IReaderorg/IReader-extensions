@@ -1,7 +1,7 @@
 listOf("fa").map { lang ->
   Extension(
     name = "Uptvs",
-    versionCode = 1,
+    versionCode = 2,
     libVersion = "2",
     lang = lang,
     description = "",

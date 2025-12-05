@@ -1,7 +1,7 @@
 listOf("tu").map { lang ->
   Extension(
     name = "EpikNovel",
-    versionCode = 1,
+    versionCode = 2,
     libVersion = "2",
     lang = lang,
     description = "",

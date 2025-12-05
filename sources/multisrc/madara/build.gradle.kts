@@ -1,7 +1,7 @@
 listOf(
     Extension(
         name = "Neosekaitranslations",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -12,7 +12,7 @@ listOf(
     ),
     Extension(
         name = "Armtl",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "ar",
         description = "",
@@ -23,7 +23,7 @@ listOf(
     ),
     Extension(
         name = "HizoManga",
-        versionCode = 2,
+        versionCode = 3,
         libVersion = "2",
         lang = "ar",
         description = "",
@@ -34,7 +34,7 @@ listOf(
     ),
     Extension(
         name = "Zinnovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -45,7 +45,7 @@ listOf(
     ),
     Extension(
         name = "NovelTranslate",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -56,7 +56,7 @@ listOf(
     ),
     Extension(
         name = "LunarLetters",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -67,7 +67,7 @@ listOf(
     ),
     Extension(
         name = "SleepyTranslations",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -78,7 +78,7 @@ listOf(
     ),
     Extension(
         name = "Freenovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -89,7 +89,7 @@ listOf(
     ),
     Extension(
         name = "FirstKissNovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -100,7 +100,7 @@ listOf(
     ),
     Extension(
         name = "NovelMultiverse",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -111,7 +111,7 @@ listOf(
     ),
     Extension(
         name = "LightNovelHeaven",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -122,7 +122,7 @@ listOf(
     ),
     Extension(
         name = "ArNovel",
-        versionCode = 3,
+        versionCode = 4,
         libVersion = "2",
         lang = "ar",
         description = "",
@@ -133,7 +133,7 @@ listOf(
     ),
     Extension(
         name = "MeioNovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "in",
         description = "",
@@ -144,7 +144,7 @@ listOf(
     ),
     Extension(
         name = "WebNovelLover",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "en",
         description = "",
@@ -155,7 +155,7 @@ listOf(
     ),
     Extension(
         name = "CrateNovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "en",
         description = "",
@@ -166,7 +166,7 @@ listOf(
     ),
     Extension(
         name = "ClickNovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "en",
         description = "",
@@ -177,7 +177,7 @@ listOf(
     ),
     Extension(
         name = "ReadWebNovels",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "en",
         description = "",
@@ -188,7 +188,7 @@ listOf(
     ),
     Extension(
         name = "MysticalSeries",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "en",
         description = "",
@@ -199,7 +199,7 @@ listOf(
     ),
     Extension(
         name = "MoreNovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "in",
         description = "",
@@ -210,7 +210,7 @@ listOf(
     ),
     Extension(
         name = "Novel4Up",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "ar",
         description = "",
@@ -221,7 +221,7 @@ listOf(
     ),
     Extension(
         name = "TurkceLightNovels",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "tu",
         description = "",
@@ -232,7 +232,7 @@ listOf(
     ),
     Extension(
         name = "SonicMTL",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "en",
         description = "",
@@ -243,7 +243,7 @@ listOf(
     ),
     Extension(
         name = "MTLNovelClub",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "1",
         lang = "en",
         description = "",
@@ -254,7 +254,7 @@ listOf(
     ),
 Extension(
         name = "Azora",
-        versionCode = 2,
+        versionCode = 3,
         libVersion = "1",
         lang = "ar",
         description = "",

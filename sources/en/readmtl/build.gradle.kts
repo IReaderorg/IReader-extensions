@@ -1,7 +1,7 @@
 listOf("en").map { lang ->
   Extension(
     name = "ReadMtl",
-    versionCode = 2,
+    versionCode = 3,
     libVersion = "2",
     lang = lang,
     description = "",

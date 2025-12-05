@@ -1,7 +1,7 @@
 register(
   Extension(
     name = "LightNovelPub",
-    versionCode = 3,
+    versionCode = 4,
     libVersion = "2",
     lang = "en",
     description = "",
@@ -10,7 +10,7 @@ register(
   ),
   Extension(
     name = "WebNovelPub",
-    versionCode = 1,
+    versionCode = 2,
     libVersion = "2",
     lang = "en",
     description = "",

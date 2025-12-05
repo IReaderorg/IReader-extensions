@@ -1,7 +1,7 @@
 listOf(
     Extension(
         name = "SkyNovel",
-        versionCode = 5,
+        versionCode = 6,
         libVersion = "2",
         lang = "en",
         description = "",
@@ -12,7 +12,7 @@ listOf(
     ),
     Extension(
         name = "WbNovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = "in",
         description = "",

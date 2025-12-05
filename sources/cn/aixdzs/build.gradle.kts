@@ -1,7 +1,7 @@
 listOf("cn").map { lang ->
   Extension(
     name = "Aixdzs",
-    versionCode = 2,
+    versionCode = 3,
     libVersion = "2",
     lang = lang,
     description = "",
