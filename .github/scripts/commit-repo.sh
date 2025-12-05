@@ -4,7 +4,8 @@ set -e
 # Sync built APKs from master/repo/ to repov2 branch
 # Note: The workflow checks out repov2 branch into 'repo' folder
 # and master branch into 'master' folder
-rsync -a --delete --exclude .git --exclude .gitignore ../master/repo/ .
+# Exclude js/ folder to preserve JS sources deployed by build_js.yml workflow
+rsync -a --delete --exclude .git --exclude .gitignore --exclude js/ ../master/repo/ .
 
 # Ensure .gitignore in repo branch doesn't exclude APKs
 # Create/update .gitignore to allow all repo files
