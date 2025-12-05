@@ -193,9 +193,9 @@ js-dist/
 
 | Component | Size | Notes |
 |-----------|------|-------|
-| sources-bundle.js | ~2-5MB | Self-contained, includes all deps |
-| sources-bundle.js.map | ~5-10MB | Source maps for debugging |
-| js-index.json | ~50KB | Source metadata catalog |
+| sources-bundle.js | ~1.6MB | Self-contained, includes all deps (Ktor, Ksoup, etc.) |
+| sources-bundle.js.map | ~1.5MB | Source maps for debugging |
+| js-index.json | ~16KB | Source metadata catalog |
 
 ## Distribution
 

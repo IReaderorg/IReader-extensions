@@ -23,6 +23,17 @@
 
 package ireader.sources
 
+import io.ktor.client.*
+import io.ktor.client.engine.js.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 import kotlin.js.JsName
@@ -86,13 +97,66 @@ object SourceRegistry {
 }
 
 /**
+ * Shared HTTP client for all sources.
+ * Uses Ktor JS engine for browser/Node.js compatibility.
+ */
+private val sharedHttpClient: HttpClient by lazy {
+    HttpClient(Js) {
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+                isLenient = true
+                encodeDefaults = true
+            })
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 30000
+            connectTimeoutMillis = 30000
+        }
+        defaultRequest {
+            headers.append(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+        }
+    }
+}
+
+/**
+ * Get the shared HTTP client instance.
+ * Exported for use by iOS/Web runtime.
+ */
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+@JsName("getHttpClient")
+fun getHttpClient(): HttpClient = sharedHttpClient
+
+/**
+ * Parse HTML string using Ksoup.
+ * Exported for use by iOS/Web runtime.
+ */
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+@JsName("parseHtml")
+fun parseHtml(html: String): Document = Ksoup.parse(html)
+
+/**
+ * Parse HTML from URL using Ksoup.
+ * Exported for use by iOS/Web runtime.
+ */
+@OptIn(ExperimentalJsExport::class)
+@JsExport
+@JsName("parseHtmlFromUrl")
+fun parseHtmlFromUrl(html: String, baseUrl: String): Document = Ksoup.parse(html, baseUrl)
+
+/**
  * Main entry point - called when bundle is loaded.
- * Initializes all sources.
+ * Initializes all sources and the HTTP client.
  */
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("initializeBundle")
 fun initializeBundle() {
+    // Force initialization of HTTP client to ensure it's bundled
+    val client = sharedHttpClient
     println("IReader Sources Bundle initialized")
+    println("HTTP Client: ${client.engine}")
     println("Available sources: ${SourceRegistry.getSourceCount()}")
 }

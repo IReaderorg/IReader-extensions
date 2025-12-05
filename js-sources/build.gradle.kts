@@ -4,17 +4,17 @@
  * Compiles extension sources to a SELF-CONTAINED JavaScript bundle.
  * 
  * The output bundle includes ALL dependencies:
- * - Kotlin stdlib
- * - Ktor HTTP client
- * - Ksoup HTML parser
- * - kotlinx-serialization
- * - kotlinx-datetime
- * - All source implementations
+ * - Kotlin stdlib (~550KB)
+ * - Ktor HTTP client with JS engine (~450KB)
+ * - Ksoup HTML parser (~520KB)
+ * - kotlinx-serialization (~200KB)
+ * - fleeksoft-io charset support (~520KB)
+ * - All source implementations (~100KB)
  * 
  * This allows the bundle to be used standalone by any JS application
  * without requiring IReader's runtime.js or any external dependencies.
  * 
- * Output: sources-bundle.js (~2-5MB self-contained bundle)
+ * Output: sources-bundle.js (~1.6MB self-contained bundle)
  * 
  * NOTE: This module is SKIPPED during Android CI builds (when CI_CHUNK_NUM is set).
  *       JS builds run separately via build_js.yml workflow.
@@ -238,12 +238,15 @@ kotlin {
                 // Core source API - provides base classes like SourceFactory
                 implementation(libs.findLibrary("ireader-core").get())
                 
-                // HTML parsing
+                // HTML parsing (with network support for JS)
                 implementation(libs.findLibrary("ksoup").get())
+                implementation(libs.findLibrary("ksoup-network").get())
                 
                 // HTTP client for network requests
                 implementation(libs.findLibrary("ktor-core").get())
                 implementation(libs.findLibrary("ktor-client-js").get())
+                implementation(libs.findLibrary("ktor-contentNegotiation").get())
+                implementation(libs.findLibrary("ktor-serialization").get())
                 
                 // Date/time handling
                 implementation(libs.findLibrary("kotlinx-datetime").get())
