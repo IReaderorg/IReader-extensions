@@ -1,7 +1,20 @@
 /**
  * JS Sources Compilation Module
  * 
- * Compiles extension sources to JavaScript for iOS.
+ * Compiles extension sources to a SELF-CONTAINED JavaScript bundle.
+ * 
+ * The output bundle includes ALL dependencies:
+ * - Kotlin stdlib
+ * - Ktor HTTP client
+ * - Ksoup HTML parser
+ * - kotlinx-serialization
+ * - kotlinx-datetime
+ * - All source implementations
+ * 
+ * This allows the bundle to be used standalone by any JS application
+ * without requiring IReader's runtime.js or any external dependencies.
+ * 
+ * Output: sources-bundle.js (~2-5MB self-contained bundle)
  * 
  * NOTE: This module is SKIPPED during Android CI builds (when CI_CHUNK_NUM is set).
  *       JS builds run separately via build_js.yml workflow.
@@ -177,30 +190,65 @@ val jsSourceCount: Int = jsSources.size
 
 kotlin {
     js(IR) {
-        browser { webpackTask { mainOutputFileName = "sources-bundle.js" } }
+        browser {
+            webpackTask {
+                mainOutputFileName = "sources-bundle.js"
+                
+                // Configure webpack for self-contained bundle
+                output.libraryTarget = "umd"  // Universal Module Definition - works in browser, Node.js, AMD
+                output.library = "IReaderSources"  // Global name for the library
+            }
+            
+            // Development webpack config
+            runTask {
+                mainOutputFileName = "sources-bundle.js"
+            }
+        }
+        
+        // Executable mode ensures all code is bundled (not just exported)
         binaries.executable()
+        
         compilations.all {
             compileTaskProvider.configure {
-                compilerOptions { freeCompilerArgs.add("-Xir-minimized-member-names=false") }
+                compilerOptions {
+                    // Keep member names readable for debugging
+                    freeCompilerArgs.add("-Xir-minimized-member-names=false")
+                }
             }
         }
     }
     
     sourceSets {
         val jsMain by getting {
+            // Main entry point and registry
+            kotlin.srcDir("src/jsMain/kotlin")
+            
+            // Include source files from each JS-enabled extension
             jsSources.forEach { kotlin.srcDir(it.sourceDir) }
             kotlin.srcDir(layout.buildDirectory.dir("ksp-js-sources"))
             kotlin.srcDir(layout.buildDirectory.dir("js-registration-sources"))
             
             dependencies {
+                // All these dependencies will be bundled into the output JS file
                 implementation(project(":common"))
                 implementation(project(":annotations"))
+                
                 val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
+                
+                // Core source API - provides base classes like SourceFactory
                 implementation(libs.findLibrary("ireader-core").get())
+                
+                // HTML parsing
                 implementation(libs.findLibrary("ksoup").get())
+                
+                // HTTP client for network requests
                 implementation(libs.findLibrary("ktor-core").get())
                 implementation(libs.findLibrary("ktor-client-js").get())
+                
+                // Date/time handling
                 implementation(libs.findLibrary("kotlinx-datetime").get())
+                
+                // JSON serialization
                 implementation(libs.findLibrary("serialization-json").get())
             }
         }

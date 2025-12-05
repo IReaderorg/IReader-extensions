@@ -1,80 +1,109 @@
-# IReader Extensions - JavaScript Integration for iOS
+# IReader Extensions - JavaScript Integration
 
-This document explains how IReader extensions are built for iOS using Kotlin/JS.
+This document explains how IReader extensions are built as a self-contained JavaScript bundle.
 
 ## Architecture Overview
 
+The JS bundle is **fully self-contained** - it includes ALL dependencies and can be used by any JavaScript application without requiring IReader's runtime.
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│              IReader Main App (source-api + source-runtime-js)   │
+│           sources-bundle.js (Self-Contained Bundle)              │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  runtime.js (~800KB-1.2MB) - LOADED ONCE AT APP START           │
-│  ├── Kotlin stdlib, coroutines, serialization                   │
+│  BUNDLED DEPENDENCIES (~2-5MB total):                           │
+│  ├── Kotlin stdlib & coroutines                                 │
 │  ├── Ktor HTTP client (JS engine)                               │
 │  ├── Ksoup HTML parser                                          │
-│  ├── source-api: HttpSource, SourceFactory, models              │
-│  └── source-runtime-js: SourceBridge, SourceRegistry            │
+│  ├── kotlinx-serialization                                      │
+│  ├── kotlinx-datetime                                           │
+│  └── source-api: HttpSource, SourceFactory, models              │
 │                                                                  │
-│  Provides global objects:                                        │
-│  - SourceRegistry.register(id, factory)                         │
-│  - SourceBridge.search(), getDetails(), getChapters(), etc.     │
+│  SOURCES (50+ novel sources):                                   │
+│  ├── FreeWebNovel, RoyalRoad, NovelUpdates, etc.               │
+│  └── Each with init function for registration                   │
 │                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                  IReader-Extensions (this project)               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Individual source .js files (~10-30KB each)                    │
-│  ├── freewebnovelkmp.js                                         │
-│  ├── royalroad.js                                               │
-│  └── novelupdates.js                                            │
-│                                                                  │
-│  Each source file contains:                                      │
-│  - Source class extending SourceFactory                         │
-│  - JsExtension concrete implementation                          │
-│  - init<SourceName>() function to register with SourceRegistry  │
-│                                                                  │
-│  NO runtime dependencies - uses globals from runtime.js         │
+│  EXPORTS (UMD - works in browser, Node.js, AMD):                │
+│  - IReaderSources.SourceRegistry                                │
+│  - IReaderSources.getSource(id)                                 │
+│  - IReaderSources.getAllSources()                               │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## How It Works
 
-### iOS App Loading Sequence
+### Browser Usage
+
+```html
+<!-- Load the self-contained bundle -->
+<script src="sources-bundle.js"></script>
+
+<script>
+// Access via global IReaderSources object
+const registry = IReaderSources.SourceRegistry;
+
+// Get all available source IDs
+const sourceIds = registry.getSourceIds();
+console.log('Available sources:', sourceIds);
+
+// Get a specific source instance
+const source = registry.getSource('freewebnovel');
+
+// Use the source
+const results = await source.getMangaList([], 1);
+</script>
+```
+
+### Node.js Usage
+
+```javascript
+// CommonJS
+const IReaderSources = require('./sources-bundle.js');
+
+// Or ES Modules
+import IReaderSources from './sources-bundle.js';
+
+// Get all sources
+const sources = IReaderSources.SourceRegistry.getAllSources();
+
+// Get specific source
+const source = IReaderSources.SourceRegistry.getSource('royalroad');
+```
+
+### iOS/Swift Usage (JavaScriptCore)
 
 ```swift
-// 1. Load runtime.js ONCE at app start (from source-api + source-runtime-js)
-jsContext.evaluateScript(bundledRuntimeJs)  // ~800KB, bundled in app
+import JavaScriptCore
 
-// 2. Initialize runtime
-jsContext.evaluateScript("initRuntime()")
+// 1. Load the self-contained bundle (includes everything)
+let bundleJs = loadBundleFromCDN("sources-bundle.js")  // ~2-5MB
+jsContext.evaluateScript(bundleJs)
 
-// 3. When user installs a source, download and load it
-let sourceJs = downloadSource("freewebnovelkmp.js")  // ~15KB
-jsContext.evaluateScript(sourceJs)
+// 2. Access sources directly
+let sourceIds = jsContext.evaluateScript("IReaderSources.SourceRegistry.getSourceIds()")
 
-// 4. Initialize the source
-jsContext.evaluateScript("initFreeWebNovelKmp()")
-
-// 5. Use SourceBridge to interact
-let result = jsContext.evaluateScript("SourceBridge.search('freewebnovelkmp', 'test', 1)")
+// 3. Get and use a source
+jsContext.evaluateScript("""
+    const source = IReaderSources.SourceRegistry.getSource('freewebnovel');
+    source.getMangaList([], 1).then(results => {
+        // Handle results
+    });
+""")
 ```
 
 ### Source Registration Flow
 
 ```
 ┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  Source JS File  │────►│  SourceRegistry  │────►│   SourceBridge   │
-│  (from CDN)      │     │  (from runtime)  │     │  (from runtime)  │
+│  Bundle Loaded   │────►│  SourceRegistry  │────►│   Source Ready   │
+│  (self-contained)│     │  (in bundle)     │     │   (use directly) │
 └──────────────────┘     └──────────────────┘     └──────────────────┘
          │                        │                        │
-         │ initSource()           │ creates instance       │ search()
-         │ calls register()       │ stores in map          │ returns JSON
+         │ Auto-registers         │ getSource(id)          │ getMangaList()
+         │ all sources            │ returns instance       │ getChapterList()
          ▼                        ▼                        ▼
-    Source registered        Ready to use            iOS gets results
+    50+ sources ready        Get by ID              Fetch content
 ```
 
 ## Creating a JS-Compatible Source
@@ -162,51 +191,115 @@ js-dist/
 
 ## File Sizes
 
-| Component | Size | Location |
-|-----------|------|----------|
-| runtime.js | ~800KB-1.2MB | Bundled in iOS app |
-| Per source .js | ~10-30KB | Downloaded from CDN |
-| 50 sources | ~1.5MB total | User downloads as needed |
+| Component | Size | Notes |
+|-----------|------|-------|
+| sources-bundle.js | ~2-5MB | Self-contained, includes all deps |
+| sources-bundle.js.map | ~5-10MB | Source maps for debugging |
+| js-index.json | ~50KB | Source metadata catalog |
 
 ## Distribution
 
 ### CDN Structure
 ```
-sources.ireader.app/
-├── index.json              # Source catalog
-└── js/
-    ├── freewebnovelkmp.js  # Individual sources
-    ├── royalroad.js
-    └── novelupdates.js
+raw.githubusercontent.com/IReaderorg/IReader-extensions/repov2/
+├── js/
+│   ├── sources-bundle.js      # Self-contained bundle
+│   ├── sources-bundle.js.map  # Source maps
+│   ├── js-index.json          # Source catalog (pretty)
+│   └── js-index.min.json      # Source catalog (minified)
+└── icon/
+    └── ireader-*.png          # Source icons
 ```
 
-### index.json Format
+### js-index.json Format
 ```json
-{
-  "version": 1,
-  "sources": [
-    {
-      "id": "freewebnovelkmp",
-      "name": "FreeWebNovel (KMP)",
-      "lang": "en",
-      "version": "2.1",
-      "file": "freewebnovelkmp.js",
-      "initFunction": "initFreeWebNovelKmp"
-    }
-  ]
-}
+[
+  {
+    "pkg": "ireader.freewebnovel.en",
+    "name": "FreeWebNovel",
+    "id": 123456789,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Novel source",
+    "nsfw": false,
+    "file": "sources-bundle.js",
+    "initFunction": "initFreeWebNovel",
+    "iconUrl": "https://raw.githubusercontent.com/.../icon/ireader-en-freewebnovel-v2.1.png"
+  }
+]
 ```
 
 ## Key Points
 
-1. **runtime.js is in the main IReader app** - NOT in this extensions project
-2. **Extensions only produce small source-specific JS files** (~10-30KB each)
-3. **Sources use globals from runtime.js** - SourceRegistry, SourceBridge, etc.
-4. **KSP generates JsInit.kt** - no manual JS code needed
-5. **Same source code works on Android, Desktop, and iOS**
+1. **Self-contained bundle** - No external runtime.js required
+2. **UMD format** - Works in browser, Node.js, and AMD loaders
+3. **All dependencies included** - Kotlin stdlib, Ktor, Ksoup, etc.
+4. **Global export** - `IReaderSources` object available globally
+5. **Same source code** - Works on Android, Desktop, iOS, and any JS environment
+6. **KSP generates init code** - No manual JS code needed
+
+## API Reference
+
+### SourceRegistry
+
+```typescript
+interface SourceRegistry {
+  // Get all registered source IDs
+  getSourceIds(): string[];
+  
+  // Get a source instance by ID
+  getSource(id: string): Source | null;
+  
+  // Get all source instances
+  getAllSources(): Source[];
+  
+  // Check if source exists
+  hasSource(id: string): boolean;
+  
+  // Get count of registered sources
+  getSourceCount(): number;
+}
+```
+
+### Source Interface
+
+```typescript
+interface Source {
+  id: number;
+  name: string;
+  lang: string;
+  baseUrl: string;
+  
+  // Fetch manga/novel list
+  getMangaList(filters: Filter[], page: number): Promise<MangasPageInfo>;
+  
+  // Get manga/novel details
+  getMangaDetails(manga: MangaInfo): Promise<MangaInfo>;
+  
+  // Get chapter list
+  getChapterList(manga: MangaInfo): Promise<ChapterInfo[]>;
+  
+  // Get chapter content
+  getPageList(chapter: ChapterInfo): Promise<Page[]>;
+}
+```
+
+## Building
+
+```bash
+# Run KSP for all JS-enabled sources
+./gradlew :extensions:individual:en:freewebnovel:kspEnReleaseKotlin
+
+# Build the self-contained bundle
+./gradlew :js-sources:jsBrowserProductionWebpack :js-sources:createSourceIndex
+
+# Output in js-sources/build/js-dist/
+```
 
 ## Related Files
 
-- `iOS-Source-Architecture.md` - Detailed iOS implementation plan
-- `IReader-Extensions-Migration-Plan.md` - Full migration checklist
-- `compiler/src/main/kotlin/JsExtensionProcessor.kt` - KSP processor for JS init generation
+- `js-sources/build.gradle.kts` - JS build configuration
+- `js-sources/src/jsMain/kotlin/IReaderSources.kt` - Main entry point
+- `js-sources/webpack.config.d/bundle.js` - Webpack UMD config
+- `compiler/src/main/kotlin/JsExtensionProcessor.kt` - KSP processor
