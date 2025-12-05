@@ -1,2 +1,0 @@
-"use strict";(Object("undefined"!=typeof self?self:this).webpackChunkIReaderSources=Object("undefined"!=typeof self?self:this).webpackChunkIReaderSources||[]).push([[731],{731:e=>{e.exports=function(){throw new Error("ws does not work in the browser. Browser clients must use the native WebSocket object")}}}]);
-//# sourceMappingURL=731.js.map
