@@ -7,25 +7,158 @@
 
 ## ⚠️ STRICT RULES FOR AI
 
-1. **ONLY use imports listed in this document** - No guessing!
-2. **ONLY use classes and methods documented here** - They are verified to exist
-3. **Follow the EXACT file structure** - Package names must match directory paths
-4. **Copy templates exactly** - Then modify selectors only
-5. **When in doubt, use the simpler approach** - @MadaraSource > SourceFactory
+1. **ALWAYS use KSP annotations when possible** - They reduce boilerplate and errors!
+2. **ONLY use imports listed in this document** - No guessing!
+3. **ONLY use classes and methods documented here** - They are verified to exist
+4. **Follow the EXACT file structure** - Package names must match directory paths
+5. **Copy templates exactly** - Then modify selectors only
+6. **When in doubt, use the simpler approach** - @MadaraSource > @ThemeSource > SourceFactory with annotations > Manual code
 
 ---
 
 ## 📋 Table of Contents
 
 1. [Decision Tree](#-decision-tree)
-2. [Verified Imports](#-verified-imports)
-3. [Source Type 1: MadaraSource (Zero Code)](#-source-type-1-madarasource-zero-code)
-4. [Source Type 2: SourceFactory (Declarative)](#-source-type-2-sourcefactory-declarative)
-5. [Available Classes & Methods](#-available-classes--methods)
-6. [File Structure](#-file-structure)
-7. [build.gradle.kts Template](#-buildgradlekts-template)
-8. [Step-by-Step Process](#-step-by-step-process)
-9. [Common Patterns](#-common-patterns)
+2. [KSP Annotations Reference](#-ksp-annotations-reference)
+3. [Verified Imports](#-verified-imports)
+4. [Source Type 1: MadaraSource (Zero Code)](#-source-type-1-madarasource-zero-code)
+5. [Source Type 2: SourceFactory (Declarative)](#-source-type-2-sourcefactory-declarative-with-ksp)
+6. [Available Classes & Methods](#-available-classes--methods)
+7. [File Structure](#-file-structure)
+8. [build.gradle.kts Template](#-buildgradlekts-template)
+9. [Step-by-Step Process](#-step-by-step-process)
+10. [Common Patterns](#-common-patterns)
+
+---
+
+## 🏷️ KSP Annotations Reference
+
+**ALWAYS prefer KSP annotations over manual code!** They reduce errors and boilerplate.
+
+### Source Identity Annotations
+
+| Annotation | Purpose | When to Use |
+|------------|---------|-------------|
+| `@Extension` | **REQUIRED** - Marks class as IReader source | Every source |
+| `@AutoSourceId` | Auto-generate stable source ID | All new sources |
+| `@AutoSourceId(seed = "OldName")` | Keep ID when renaming | Migrating sources |
+| `@MadaraSource(...)` | Zero-code Madara source | Madara WordPress sites |
+| `@ThemeSource(...)` | Zero-code theme source | Other theme-based sites |
+| `@SourceConfig(...)` | Define all config in one place | Advanced use |
+
+### Auto-Generation Annotations
+
+| Annotation | Purpose | Generated Code |
+|------------|---------|----------------|
+| `@GenerateFilters(title=true, sort=true, sortOptions=[...])` | Auto-generate filters | `getFilters()` implementation |
+| `@GenerateCommands(detailFetch=true, contentFetch=true, chapterFetch=true)` | Auto-generate commands | `getCommands()` implementation |
+
+### Declarative Selector Annotations
+
+| Annotation | Purpose | Replaces |
+|------------|---------|----------|
+| `@ExploreFetcher(name, endpoint, selector, ...)` | Define listing endpoints | `exploreFetchers` override |
+| `@DetailSelectors(title, cover, author, description, ...)` | Novel detail selectors | `detailFetcher` override |
+| `@ChapterSelectors(list, name, link, date, reversed)` | Chapter list selectors | `chapterFetcher` override |
+| `@ContentSelectors(content, title, removeSelectors)` | Chapter content selectors | `contentFetcher` override |
+
+### HTTP Configuration Annotations
+
+| Annotation | Purpose | Example |
+|------------|---------|---------|
+| `@RateLimit(permits=2, periodMs=1000)` | Limit request rate | 2 requests/second |
+| `@CustomHeader(name, value)` | Add HTTP headers | `@CustomHeader(name="Referer", value="...")` |
+| `@CloudflareConfig(enabled=true)` | Handle Cloudflare | Sites with CF protection |
+| `@Pagination(startPage=1, itemsPerPage=20)` | Configure pagination | Custom pagination |
+
+### Metadata Annotations
+
+| Annotation | Purpose | Example |
+|------------|---------|---------|
+| `@SourceMeta(description, nsfw, tags)` | Add source metadata | `@SourceMeta(nsfw=true)` |
+| `@SourceDeepLink(host, pathPattern)` | Handle browser URLs | Open novels from browser |
+| `@RequiresAuth(type, loginUrl)` | Mark auth requirements | Sites needing login |
+| `@ApiEndpoint(name, path, method)` | Define API endpoints | JSON API sources |
+
+### Theme Customization Annotations
+
+| Annotation | Purpose | Example |
+|------------|---------|---------|
+| `@Selector(name, value)` | Override theme selector | `@Selector(name="novelTitle", value="h1.custom")` |
+| `@DateFormat(pattern, locale)` | Custom date parsing | `@DateFormat(pattern="dd/MM/yyyy")` |
+
+### Example: Fully Annotated Source
+
+```kotlin
+package ireader.mysite
+
+import ireader.core.source.Dependencies
+import ireader.core.source.SourceFactory
+import tachiyomix.annotations.*
+
+@Extension
+@AutoSourceId
+@GenerateFilters(
+    title = true,
+    sort = true,
+    sortOptions = ["Latest", "Popular", "Rating"]
+)
+@GenerateCommands(
+    detailFetch = true,
+    contentFetch = true,
+    chapterFetch = true
+)
+@SourceMeta(
+    description = "Popular novel site",
+    nsfw = false,
+    tags = ["light-novel", "web-novel"]
+)
+@RateLimit(permits = 3, periodMs = 1000)
+@ExploreFetcher(
+    name = "Latest",
+    endpoint = "/novels/page/{page}/",
+    selector = ".novel-item",
+    nameSelector = ".title",
+    linkSelector = "a",
+    coverSelector = "img"
+)
+@ExploreFetcher(
+    name = "Search",
+    endpoint = "/search?q={query}&page={page}",
+    selector = ".novel-item",
+    nameSelector = ".title",
+    linkSelector = "a",
+    coverSelector = "img",
+    isSearch = true
+)
+@DetailSelectors(
+    title = "h1.novel-title",
+    cover = ".novel-cover img",
+    author = ".author-name",
+    description = ".synopsis p",
+    genres = ".genre-list a",
+    status = ".novel-status"
+)
+@ChapterSelectors(
+    list = ".chapter-list li",
+    name = ".chapter-title",
+    link = "a",
+    reversed = true
+)
+@ContentSelectors(
+    content = ".chapter-content p",
+    title = ".chapter-title",
+    removeSelectors = [".ads", "script", ".author-note"]
+)
+abstract class MySite(deps: Dependencies) : SourceFactory(deps = deps) {
+    override val lang = "en"
+    override val baseUrl = "https://mysite.com"
+    override val id: Long get() = MySiteSourceId.ID
+    override val name = "My Site"
+    
+    // That's it! All fetchers, filters, commands are generated by KSP!
+}
+```
 
 ---
 
@@ -40,9 +173,20 @@ Is the site a Madara/WordPress theme?
 │         - Has /wp-admin/ page
 │         - Similar layout to BoxNovel, NovelFull
 │
-└── NO → Use SourceFactory with declarative fetchers
-         - Define CSS selectors
-         - Override exploreFetchers, detailFetcher, chapterFetcher, contentFetcher
+└── NO → Is it based on another known theme?
+         │
+         ├── YES → Use @ThemeSource (minimal code)
+         │
+         └── NO → Use SourceFactory with KSP annotations
+                  PRIORITY ORDER:
+                  1. @AutoSourceId - Auto-generate ID
+                  2. @GenerateFilters - Auto-generate filters
+                  3. @GenerateCommands - Auto-generate commands
+                  4. @ExploreFetcher - Declarative listings
+                  5. @DetailSelectors - Declarative detail page
+                  6. @ChapterSelectors - Declarative chapters
+                  7. @ContentSelectors - Declarative content
+                  8. Manual code ONLY when annotations can't handle it
 ```
 
 ---
@@ -82,15 +226,38 @@ import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 ```
 
+### ✅ KSP ANNOTATIONS (USE THESE!):
+```kotlin
+// RECOMMENDED - KSP annotations for declarative sources
+import tachiyomix.annotations.Extension          // ✅ REQUIRED for all sources
+import tachiyomix.annotations.MadaraSource       // ✅ Zero-code Madara sources
+import tachiyomix.annotations.ThemeSource        // ✅ Theme-based sources
+import tachiyomix.annotations.AutoSourceId       // ✅ Auto-generate source ID
+import tachiyomix.annotations.GenerateFilters    // ✅ Auto-generate getFilters()
+import tachiyomix.annotations.GenerateCommands   // ✅ Auto-generate getCommands()
+import tachiyomix.annotations.SourceMeta         // ✅ Add source metadata
+import tachiyomix.annotations.SourceConfig       // ✅ Define source config
+import tachiyomix.annotations.ExploreFetcher     // ✅ Declarative explore endpoints
+import tachiyomix.annotations.DetailSelectors    // ✅ Declarative detail selectors
+import tachiyomix.annotations.ChapterSelectors   // ✅ Declarative chapter selectors
+import tachiyomix.annotations.ContentSelectors   // ✅ Declarative content selectors
+import tachiyomix.annotations.RateLimit          // ✅ Rate limiting
+import tachiyomix.annotations.CustomHeader       // ✅ Custom HTTP headers
+import tachiyomix.annotations.CloudflareConfig   // ✅ Cloudflare handling
+import tachiyomix.annotations.Pagination         // ✅ Pagination config
+import tachiyomix.annotations.ApiEndpoint        // ✅ API endpoint definition
+import tachiyomix.annotations.SourceDeepLink     // ✅ Deep link handling
+import tachiyomix.annotations.RequiresAuth       // ✅ Auth requirements
+import tachiyomix.annotations.Selector           // ✅ Custom selector override
+import tachiyomix.annotations.DateFormat         // ✅ Custom date format
+```
+
 ### ❌ DO NOT USE THESE (They don't exist):
 ```kotlin
 // WRONG - These do NOT exist in this project:
 import ireader.common.utils.DateParser          // ❌ NOT AVAILABLE
 import ireader.common.utils.ContentCleaner      // ❌ NOT AVAILABLE  
 import ireader.core.source.helpers.*            // ❌ NOT AVAILABLE
-import tachiyomix.annotations.AutoSourceId      // ❌ NOT PROCESSED YET
-import tachiyomix.annotations.GenerateFilters   // ❌ NOT PROCESSED YET
-import tachiyomix.annotations.GenerateCommands  // ❌ NOT PROCESSED YET
 ```
 
 ---
@@ -145,49 +312,50 @@ object LunarLettersConfig
 
 ---
 
-## 🏭 Source Type 2: SourceFactory (Declarative)
+## 🏭 Source Type 2: SourceFactory (Declarative with KSP)
 
 **Use when site is NOT Madara but has standard HTML structure.**
+**ALWAYS use KSP annotations to minimize boilerplate!**
 
-### Complete Working Template (COPY THIS):
+### Complete Working Template with KSP Annotations (RECOMMENDED):
 ```kotlin
 package ireader.sitename
 
 import ireader.core.source.Dependencies
-import ireader.core.source.model.Command
-import ireader.core.source.model.CommandList
-import ireader.core.source.model.Filter
-import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
+import tachiyomix.annotations.GenerateFilters
+import tachiyomix.annotations.GenerateCommands
+import tachiyomix.annotations.SourceMeta
 
 @Extension
+@AutoSourceId                                    // ✅ Auto-generates stable ID
+@GenerateFilters(title = true)                   // ✅ Auto-generates getFilters()
+@GenerateCommands(                               // ✅ Auto-generates getCommands()
+    detailFetch = true,
+    contentFetch = true,
+    chapterFetch = true
+)
+@SourceMeta(                                     // ✅ Optional metadata
+    description = "Description of the source",
+    nsfw = false
+)
 abstract class SiteName(deps: Dependencies) : SourceFactory(deps = deps) {
 
     // ═══════════════════════════════════════════════════════════════
-    // REQUIRED: Basic Info
+    // REQUIRED: Basic Info (ID auto-generated by @AutoSourceId)
     // ═══════════════════════════════════════════════════════════════
     override val lang: String get() = "en"
     override val baseUrl: String get() = "https://example.com"
-    override val id: Long get() = 12345L
+    override val id: Long get() = SiteNameSourceId.ID  // Use generated ID
     override val name: String get() = "Site Name"
 
     // ═══════════════════════════════════════════════════════════════
-    // REQUIRED: Filters
+    // FILTERS & COMMANDS - Auto-generated by annotations above!
+    // No need to override getFilters() or getCommands()
     // ═══════════════════════════════════════════════════════════════
-    override fun getFilters(): FilterList = listOf(
-        Filter.Title(),
-    )
-
-    // ═══════════════════════════════════════════════════════════════
-    // REQUIRED: Commands
-    // ═══════════════════════════════════════════════════════════════
-    override fun getCommands(): CommandList = listOf(
-        Command.Detail.Fetch(),
-        Command.Content.Fetch(),
-        Command.Chapter.Fetch(),
-    )
 
     // ═══════════════════════════════════════════════════════════════
     // EXPLORE FETCHERS - Novel listings and search
@@ -371,12 +539,15 @@ listOf("en").map { lang ->
 
 ## 📋 Step-by-Step Process
 
-### Step 1: Determine Source Type
+### Step 1: Determine Source Type (KSP-First Approach)
 
 Open the website and check:
-- Does URL look like `/novel/name/chapter-1/`? → **MadaraSource**
-- Does it have `/wp-admin/`? → **MadaraSource**
-- Otherwise → **SourceFactory**
+- Does URL look like `/novel/name/chapter-1/`? → **@MadaraSource** (zero code!)
+- Does it have `/wp-admin/`? → **@MadaraSource** (zero code!)
+- Is it based on another known theme? → **@ThemeSource**
+- Otherwise → **SourceFactory with KSP annotations**
+
+**ALWAYS try KSP annotations first before writing manual code!**
 
 ### Step 2: Find CSS Selectors (For SourceFactory)
 
@@ -415,14 +586,22 @@ Use browser DevTools (F12):
 
 ### Step 3: Generate Source ID
 
-Use this formula or run: `./gradlew generateSourceId -PsourceName="Name"`
+**RECOMMENDED: Use `@AutoSourceId` annotation!**
+```kotlin
+@Extension
+@AutoSourceId  // KSP generates stable ID automatically
+abstract class MySite(deps: Dependencies) : SourceFactory(deps = deps) {
+    override val id: Long get() = MySiteSourceId.ID  // Use generated constant
+}
+```
+
+**Alternative: Manual generation**
+Run: `./gradlew generateSourceId -PsourceName="Name"`
 
 For manual calculation:
 ```
 MD5(lowercase(name) + "/" + lang + "/1") → first 8 bytes as Long
 ```
-
-Or just use a unique number not used by other sources.
 
 ### Step 4: Create Files
 
@@ -502,16 +681,29 @@ override fun getUserAgent(): String {
 
 Before submitting:
 
+### KSP Annotations (PREFERRED):
+- [ ] Used `@MadaraSource` if site is Madara-based (zero code!)
+- [ ] Used `@AutoSourceId` instead of hardcoding ID
+- [ ] Used `@GenerateFilters` instead of manual `getFilters()`
+- [ ] Used `@GenerateCommands` instead of manual `getCommands()`
+- [ ] Used `@ExploreFetcher` for declarative listings
+- [ ] Used `@DetailSelectors`, `@ChapterSelectors`, `@ContentSelectors` where possible
+- [ ] Used `@RateLimit` if site needs rate limiting
+- [ ] Used `@SourceMeta` for description and NSFW flag
+
+### Required Checks:
 - [ ] Package name is `ireader.{lowercase_name}`
 - [ ] Directory matches package: `ireader/{lowercase_name}/`
 - [ ] Class is `abstract` and extends `SourceFactory`
 - [ ] Has `@Extension` annotation
 - [ ] All required overrides present (lang, baseUrl, id, name)
-- [ ] `getFilters()` returns at least `Filter.Title()`
-- [ ] `getCommands()` returns the three standard commands
 - [ ] Selectors are valid CSS
 - [ ] `addBaseUrlToLink = true` if URLs are relative
 - [ ] build.gradle.kts has correct name and lang
+
+### Only if NOT using KSP annotations:
+- [ ] `getFilters()` returns at least `Filter.Title()`
+- [ ] `getCommands()` returns the three standard commands
 
 ---
 
@@ -568,28 +760,58 @@ Before submitting:
 
 ## 📞 Quick Reference
 
-### Create Madara Source:
+### Option 1: Madara Source (BEST - Zero Code):
 ```kotlin
 package ireader.sitename
 import tachiyomix.annotations.MadaraSource
 
 @MadaraSource(name = "Name", baseUrl = "https://...", lang = "en", id = 123)
 object SiteNameConfig
+// That's it! No class body needed!
 ```
 
-### Create SourceFactory Source:
+### Option 2: SourceFactory with KSP Annotations (RECOMMENDED):
+```kotlin
+package ireader.sitename
+import ireader.core.source.Dependencies
+import ireader.core.source.SourceFactory
+import tachiyomix.annotations.*
+
+@Extension
+@AutoSourceId
+@GenerateFilters(title = true, sort = true, sortOptions = ["Latest", "Popular"])
+@GenerateCommands(detailFetch = true, contentFetch = true, chapterFetch = true)
+@ExploreFetcher(name = "Latest", endpoint = "/novels/{page}/", selector = ".novel-item", 
+    nameSelector = ".title", linkSelector = "a", coverSelector = "img")
+@ExploreFetcher(name = "Search", endpoint = "/search?q={query}", selector = ".novel-item",
+    nameSelector = ".title", linkSelector = "a", coverSelector = "img", isSearch = true)
+@DetailSelectors(title = "h1", cover = ".cover img", author = ".author", description = ".desc")
+@ChapterSelectors(list = ".chapter-list li", name = "a", link = "a", reversed = true)
+@ContentSelectors(content = ".chapter-content p")
+abstract class SiteName(deps: Dependencies) : SourceFactory(deps = deps) {
+    override val lang = "en"
+    override val baseUrl = "https://..."
+    override val id: Long get() = SiteNameSourceId.ID
+    override val name = "Name"
+    // Filters, commands, and fetchers are auto-generated!
+}
+```
+
+### Option 3: SourceFactory Manual (Only if annotations can't handle it):
 ```kotlin
 package ireader.sitename
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.model.*
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
 
 @Extension
+@AutoSourceId  // Still use this for ID!
 abstract class SiteName(deps: Dependencies) : SourceFactory(deps = deps) {
     override val lang = "en"
     override val baseUrl = "https://..."
-    override val id = 123L
+    override val id: Long get() = SiteNameSourceId.ID
     override val name = "Name"
     
     override fun getFilters() = listOf(Filter.Title())
@@ -822,7 +1044,7 @@ python scripts/create-empty-source.py SiteName https://example.com en
 
 ## ⚡ Quick Copy-Paste Templates
 
-### Template A: Madara Source
+### Template A: Madara Source (BEST - Zero Code!)
 ```kotlin
 package ireader.CHANGEME
 
@@ -835,9 +1057,65 @@ import tachiyomix.annotations.MadaraSource
     id = CHANGEME
 )
 object CHANGEMEConfig
+// That's it! No class body needed!
 ```
 
-### Template B: SourceFactory Source
+### Template B: SourceFactory with KSP Annotations (RECOMMENDED)
+```kotlin
+package ireader.CHANGEME
+
+import ireader.core.source.Dependencies
+import ireader.core.source.SourceFactory
+import tachiyomix.annotations.*
+
+@Extension
+@AutoSourceId
+@GenerateFilters(title = true)
+@GenerateCommands(detailFetch = true, contentFetch = true, chapterFetch = true)
+@ExploreFetcher(
+    name = "Latest",
+    endpoint = "/CHANGEME/{page}/",
+    selector = "CHANGEME",
+    nameSelector = "CHANGEME",
+    linkSelector = "a",
+    coverSelector = "img"
+)
+@ExploreFetcher(
+    name = "Search",
+    endpoint = "/search?q={query}",
+    selector = "CHANGEME",
+    nameSelector = "CHANGEME",
+    linkSelector = "a",
+    coverSelector = "img",
+    isSearch = true
+)
+@DetailSelectors(
+    title = "CHANGEME",
+    cover = "CHANGEME img",
+    author = "CHANGEME",
+    description = "CHANGEME",
+    genres = "CHANGEME a"
+)
+@ChapterSelectors(
+    list = "CHANGEME",
+    name = "a",
+    link = "a",
+    reversed = true
+)
+@ContentSelectors(
+    content = "CHANGEME p",
+    title = "CHANGEME"
+)
+abstract class CHANGEME(deps: Dependencies) : SourceFactory(deps = deps) {
+    override val lang: String get() = "en"
+    override val baseUrl: String get() = "https://CHANGEME.com"
+    override val id: Long get() = CHANGEMESourceId.ID
+    override val name: String get() = "CHANGEME"
+    // Filters, commands, and fetchers are auto-generated by KSP!
+}
+```
+
+### Template C: SourceFactory Manual (Only when annotations can't handle it)
 ```kotlin
 package ireader.CHANGEME
 
@@ -849,13 +1127,15 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
 
 @Extension
+@AutoSourceId  // Still use this for ID generation!
 abstract class CHANGEME(deps: Dependencies) : SourceFactory(deps = deps) {
 
     override val lang: String get() = "en"
     override val baseUrl: String get() = "https://CHANGEME.com"
-    override val id: Long get() = CHANGEME_ID
+    override val id: Long get() = CHANGEMESourceId.ID
     override val name: String get() = "CHANGEME"
 
     override fun getFilters(): FilterList = listOf(Filter.Title())
@@ -2141,13 +2421,36 @@ Before generating any source code, verify:
 
 ## 🔴 ABSOLUTE RULES (NEVER BREAK THESE)
 
-1. **ALWAYS use `abstract class`** for SourceFactory sources
-2. **ALWAYS use `requestBuilder(url)`** with `client.get()`
-3. **NEVER use Java imports** (`java.net.*`, `java.nio.*`)
-4. **NEVER use `org.jsoup`** - use `com.fleeksoft.ksoup`
-5. **NEVER use `chaptersRequest()`** in SourceFactory - use `getChapterListRequest()`
-6. **ALWAYS check for WebView HTML** in custom `getChapterList()` overrides
+### KSP Annotation Rules (HIGHEST PRIORITY):
+1. **ALWAYS check if site is Madara first** → Use `@MadaraSource` (zero code!)
+2. **ALWAYS use `@AutoSourceId`** instead of hardcoding IDs for new sources
+3. **PREFER `@GenerateFilters` and `@GenerateCommands`** over manual implementations
+4. **USE declarative annotations** (`@ExploreFetcher`, `@DetailSelectors`, etc.) when possible
+5. **ONLY write manual code** when KSP annotations cannot handle the use case
+
+### Code Rules:
+6. **ALWAYS use `abstract class`** for SourceFactory sources
+7. **ALWAYS use `requestBuilder(url)`** with `client.get()`
+8. **NEVER use Java imports** (`java.net.*`, `java.nio.*`)
+9. **NEVER use `org.jsoup`** - use `com.fleeksoft.ksoup`
+10. **NEVER use `chaptersRequest()`** in SourceFactory - use `getChapterListRequest()`
+11. **ALWAYS check for WebView HTML** in custom `getChapterList()` overrides
+
+---
+
+## 📚 KSP Annotations Location
+
+All KSP annotations are defined in:
+```
+annotations/src/commonMain/kotlin/tachiyomix/annotations/
+├── Extension.kt           # @Extension
+├── SourceAnnotations.kt   # @AutoSourceId, @GenerateFilters, @GenerateCommands, etc.
+├── MadaraSource.kt        # @MadaraSource, @ThemeSource, @Selector, @DateFormat
+├── SourceMeta.kt          # @SourceMeta, @ExploreFetcher, @DetailSelectors, etc.
+├── ApiAnnotations.kt      # @ApiEndpoint, @RateLimit, @CustomHeader, etc.
+```
 
 ---
 
 *Following these rules will prevent 99% of compilation errors in AI-generated sources.*
+*ALWAYS prefer KSP annotations over manual code for cleaner, more maintainable sources!*
