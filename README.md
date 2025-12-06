@@ -17,31 +17,33 @@ Check out the repo's [sample](https://github.com/kazemcodes/IReader-extensions/t
 
 ## Quick Start
 
-### Creating a New Extension
+### Creating a New Source
 
-**Option 1: Using the Script (Recommended)**
 ```bash
-# Create an empty extension with boilerplate code
+python scripts/add-source.py
+```
+
+Answer 4 questions and get a working source template:
+1. Source name (e.g., `NovelFull`)
+2. Website URL (e.g., `https://novelfull.com`)
+3. Language code (e.g., `en`)
+4. Is it a Madara site? (y/n)
+
+**For Madara sites** - generates zero-code source using `@MadaraSource` annotation.
+
+**For other sites** - generates `SourceFactory` template with KSP annotations (`@AutoSourceId`, `@GenerateFilters`, `@GenerateCommands`). Just update the CSS selectors.
+
+See [ADD_SOURCE_GUIDE.md](./docs/ADD_SOURCE_GUIDE.md) for details.
+
+### Legacy Scripts
+
+```bash
+# Old script (still works)
 python scripts/create-empty-source.py NovelExample https://novelexample.com en
 
-# Create an NSFW extension
-python scripts/create-empty-source.py AdultNovel https://adultnovel.com en --nsfw
+# Convert from lnreader-plugins
+python scripts/js-to-kotlin-converter.py plugin.ts en
 ```
-
-**Option 2: Converting from lnreader-plugins**
-```bash
-# Convert a single plugin
-python scripts/js-to-kotlin-converter.py lnreader-plugins-master/plugins/english/novelbuddy.ts en
-
-# Batch convert all plugins
-./scripts/batch-convert-lnreader.sh
-
-# Convert only English plugins
-./scripts/batch-convert-lnreader.sh en
-```
-
-**Option 3: Manual Creation**
-See [Extension Template](./tutorial/EXTENSION_TEMPLATE.md) for a complete guide.
 
 ### Common Utilities
 

@@ -4,7 +4,48 @@ This directory contains utility scripts for creating and converting extensions.
 
 ## Scripts
 
-### 1. create-empty-source.py
+### 1. add-source.py (Recommended)
+
+**Interactive, noob-proof source creator** with guided prompts and multiple templates.
+
+**Usage:**
+```bash
+# Interactive mode (recommended for beginners)
+python scripts/add-source.py
+
+# Quick mode with arguments
+python scripts/add-source.py --name "NovelSite" --url "https://novelsite.com" --lang en
+
+# Create a Madara source (zero-code)
+python scripts/add-source.py --name "BoxNovel" --url "https://boxnovel.com" --lang en --type madara
+
+# Create with all options
+python scripts/add-source.py --name "MyNovel" --url "https://mynovel.com" --lang en --type sourcefactory --nsfw --js
+```
+
+**Arguments:**
+- `--name, -n`: Source name (e.g., NovelFull)
+- `--url, -u`: Base URL (e.g., https://novelfull.com)
+- `--lang, -l`: Language code (default: en)
+- `--type, -t`: Source type: `madara`, `sourcefactory`, `parsed` (default: sourcefactory)
+- `--description, -d`: Source description
+- `--nsfw`: Mark as NSFW content
+- `--js`: Enable JavaScript rendering
+- `--output, -o`: Output directory (default: ./sources)
+- `--quick, -q`: Skip confirmation prompts
+
+**Source Types:**
+| Type | Use When |
+|------|----------|
+| `madara` | Site uses Madara WordPress theme (zero-code!) |
+| `sourcefactory` | Standard HTML site with CSS selectors (recommended) |
+| `parsed` | Complex sites needing custom logic |
+
+**Documentation:** See [docs/ADD_SOURCE_GUIDE.md](../docs/ADD_SOURCE_GUIDE.md) for complete guide.
+
+---
+
+### 2. create-empty-source.py (Legacy)
 
 Creates a complete empty extension structure with boilerplate code.
 
