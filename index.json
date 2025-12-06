@@ -801,6 +801,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.novelgecesi.tu",
+    "apk": "ireader-tu-novelgecesi-v2.1.apk",
+    "name": "NovelGecesi",
+    "id": 525740147206608797,
+    "lang": "tu",
+    "code": 1,
+    "version": "2.1",
+    "description": "Türkçe novel okuma sitesi",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.novelhall.en",
     "apk": "ireader-en-novelhall-v2.6.apk",
     "name": "NovelHall",
