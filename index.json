@@ -715,6 +715,18 @@
     "assetsDir": "multisrc/madara/ltnovel/assets"
   },
   {
+    "pkg": "ireader.mydramanovel.en",
+    "apk": "ireader-en-mydramanovel-v2.1.apk",
+    "name": "MyDramaNovel",
+    "id": 6394637986413384415,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Translating Tomorrow",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.mylovenovel.en",
     "apk": "ireader-en-mylovenovel-v2.9.apk",
     "name": "MyLoveNovel",
@@ -1209,6 +1221,18 @@
     "code": 6,
     "version": "2.6",
     "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.wuxiaclick.en",
+    "apk": "ireader-en-wuxiaclick-v2.1.apk",
+    "name": "WuxiaClick",
+    "id": 8205328871368913707,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read Wuxia, Light and Korean Novels at WuxiaClick",
     "nsfw": false,
     "sourceDir": "main"
   },
