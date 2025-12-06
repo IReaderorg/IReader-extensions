@@ -1580,3 +1580,574 @@ abstract class AdvancedExample(private val deps: Dependencies) : SourceFactory(d
 ---
 
 *This section covers advanced filter and command usage based on real working sources in the IReader-extensions repository.*
+
+
+---
+
+## 🚨 CRITICAL: Common AI Mistakes to AVOID
+
+### ❌ Mistake 1: Using `class` instead of `abstract class`
+
+```kotlin
+// ❌ WRONG - Will cause compilation error
+@Extension
+class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+
+// ✅ CORRECT - SourceFactory sources MUST be abstract
+@Extension
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+```
+
+**Why:** The KSP processor generates a concrete implementation class that extends your abstract class.
+
+---
+
+### ❌ Mistake 2: Using `chaptersRequest` in SourceFactory
+
+```kotlin
+// ❌ WRONG - chaptersRequest is from ParsedHttpSource, NOT SourceFactory
+override fun chaptersRequest(book: MangaInfo): HttpRequestBuilder {
+    return HttpRequestBuilder().apply {
+        url(book.key)
+    }
+}
+
+// ✅ CORRECT - Use getChapterListRequest for SourceFactory
+override suspend fun getChapterListRequest(
+    manga: MangaInfo,
+    commands: List<Command<*>>
+): Document {
+    return client.get(requestBuilder(manga.key)).asJsoup()
+}
+```
+
+**Why:** `SourceFactory` and `ParsedHttpSource` have different APIs. Don't mix them.
+
+---
+
+### ❌ Mistake 3: Using Java imports (NOT available in Kotlin Multiplatform)
+
+```kotlin
+// ❌ WRONG - These Java classes don't exist in KMP
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
+val encoded = URLEncoder.encode(query, StandardCharsets.UTF_8.toString())
+
+// ✅ CORRECT - Use Ktor's URL encoding or manual encoding
+import io.ktor.http.encodeURLParameter
+
+val encoded = query.encodeURLParameter()
+
+// OR simple manual encoding for basic cases
+val encoded = query.replace(" ", "%20")
+```
+
+**Why:** IReader uses Kotlin Multiplatform. Java-specific classes are not available.
+
+---
+
+### ❌ Mistake 4: Mixing ParsedHttpSource and SourceFactory methods
+
+**ParsedHttpSource methods (DO NOT use in SourceFactory):**
+```kotlin
+// ❌ These are ParsedHttpSource methods - NOT available in SourceFactory
+fun chaptersRequest(book: MangaInfo): HttpRequestBuilder
+fun contentRequest(chapter: ChapterInfo): HttpRequestBuilder
+fun detailRequest(book: MangaInfo): HttpRequestBuilder
+fun chaptersSelector(): String
+fun chapterFromElement(element: Element): ChapterInfo
+```
+
+**SourceFactory methods (USE these instead):**
+```kotlin
+// ✅ These are SourceFactory methods
+suspend fun getChapterListRequest(manga: MangaInfo, commands: List<Command<*>>): Document
+suspend fun getMangaDetailsRequest(manga: MangaInfo, commands: List<Command<*>>): Document
+suspend fun getContentRequest(chapter: ChapterInfo, commands: List<Command<*>>): Document
+val chapterFetcher: Chapters  // Use declarative fetcher instead
+```
+
+---
+
+### ❌ Mistake 5: Wrong import for Document/Element
+
+```kotlin
+// ❌ WRONG - org.jsoup is NOT available
+import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+
+// ✅ CORRECT - Use fleeksoft.ksoup
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
+```
+
+---
+
+## ✅ Correct Method Overrides for SourceFactory
+
+### Custom Chapter List Request
+
+```kotlin
+import io.ktor.client.request.get
+import ireader.core.source.asJsoup
+import com.fleeksoft.ksoup.nodes.Document
+
+// Override to customize chapter list URL
+override suspend fun getChapterListRequest(
+    manga: MangaInfo,
+    commands: List<Command<*>>
+): Document {
+    // Example: Different URL pattern for chapters
+    val chapterUrl = manga.key.replace("/novel/", "/chapters/")
+    return client.get(requestBuilder(chapterUrl)).asJsoup()
+}
+```
+
+### Custom Detail Request
+
+```kotlin
+// Override to customize detail page URL
+override suspend fun getMangaDetailsRequest(
+    manga: MangaInfo,
+    commands: List<Command<*>>
+): Document {
+    return client.get(requestBuilder(manga.key)).asJsoup()
+}
+```
+
+### Custom Content Request
+
+```kotlin
+// Override to customize chapter content URL
+override suspend fun getContentRequest(
+    chapter: ChapterInfo,
+    commands: List<Command<*>>
+): Document {
+    return client.get(requestBuilder(chapter.key)).asJsoup()
+}
+```
+
+### Full Custom Chapter List (with pagination)
+
+```kotlin
+override suspend fun getChapterList(
+    manga: MangaInfo,
+    commands: List<Command<*>>
+): List<ChapterInfo> {
+    // Check for WebView HTML first
+    val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
+    if (chapterFetch != null && chapterFetch.html.isNotBlank()) {
+        return chaptersParse(chapterFetch.html.asJsoup()).reversed()
+    }
+
+    // Custom chapter fetching logic
+    val chapters = mutableListOf<ChapterInfo>()
+    var page = 1
+    
+    while (true) {
+        val url = "${manga.key}/chapters?page=$page"
+        val document = client.get(requestBuilder(url)).asJsoup()
+        val pageChapters = chaptersParse(document)
+        
+        if (pageChapters.isEmpty()) break
+        
+        chapters.addAll(pageChapters)
+        page++
+    }
+    
+    return chapters.reversed()
+}
+```
+
+---
+
+## 📋 SourceFactory vs ParsedHttpSource Comparison
+
+| Feature | SourceFactory | ParsedHttpSource |
+|---------|---------------|------------------|
+| Class type | `abstract class` | `abstract class` |
+| Chapter request | `getChapterListRequest()` | `chaptersRequest()` |
+| Detail request | `getMangaDetailsRequest()` | `detailRequest()` |
+| Content request | `getContentRequest()` | `contentRequest()` |
+| Chapter parsing | `chapterFetcher` (declarative) | `chaptersSelector()` + `chapterFromElement()` |
+| Recommended | ✅ YES - Use this | ⚠️ Legacy - Avoid |
+
+---
+
+## 🔒 Safe Imports List (Verified to Work)
+
+```kotlin
+// ALWAYS SAFE - Core imports
+import ireader.core.source.Dependencies
+import ireader.core.source.SourceFactory
+import tachiyomix.annotations.Extension
+
+// SAFE - Model imports
+import ireader.core.source.model.Command
+import ireader.core.source.model.CommandList
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
+import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.ChapterInfo
+import ireader.core.source.model.Page
+import ireader.core.source.model.Text
+import ireader.core.source.model.MangasPageInfo
+import ireader.core.source.model.Listing
+
+// SAFE - HTTP imports
+import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.headers
+import io.ktor.client.request.url
+import io.ktor.client.request.forms.submitForm
+import io.ktor.http.Parameters
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+
+// SAFE - Parsing imports
+import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
+
+// SAFE - Serialization (for JSON APIs)
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+// SAFE - Coroutines
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import ireader.core.util.DefaultDispatcher
+```
+
+---
+
+## ❌ FORBIDDEN Imports (Will NOT Work)
+
+```kotlin
+// ❌ FORBIDDEN - Java classes (not in KMP)
+import java.net.URLEncoder
+import java.net.URL
+import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+// ❌ FORBIDDEN - Wrong JSoup package
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
+
+// ❌ FORBIDDEN - Not available utilities
+import ireader.common.utils.DateParser
+import ireader.common.utils.ContentCleaner
+import ireader.core.source.helpers.*
+```
+
+---
+
+## 🔄 URL Encoding Without Java
+
+```kotlin
+// Option 1: Ktor's encodeURLParameter
+import io.ktor.http.encodeURLParameter
+
+val encoded = query.encodeURLParameter()
+
+// Option 2: Manual encoding for simple cases
+fun encodeUrl(text: String): String {
+    return text
+        .replace(" ", "%20")
+        .replace("&", "%26")
+        .replace("=", "%3D")
+        .replace("?", "%3F")
+        .replace("#", "%23")
+}
+
+// Option 3: Use in endpoint directly (SourceFactory handles it)
+BaseExploreFetcher(
+    "Search",
+    endpoint = "/search?q={query}",  // {query} is auto-encoded
+    // ...
+)
+```
+
+---
+
+*These rules are based on actual compilation errors encountered. Following them will prevent 90% of AI-generated code issues.*
+
+
+---
+
+## 🚨 MORE CRITICAL MISTAKES TO AVOID
+
+### ❌ Mistake 6: Using `client.get(url)` directly
+
+```kotlin
+// ❌ WRONG - Missing requestBuilder()
+val document = client.get(url).asJsoup()
+val document = client.get("$baseUrl/search").asJsoup()
+
+// ✅ CORRECT - Always use requestBuilder()
+val document = client.get(requestBuilder(url)).asJsoup()
+val document = client.get(requestBuilder("$baseUrl/search")).asJsoup()
+```
+
+**Why:** `requestBuilder()` adds required headers (User-Agent, etc.). Without it, requests may fail or be blocked.
+
+---
+
+### ❌ Mistake 7: Using `class` instead of `abstract class` (REPEATED - VERY COMMON)
+
+```kotlin
+// ❌ WRONG - This is the #1 most common mistake!
+@Extension
+class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+
+// ✅ CORRECT - MUST be abstract
+@Extension
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+```
+
+**Why:** KSP generates a concrete `Extension` class that extends your source. Your source MUST be `abstract`.
+
+**This mistake causes:** `Cannot create an instance of an abstract class` or similar errors.
+
+---
+
+### ❌ Mistake 8: Manual URL encoding with wrong methods
+
+```kotlin
+// ❌ WRONG - These don't exist or don't work in KMP
+val encoded = URLEncoder.encode(text, "UTF-8")
+val encoded = text.encodeToByteArray().toString()
+val encoded = java.net.URLEncoder.encode(text, StandardCharsets.UTF_8)
+
+// ✅ CORRECT - Simple manual encoding
+val encoded = text.trim().replace(" ", "%20")
+
+// ✅ CORRECT - Or use Ktor (if imported)
+import io.ktor.http.encodeURLParameter
+val encoded = text.encodeURLParameter()
+```
+
+---
+
+### ❌ Mistake 9: Returning wrong type from getChapterList
+
+```kotlin
+// ❌ WRONG - Returning nullable or wrong type
+override suspend fun getChapterList(...): List<ChapterInfo>? {  // ❌ nullable
+override suspend fun getChapterList(...): MutableList<ChapterInfo> {  // ❌ mutable
+
+// ✅ CORRECT - Return List<ChapterInfo> (non-nullable)
+override suspend fun getChapterList(
+    manga: MangaInfo,
+    commands: List<Command<*>>
+): List<ChapterInfo> {
+    // ...
+    return chapters  // Must be List<ChapterInfo>
+}
+```
+
+---
+
+### ❌ Mistake 10: Using `return@mapNotNull null` incorrectly
+
+```kotlin
+// ❌ PROBLEMATIC - Can cause issues
+document.select("div").mapNotNull { element ->
+    val link = element.select("a").first() ?: return@mapNotNull null
+    // ...
+}
+
+// ✅ BETTER - Use let or explicit null handling
+document.select("div").mapNotNull { element ->
+    element.select("a").first()?.let { link ->
+        ChapterInfo(
+            name = link.text(),
+            key = link.attr("href")
+        )
+    }
+}
+
+// ✅ ALSO GOOD - Filter after map
+document.select("div").map { element ->
+    val link = element.select("a").firstOrNull()
+    if (link != null) {
+        ChapterInfo(name = link.text(), key = link.attr("href"))
+    } else {
+        null
+    }
+}.filterNotNull()
+```
+
+---
+
+## ✅ CORRECT SourceFactory Template (FINAL VERSION)
+
+**Copy this EXACTLY and only change the marked parts:**
+
+```kotlin
+package ireader.SOURCENAME  // ← Change SOURCENAME
+
+import ireader.core.source.Dependencies
+import ireader.core.source.SourceFactory
+import ireader.core.source.model.Command
+import ireader.core.source.model.CommandList
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
+import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.ChapterInfo
+import tachiyomix.annotations.Extension
+import io.ktor.client.request.get
+import ireader.core.source.asJsoup
+import com.fleeksoft.ksoup.nodes.Document
+
+@Extension
+abstract class SourceName(deps: Dependencies) : SourceFactory(deps = deps) {  // ← MUST be abstract
+
+    override val name = "Source Name"           // ← Change
+    override val baseUrl = "https://example.com" // ← Change
+    override val lang = "en"                     // ← Change if needed
+    override val id = 12345L                     // ← Change to unique ID
+
+    override fun getFilters(): FilterList = listOf(Filter.Title())
+
+    override fun getCommands(): CommandList = listOf(
+        Command.Detail.Fetch(),
+        Command.Content.Fetch(),
+        Command.Chapter.Fetch(),
+    )
+
+    override val exploreFetchers = listOf(
+        BaseExploreFetcher(
+            "Latest",
+            endpoint = "/novels/",              // ← Change
+            selector = ".novel-item",           // ← Change
+            nameSelector = ".title",            // ← Change
+            linkSelector = "a",
+            linkAtt = "href",
+            coverSelector = "img",
+            coverAtt = "src",
+            addBaseUrlToLink = true,
+            addBaseurlToCoverLink = true
+        ),
+        BaseExploreFetcher(
+            "Search",
+            endpoint = "/search?q={query}",     // ← Change
+            selector = ".novel-item",           // ← Change
+            nameSelector = ".title",            // ← Change
+            linkSelector = "a",
+            linkAtt = "href",
+            coverSelector = "img",
+            coverAtt = "src",
+            addBaseUrlToLink = true,
+            addBaseurlToCoverLink = true,
+            type = SourceFactory.Type.Search
+        )
+    )
+
+    override val detailFetcher = SourceFactory.Detail(
+        nameSelector = "h1",                    // ← Change
+        coverSelector = ".cover img",           // ← Change
+        coverAtt = "src",
+        descriptionSelector = ".description",   // ← Change
+        authorBookSelector = ".author",         // ← Change (optional)
+        categorySelector = ".genres a",         // ← Change (optional)
+        addBaseurlToCoverLink = true
+    )
+
+    override val chapterFetcher = SourceFactory.Chapters(
+        selector = ".chapter-list li",          // ← Change
+        nameSelector = "a",                     // ← Change
+        linkSelector = "a",
+        linkAtt = "href",
+        addBaseUrlToLink = true,
+        reverseChapterList = true
+    )
+
+    override val contentFetcher = SourceFactory.Content(
+        pageContentSelector = ".chapter-content p"  // ← Change
+    )
+}
+```
+
+---
+
+## ✅ CORRECT Custom getChapterList Override
+
+**If you need custom chapter fetching logic:**
+
+```kotlin
+import io.ktor.client.request.get
+import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
+import com.fleeksoft.ksoup.nodes.Document
+
+override suspend fun getChapterList(
+    manga: MangaInfo,
+    commands: List<Command<*>>
+): List<ChapterInfo> {
+    // Step 1: Check for WebView HTML first (ALWAYS do this)
+    val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
+    if (chapterFetch != null && chapterFetch.html.isNotBlank()) {
+        return chaptersParse(chapterFetch.html.asJsoup()).reversed()
+    }
+
+    // Step 2: Custom URL building (if needed)
+    val safeTitle = manga.title.trim().replace(" ", "%20")
+    val url = "$baseUrl/search/label/$safeTitle?max-results=200"
+    
+    // Step 3: Fetch with requestBuilder (REQUIRED)
+    val document = client.get(requestBuilder(url)).asJsoup()
+    
+    // Step 4: Parse chapters
+    val chapters = document.select("div.post-outer").mapNotNull { element ->
+        element.select("h3.post-title a").firstOrNull()?.let { link ->
+            ChapterInfo(
+                name = link.text(),
+                key = link.attr("href")
+            )
+        }
+    }
+    
+    // Step 5: Return (reversed if newest first on page)
+    return chapters.reversed()
+}
+```
+
+---
+
+## 📋 Pre-Submission Checklist for AI
+
+Before generating any source code, verify:
+
+- [ ] Class is `abstract class`, NOT `class`
+- [ ] Extends `SourceFactory(deps = deps)` with named parameter
+- [ ] Has `@Extension` annotation
+- [ ] All `client.get()` calls use `requestBuilder()`
+- [ ] No Java imports (`java.net.*`, `java.nio.*`, etc.)
+- [ ] Uses `com.fleeksoft.ksoup`, NOT `org.jsoup`
+- [ ] Package name is lowercase: `ireader.sourcename`
+- [ ] No `chaptersRequest()` method (that's ParsedHttpSource)
+- [ ] Uses `getChapterListRequest()` if overriding chapter request
+- [ ] Returns `List<ChapterInfo>` (not nullable, not mutable)
+
+---
+
+## 🔴 ABSOLUTE RULES (NEVER BREAK THESE)
+
+1. **ALWAYS use `abstract class`** for SourceFactory sources
+2. **ALWAYS use `requestBuilder(url)`** with `client.get()`
+3. **NEVER use Java imports** (`java.net.*`, `java.nio.*`)
+4. **NEVER use `org.jsoup`** - use `com.fleeksoft.ksoup`
+5. **NEVER use `chaptersRequest()`** in SourceFactory - use `getChapterListRequest()`
+6. **ALWAYS check for WebView HTML** in custom `getChapterList()` overrides
+
+---
+
+*Following these rules will prevent 99% of compilation errors in AI-generated sources.*
