@@ -24,7 +24,7 @@ import tachiyomix.annotations.*
 
 /**
  * 📚 FreeWebNovel Source
- * 
+ *
  * Uses ParsedHttpSource with KSP annotations for filters/commands.
  * Custom fetch logic required due to different selectors per listing type.
  */
@@ -32,6 +32,19 @@ import tachiyomix.annotations.*
 @AutoSourceId(seed = "FreeWebNovel")
 @GenerateFilters(title = true, sort = true, sortOptions = ["Latest", "Popular", "New Novels"])
 @GenerateCommands(detailFetch = true, chapterFetch = true, contentFetch = true)
+@GenerateTests(
+unitTests = false,
+    integrationTests = true,
+    "status",
+    1
+)
+@TestFixture(
+    "https://freewebnovel.com/novel/follow-the-path-of-dao-from-infancy",
+    chapterUrl = "https://freewebnovel.com/novel/follow-the-path-of-dao-from-infancy/chapter-1575",
+    expectedAuthor = "Ancient Xi",
+    expectedTitle = "Follow the path of Dao from infancy"
+)
+@TestExpectations
 abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "FreeWebNovel"
@@ -43,7 +56,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         Filter.Title(),
         Filter.Sort("Sort By:", arrayOf("Latest", "Popular", "New Novels")),
     )
-    
+
     override fun getCommands(): CommandList = listOf(
         Command.Detail.Fetch(),
         Command.Chapter.Fetch(),
@@ -113,15 +126,25 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         cover = baseUrl + element.select("div.pic img").attr("src")
     )
 
-    override fun detailParse(document: Document) = MangaInfo(
-        title = document.select("div.m-desc h1.tit").text(),
-        cover = baseUrl + document.select("div.m-book1 div.pic img").attr("src"),
-        description = document.select("div.inner p").eachText().joinToString("\n"),
-        author = document.select("div.right a.a1").attr("title"),
-        genres = document.select("[title=Genre]").next().text().split(","),
-        key = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href"),
-        status = document.select("[title=Status]").next().text().handleStatus()
-    )
+    override fun detailParse(document: Document): MangaInfo {
+        // Get genre - find the element after [title=Genre] using nextElementSibling
+        val genreElement = document.select("[title=Genre]").firstOrNull()
+        val genres = genreElement?.nextElementSibling()?.text()?.split(",")?.map { it.trim() } ?: emptyList()
+        
+        // Get status - find the element after [title=Status] using nextElementSibling
+        val statusElement = document.select("[title=Status]").firstOrNull()
+        val status = statusElement?.nextElementSibling()?.text()?.handleStatus() ?: MangaInfo.ONGOING
+        
+        return MangaInfo(
+            title = document.select("div.m-desc h1.tit").text(),
+            cover = baseUrl + document.select("div.m-book1 div.pic img").attr("src"),
+            description = document.select("div.inner p").eachText().joinToString("\n"),
+            author = document.select("div.right a.a1").attr("title"),
+            genres = genres,
+            key = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href"),
+            status = status
+        )
+    }
 
     private fun String.handleStatus(): Long = when (this) {
         "OnGoing" -> MangaInfo.ONGOING
