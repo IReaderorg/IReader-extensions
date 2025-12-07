@@ -71,22 +71,13 @@ annotation class SourceMeta(
  * ║      sortOptions = ["Latest", "Popular", "Rating"]                       ║
  * ║  )                                                                       ║
  * ║  abstract class MySource(deps: Dependencies) : SourceFactory(deps) {     ║
- * ║      // Use: override fun getFilters() = MySourceFilters.getGeneratedFilters()
+ * ║      // getFilters() is AUTOMATICALLY generated - no override needed!    ║
  * ║  }                                                                       ║
  * ║                                                                          ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  * 
- * GENERATED CODE:
- * ───────────────
- * KSP creates MySourceFilters.kt with:
- * ```kotlin
- * object MySourceFilters {
- *     fun getGeneratedFilters() = listOf(
- *         Filter.Title(),
- *         Filter.Sort("Sort By:", arrayOf("Latest", "Popular", "Rating"))
- *     )
- * }
- * ```
+ * NOTE: Prefer using @GenerateFilters instead - it's the newer annotation
+ * that automatically implements getFilters() in the Extension class.
  * 
  * For complex filters, write them manually instead.
  */
@@ -120,7 +111,7 @@ annotation class SourceFilters(
  * 🔗 EXPLORE FETCHER - Define a listing/search endpoint
  * 
  * ╔══════════════════════════════════════════════════════════════════════════╗
- * ║  Define endpoints declaratively instead of writing code                  ║
+ * ║  Define endpoints declaratively - exploreFetchers is AUTO-GENERATED!     ║
  * ╠══════════════════════════════════════════════════════════════════════════╣
  * ║                                                                          ║
  * ║  @Extension                                                              ║
@@ -138,7 +129,9 @@ annotation class SourceFilters(
  * ║      selector = ".search-result",                                        ║
  * ║      isSearch = true                                                     ║
  * ║  )                                                                       ║
- * ║  abstract class MySource(deps: Dependencies) : SourceFactory(deps)       ║
+ * ║  abstract class MySource(deps: Dependencies) : SourceFactory(deps) {     ║
+ * ║      // exploreFetchers is AUTOMATICALLY generated - no override needed! ║
+ * ║  }                                                                       ║
  * ║                                                                          ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  * 
@@ -147,10 +140,8 @@ annotation class SourceFilters(
  *   {page}  - Page number (1, 2, 3...)
  *   {query} - Search query (URL encoded)
  * 
- * GENERATED CODE:
- * ───────────────
- * KSP creates MySourceFetchers.kt with BaseExploreFetcher objects.
- * Use: override val exploreFetchers = MySourceFetchers.generatedExploreFetchers
+ * The KSP processor automatically generates the exploreFetchers property
+ * override in the Extension class. No manual override needed!
  */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
@@ -194,6 +185,8 @@ annotation class ExploreFetcher(
 /**
  * 📖 DETAIL SELECTORS - Define novel detail page selectors
  * 
+ * detailFetcher is AUTOMATICALLY generated - no override needed!
+ * 
  * ```kotlin
  * @Extension
  * @DetailSelectors(
@@ -204,7 +197,9 @@ annotation class ExploreFetcher(
  *     genres = ".genre-list a",
  *     status = ".novel-status"
  * )
- * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps) {
+ *     // detailFetcher is AUTOMATICALLY generated!
+ * }
  * ```
  * 
  * KSP validates these selectors at compile time!
@@ -229,6 +224,8 @@ annotation class DetailSelectors(
 /**
  * 📚 CHAPTER SELECTORS - Define chapter list selectors
  * 
+ * chapterFetcher is AUTOMATICALLY generated - no override needed!
+ * 
  * ```kotlin
  * @Extension
  * @ChapterSelectors(
@@ -238,7 +235,9 @@ annotation class DetailSelectors(
  *     date = ".chapter-date",
  *     reversed = true  // If chapters are newest-first
  * )
- * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps) {
+ *     // chapterFetcher is AUTOMATICALLY generated!
+ * }
  * ```
  */
 @Retention(AnnotationRetention.SOURCE)
@@ -259,6 +258,8 @@ annotation class ChapterSelectors(
 /**
  * 📄 CONTENT SELECTORS - Define chapter content selectors
  * 
+ * contentFetcher is AUTOMATICALLY generated - no override needed!
+ * 
  * ```kotlin
  * @Extension
  * @ContentSelectors(
@@ -266,7 +267,9 @@ annotation class ChapterSelectors(
  *     title = ".chapter-title",
  *     removeSelectors = [".ads", ".author-note", "script"]
  * )
- * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+ * abstract class MySource(deps: Dependencies) : SourceFactory(deps) {
+ *     // contentFetcher is AUTOMATICALLY generated!
+ * }
  * ```
  */
 @Retention(AnnotationRetention.SOURCE)

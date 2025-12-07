@@ -98,14 +98,19 @@ annotation class ValidatePackage
  * 🔍 GENERATE FILTERS - Auto-generate common filters (OPTIONAL)
  * 
  * ┌─────────────────────────────────────────────────────────────────┐
+ * │  @Extension                                                     │
  * │  @GenerateFilters(                                              │
  * │      title = true,                    // Title search           │
  * │      sort = true,                     // Sort dropdown          │
  * │      sortOptions = ["Latest", "Popular", "Rating"]              │
  * │  )                                                              │
+ * │  abstract class MySource(deps: Dependencies) : SourceFactory(deps) │
  * │                                                                 │
- * │  // Then use: override fun getFilters() = mysourceFilters()     │
+ * │  // getFilters() is AUTOMATICALLY implemented - no override needed! │
  * └─────────────────────────────────────────────────────────────────┘
+ * 
+ * The KSP processor automatically generates the getFilters() override
+ * in the Extension class. You don't need to write any code!
  * 
  * Skip this if you have custom/complex filters - just write them manually.
  */
@@ -132,14 +137,19 @@ annotation class GenerateFilters(
  * ⚡ GENERATE COMMANDS - Auto-generate standard commands (OPTIONAL)
  * 
  * ┌─────────────────────────────────────────────────────────────────┐
+ * │  @Extension                                                     │
  * │  @GenerateCommands(                                             │
  * │      detailFetch = true,              // Fetch novel details    │
  * │      contentFetch = true,             // Fetch chapter content  │
  * │      chapterFetch = true              // Fetch chapter list     │
  * │  )                                                              │
+ * │  abstract class MySource(deps: Dependencies) : SourceFactory(deps) │
  * │                                                                 │
- * │  // Then use: override fun getCommands() = mysourceCommands()   │
+ * │  // getCommands() is AUTOMATICALLY implemented - no override needed! │
  * └─────────────────────────────────────────────────────────────────┘
+ * 
+ * The KSP processor automatically generates the getCommands() override
+ * in the Extension class. You don't need to write any code!
  * 
  * Most sources use the same commands, so this saves repetitive code.
  */

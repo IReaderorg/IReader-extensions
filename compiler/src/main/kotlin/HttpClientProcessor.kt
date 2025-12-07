@@ -15,7 +15,7 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 /**
  * KSP Processor that generates Ktor HTTP client helper code from annotations.
- * 
+ *
  * Generates:
  * - Request builder functions for each endpoint
  * - Response parsing helpers
@@ -48,8 +48,8 @@ class HttpClientProcessor(
     }
 
     private fun generateHttpClient(source: KSClassDeclaration) {
-        val endpoints = source.annotations.filter { 
-            it.shortName.asString() == "ApiEndpoint" 
+        val endpoints = source.annotations.filter {
+            it.shortName.asString() == "ApiEndpoint"
         }.toList()
 
         if (endpoints.isEmpty()) return

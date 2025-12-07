@@ -5,6 +5,115 @@
 
 ---
 
+## 🚨🚨🚨 MANDATORY: USE KSP ANNOTATIONS! 🚨🚨🚨
+
+**BEFORE WRITING ANY SOURCE CODE, YOU MUST:**
+
+1. **CHECK IF SITE IS MADARA** → Use `@MadaraSource` (ZERO CODE NEEDED!)
+2. **ALWAYS USE `@AutoSourceId`** → Never hardcode source IDs!
+3. **USE DECLARATIVE ANNOTATIONS** → `@ExploreFetcher`, `@DetailSelectors`, `@ChapterSelectors`, `@ContentSelectors`
+4. **ONLY WRITE MANUAL CODE** when KSP annotations absolutely cannot handle the use case!
+
+**KSP annotations are located in:** `annotations/src/commonMain/kotlin/tachiyomix/annotations/`
+
+---
+
+## ✅ KSP Annotations Now Work Automatically!
+
+**ALL declarative annotations now automatically implement their methods/properties!**
+
+The KSP processor generates overrides directly in the Extension class - **no manual override needed!**
+
+### Auto-Generated Annotations Summary:
+
+| Annotation | Auto-Generates | Manual Override Needed? |
+|------------|----------------|------------------------|
+| `@GenerateFilters` | `getFilters()` | ❌ NO |
+| `@GenerateCommands` | `getCommands()` | ❌ NO |
+| `@ExploreFetcher` | `exploreFetchers` | ❌ NO |
+| `@DetailSelectors` | `detailFetcher` | ❌ NO |
+| `@ChapterSelectors` | `chapterFetcher` | ❌ NO |
+| `@ContentSelectors` | `contentFetcher` | ❌ NO |
+
+### Complete Example - Fully Declarative Source:
+
+```kotlin
+// ✅ BEST - All annotations work automatically!
+@Extension
+@AutoSourceId
+@GenerateFilters(title = true, sort = true, sortOptions = ["Latest", "Popular"])
+@GenerateCommands(detailFetch = true, contentFetch = true, chapterFetch = true)
+@ExploreFetcher(
+    name = "Latest",
+    endpoint = "/novels/page/{page}/",
+    selector = ".novel-item",
+    nameSelector = ".title",
+    linkSelector = "a",
+    coverSelector = "img"
+)
+@ExploreFetcher(
+    name = "Search",
+    endpoint = "/search?q={query}",
+    selector = ".novel-item",
+    nameSelector = ".title",
+    linkSelector = "a",
+    coverSelector = "img",
+    isSearch = true
+)
+@DetailSelectors(
+    title = "h1.novel-title",
+    cover = ".cover img",
+    author = ".author",
+    description = ".synopsis",
+    genres = ".genres a",
+    status = ".status"
+)
+@ChapterSelectors(
+    list = ".chapter-list li",
+    name = "a",
+    link = "a",
+    reversed = true
+)
+@ContentSelectors(
+    content = ".chapter-content p",
+    title = ".chapter-title"
+)
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+    // ✅ ALL of these are AUTOMATICALLY generated:
+    // - getFilters()
+    // - getCommands()
+    // - exploreFetchers
+    // - detailFetcher
+    // - chapterFetcher
+    // - contentFetcher
+    
+    // Only need to define basic properties:
+    override val lang = "en"
+    override val baseUrl = "https://example.com"
+    override val name = "My Source"
+}
+```
+
+### Manual Overrides Still Work:
+
+```kotlin
+// ✅ ALSO CORRECT - Manual overrides for custom logic:
+@Extension
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+    override fun getFilters(): FilterList = listOf(Filter.Title())
+    override fun getCommands(): CommandList = listOf(
+        Command.Detail.Fetch(),
+        Command.Content.Fetch(),
+        Command.Chapter.Fetch(),
+    )
+    // ... manual fetcher overrides
+}
+```
+
+**RECOMMENDATION:** Use declarative annotations for standard sources - zero boilerplate!
+
+---
+
 ## ⚠️ STRICT RULES FOR AI
 
 1. **ALWAYS use KSP annotations when possible** - They reduce boilerplate and errors!
@@ -13,6 +122,121 @@
 4. **Follow the EXACT file structure** - Package names must match directory paths
 5. **Copy templates exactly** - Then modify selectors only
 6. **When in doubt, use the simpler approach** - @MadaraSource > @ThemeSource > SourceFactory with annotations > Manual code
+
+---
+
+## 🔴 CRITICAL: Method Signatures Must Be EXACT!
+
+### Content Fetching - Use `getPageList` with `List<Page>` return type!
+```kotlin
+// ❌ WRONG - getContents doesn't exist!
+override suspend fun getContents(chapter: ChapterInfo, commands: List<Command<*>>): List<String> {
+    // This will cause compilation errors!
+}
+
+// ✅ CORRECT - Use getPageList with List<Page> return type
+override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+    val doc = getContentRequest(chapter, commands)
+    return parseContent(doc)  // Use private helper method
+}
+
+private fun parseContent(document: Document): List<Page> {
+    return document.select(".content p")
+        .map { it.text().trim() }
+        .filter { it.isNotBlank() }
+        .toPage()  // Use .toPage() extension!
+}
+```
+
+### pageContentParse - Returns `List<Page>`, NOT `List<String>`!
+```kotlin
+// ❌ WRONG - Wrong return type!
+override fun pageContentParse(document: Document): List<String> {
+    // ERROR: Return type is not a subtype of List<Page>
+}
+
+// ✅ CORRECT - Return List<Page>
+override fun pageContentParse(document: Document): List<Page> {
+    return document.select(".content p")
+        .map { it.text().trim() }
+        .filter { it.isNotBlank() }
+        .toPage()
+}
+
+// ✅ BETTER - Use private helper to avoid signature issues
+private fun parseContent(document: Document): List<Page> {
+    return document.select(".content p")
+        .map { it.text().trim() }
+        .filter { it.isNotBlank() }
+        .toPage()
+}
+```
+
+### Converting List<String> to List<Page>
+```kotlin
+// ✅ Use the .toPage() extension function
+val content: List<String> = listOf("paragraph 1", "paragraph 2")
+val pages: List<Page> = content.toPage()  // Converts strings to Page objects
+```
+
+---
+
+## ❌ WRONG vs ✅ CORRECT Examples
+
+### Source ID - Use @AutoSourceId when possible
+```kotlin
+// ❌ WRONG - Hardcoded ID for new sources
+override val id: Long get() = 93
+
+// ✅ CORRECT - Use @AutoSourceId for new sources
+@Extension
+@AutoSourceId
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+    override val id: Long get() = MySourceSourceId.ID  // Generated!
+}
+
+// ✅ ALSO OK - Hardcoded ID for existing sources (to maintain compatibility)
+override val id: Long get() = 93  // Keep existing ID
+```
+
+### Filters & Commands - Use annotations (RECOMMENDED)
+```kotlin
+// ✅ BEST - Use annotations for automatic generation
+@Extension
+@GenerateFilters(title = true)
+@GenerateCommands(detailFetch = true, contentFetch = true, chapterFetch = true)
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+    // getFilters() and getCommands() are AUTOMATICALLY generated!
+}
+
+// ✅ ALSO OK - Manual overrides for custom logic
+@Extension
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+    
+    override fun getFilters(): FilterList = listOf(
+        Filter.Title(),
+    )
+
+    override fun getCommands(): CommandList = listOf(
+        Command.Detail.Fetch(),
+        Command.Content.Fetch(),
+        Command.Chapter.Fetch(),
+    )
+}
+```
+
+### Complete CORRECT template:
+```kotlin
+// ✅✅✅ CORRECT - Standard SourceFactory source with KSP annotations ✅✅✅
+@Extension
+@GenerateFilters(title = true)
+@GenerateCommands(detailFetch = true, contentFetch = true, chapterFetch = true)
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+    override val id: Long get() = MySourceSourceId.ID
+    // Filters and commands are auto-generated by KSP!
+    // No manual override needed!
+}
+```
 
 ---
 
@@ -200,12 +424,9 @@ import tachiyomix.annotations.MadaraSource
 
 ### For SourceFactory Sources:
 ```kotlin
-// REQUIRED - Always include these
+// REQUIRED - Always include these for ANY SourceFactory source
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
-import tachiyomix.annotations.Extension
-
-// MODEL CLASSES - Use as needed
 import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
@@ -213,38 +434,36 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Page
+import tachiyomix.annotations.Extension
 
 // HTTP - Only if overriding requests
 import io.ktor.client.request.get
 import io.ktor.client.request.post
-import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.headers
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Parameters
 
 // PARSING - Only if custom parsing needed
 import ireader.core.source.asJsoup
-import com.fleeksoft.ksoup.Ksoup
+import ireader.core.source.findInstance
 import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 ```
 
 ### ✅ KSP ANNOTATIONS (USE THESE!):
 ```kotlin
-// RECOMMENDED - KSP annotations for declarative sources
+// WORKING KSP annotations - ALL auto-generate their implementations!
 import tachiyomix.annotations.Extension          // ✅ REQUIRED for all sources
-import tachiyomix.annotations.MadaraSource       // ✅ Zero-code Madara sources
+import tachiyomix.annotations.MadaraSource       // ✅ Zero-code Madara sources (BEST!)
 import tachiyomix.annotations.ThemeSource        // ✅ Theme-based sources
 import tachiyomix.annotations.AutoSourceId       // ✅ Auto-generate source ID
-import tachiyomix.annotations.GenerateFilters    // ✅ Auto-generate getFilters()
-import tachiyomix.annotations.GenerateCommands   // ✅ Auto-generate getCommands()
 import tachiyomix.annotations.SourceMeta         // ✅ Add source metadata
-import tachiyomix.annotations.SourceConfig       // ✅ Define source config
-import tachiyomix.annotations.ExploreFetcher     // ✅ Declarative explore endpoints
-import tachiyomix.annotations.DetailSelectors    // ✅ Declarative detail selectors
-import tachiyomix.annotations.ChapterSelectors   // ✅ Declarative chapter selectors
-import tachiyomix.annotations.ContentSelectors   // ✅ Declarative content selectors
-import tachiyomix.annotations.RateLimit          // ✅ Rate limiting
-import tachiyomix.annotations.CustomHeader       // ✅ Custom HTTP headers
-import tachiyomix.annotations.CloudflareConfig   // ✅ Cloudflare handling
-import tachiyomix.annotations.Pagination         // ✅ Pagination config
+import tachiyomix.annotations.GenerateFilters    // ✅ Auto-generates getFilters()
+import tachiyomix.annotations.GenerateCommands   // ✅ Auto-generates getCommands()
+import tachiyomix.annotations.ExploreFetcher     // ✅ Auto-generates exploreFetchers
+import tachiyomix.annotations.DetailSelectors    // ✅ Auto-generates detailFetcher
+import tachiyomix.annotations.ChapterSelectors   // ✅ Auto-generates chapterFetcher
+import tachiyomix.annotations.ContentSelectors   // ✅ Auto-generates contentFetcher
 import tachiyomix.annotations.ApiEndpoint        // ✅ API endpoint definition
 import tachiyomix.annotations.SourceDeepLink     // ✅ Deep link handling
 import tachiyomix.annotations.RequiresAuth       // ✅ Auth requirements

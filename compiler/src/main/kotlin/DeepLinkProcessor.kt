@@ -17,7 +17,7 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 /**
  * KSP Processor that generates deep link handling code from annotations.
- * 
+ *
  * Generates:
  * - URL pattern matchers
  * - Deep link handlers
@@ -42,8 +42,8 @@ class DeepLinkProcessor(
     }
 
     private fun generateDeepLinkHandler(source: KSClassDeclaration) {
-        val deepLinks = source.annotations.filter { 
-            it.shortName.asString() == "SourceDeepLink" 
+        val deepLinks = source.annotations.filter {
+            it.shortName.asString() == "SourceDeepLink"
         }.toList()
 
         if (deepLinks.isEmpty()) return
@@ -88,7 +88,7 @@ class DeepLinkProcessor(
         // Store deep link patterns
         val patternsBuilder = CodeBlock.builder()
             .add("listOf(\n")
-        
+
         deepLinks.forEachIndexed { index, deepLink ->
             val args = deepLink.arguments.associate { it.name?.asString() to it.value }
             val host = args["host"] as? String ?: ""

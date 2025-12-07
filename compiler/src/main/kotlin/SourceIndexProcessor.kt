@@ -17,7 +17,7 @@ import kotlinx.serialization.json.Json
 /**
  * KSP Processor that generates a repository index JSON file
  * containing metadata for all sources in the project.
- * 
+ *
  * This enables automatic repository index generation at compile time.
  */
 class SourceIndexProcessor(
@@ -82,12 +82,12 @@ class SourceIndexProcessor(
         // Try to extract info from the class properties
         val className = extension.simpleName.asString()
         val packageName = extension.packageName.asString()
-        
+
         // Check for @SourceMeta annotation
-        val metaAnnotation = extension.annotations.find { 
-            it.shortName.asString() == "SourceMeta" 
+        val metaAnnotation = extension.annotations.find {
+            it.shortName.asString() == "SourceMeta"
         }
-        
+
         val meta = metaAnnotation?.let { ann ->
             val args = ann.arguments.associate { it.name?.asString() to it.value }
             SourceMeta(
@@ -99,8 +99,8 @@ class SourceIndexProcessor(
         }
 
         // Extract source properties from the class
-        val properties = extension.getAllProperties().associate { 
-            it.simpleName.asString() to it 
+        val properties = extension.getAllProperties().associate {
+            it.simpleName.asString() to it
         }
 
         val name = extractStringProperty(properties["name"]) ?: className
@@ -123,14 +123,14 @@ class SourceIndexProcessor(
     }
 
     private fun collectMadaraSourceInfo(config: KSClassDeclaration) {
-        val annotation = config.annotations.first { 
-            it.shortName.asString() == "MadaraSource" 
+        val annotation = config.annotations.first {
+            it.shortName.asString() == "MadaraSource"
         }
-        
+
         val args = annotation.arguments.associate { it.name?.asString() to it.value }
-        
-        val metaAnnotation = config.annotations.find { 
-            it.shortName.asString() == "SourceMeta" 
+
+        val metaAnnotation = config.annotations.find {
+            it.shortName.asString() == "SourceMeta"
         }
         val meta = metaAnnotation?.let { ann ->
             val metaArgs = ann.arguments.associate { it.name?.asString() to it.value }
@@ -155,14 +155,14 @@ class SourceIndexProcessor(
     }
 
     private fun collectThemeSourceInfo(config: KSClassDeclaration) {
-        val annotation = config.annotations.first { 
-            it.shortName.asString() == "ThemeSource" 
+        val annotation = config.annotations.first {
+            it.shortName.asString() == "ThemeSource"
         }
-        
+
         val args = annotation.arguments.associate { it.name?.asString() to it.value }
-        
-        val metaAnnotation = config.annotations.find { 
-            it.shortName.asString() == "SourceMeta" 
+
+        val metaAnnotation = config.annotations.find {
+            it.shortName.asString() == "SourceMeta"
         }
         val meta = metaAnnotation?.let { ann ->
             val metaArgs = ann.arguments.associate { it.name?.asString() to it.value }
@@ -187,13 +187,13 @@ class SourceIndexProcessor(
     }
 
     private fun generateIndex() {
-        val json = Json { 
-            prettyPrint = true 
+        val json = Json {
+            prettyPrint = true
             encodeDefaults = true
         }
-        
+
         val indexContent = json.encodeToString(sources.sortedBy { it.name })
-        
+
         // Generate as a resource file
         try {
             codeGenerator.createNewFileByPath(

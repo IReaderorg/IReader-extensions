@@ -21,13 +21,13 @@ import java.security.MessageDigest
 
 /**
  * KSP Processor that automatically generates stable source IDs.
- * 
+ *
  * Features:
  * 1. Generates deterministic IDs from source name + lang + version
  * 2. Maintains a registry of all source IDs to prevent collisions
  * 3. Supports migration from manual IDs via @AutoSourceId(seed = "oldname")
  * 4. Generates a source-ids.json registry file for reference
- * 
+ *
  * Usage:
  * ```kotlin
  * @Extension
@@ -97,22 +97,22 @@ class SourceIdProcessor(
     }
 
     private fun processAutoSourceId(classDecl: KSClassDeclaration) {
-        val annotation = classDecl.annotations.find { 
-            it.shortName.asString() == "AutoSourceId" 
+        val annotation = classDecl.annotations.find {
+            it.shortName.asString() == "AutoSourceId"
         } ?: return
-        
+
         val seed = getAnnotationArgument(annotation, "seed", "")
         val version = getAnnotationArgument(annotation, "version", 1)
-        
+
         // Get name and lang from build options or class properties
         val (name, lang) = extractNameAndLang(classDecl)
-        
+
         val idSeed = seed.ifEmpty { name }
         val sourceId = generateSourceId(idSeed, lang, version)
-        
+
         val className = classDecl.simpleName.asString()
         val packageName = classDecl.packageName.asString()
-        
+
         // Add to registry
         sourceRegistry.add(SourceIdEntry(
             className = className,
@@ -123,9 +123,9 @@ class SourceIdProcessor(
             seed = idSeed,
             version = version
         ))
-        
+
         logger.info("Generated ID for $name ($lang): $sourceId [seed=$idSeed, v=$version]")
-        
+
         // Generate the ID constant file
         generateIdConstant(classDecl, sourceId, name, lang)
     }
@@ -133,15 +133,15 @@ class SourceIdProcessor(
     private fun collectExistingSourceId(classDecl: KSClassDeclaration) {
         val className = classDecl.simpleName.asString()
         val packageName = classDecl.packageName.asString()
-        
+
         // Try to get from build options
         val buildDir = getBuildDir()
         val variant = getVariant(buildDir)
-        
+
         val name = options["${variant}_name"] ?: className
         val lang = options["${variant}_lang"] ?: "en"
         val id = options["${variant}_id"]?.toLongOrNull() ?: generateSourceId(name, lang, 1)
-        
+
         sourceRegistry.add(SourceIdEntry(
             className = className,
             packageName = packageName,
@@ -155,14 +155,14 @@ class SourceIdProcessor(
 
     private fun extractNameAndLang(classDecl: KSClassDeclaration): Pair<String, String> {
         val className = classDecl.simpleName.asString()
-        
+
         // Try to get from build options first
         val buildDir = getBuildDir()
         val variant = getVariant(buildDir)
-        
+
         val name = options["${variant}_name"] ?: className
         val lang = options["${variant}_lang"] ?: "en"
-        
+
         return name to lang
     }
 
@@ -181,7 +181,7 @@ class SourceIdProcessor(
     ) {
         val packageName = classDecl.packageName.asString()
         val className = classDecl.simpleName.asString()
-        
+
         val fileSpec = FileSpec.builder(packageName, "${className}SourceId")
             .addFileComment(
                 """
@@ -214,7 +214,7 @@ class SourceIdProcessor(
                     .build()
             )
             .build()
-        
+
         try {
             fileSpec.writeTo(codeGenerator, Dependencies(false, classDecl.containingFile!!))
             logger.info("Generated ${className}SourceId.kt")
@@ -225,13 +225,13 @@ class SourceIdProcessor(
     }
 
     private fun generateSourceIdRegistry() {
-        val json = Json { 
-            prettyPrint = true 
+        val json = Json {
+            prettyPrint = true
             encodeDefaults = true
         }
-        
+
         val registryContent = json.encodeToString(sourceRegistry.sortedBy { it.name })
-        
+
         try {
             codeGenerator.createNewFileByPath(
                 Dependencies(false),
@@ -249,11 +249,11 @@ class SourceIdProcessor(
     private fun checkForCollisions() {
         val idGroups = sourceRegistry.groupBy { it.id }
         val collisions = idGroups.filter { it.value.size > 1 }
-        
+
         if (collisions.isNotEmpty()) {
             collisions.forEach { (id, sources) ->
-                val sourceList = sources.joinToString("\n") { 
-                    "    • ${it.name} (${it.lang}) → ${it.packageName}.${it.className}" 
+                val sourceList = sources.joinToString("\n") {
+                    "    • ${it.name} (${it.lang}) → ${it.packageName}.${it.className}"
                 }
                 logger.error(
                     """

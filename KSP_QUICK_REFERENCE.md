@@ -45,7 +45,7 @@ abstract class MySource(deps: Dependencies) : SourceFactory(deps) {
 
 ## Declarative Selectors
 
-Define scraping without code:
+Define scraping without code - **all properties are auto-generated!**
 
 ```kotlin
 @Extension
@@ -70,14 +70,17 @@ Define scraping without code:
 @ContentSelectors(
     content = ".chapter-content p"
 )
-abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+abstract class MySource(deps: Dependencies) : SourceFactory(deps) {
+    // ✅ exploreFetchers, detailFetcher, chapterFetcher, contentFetcher
+    // are ALL automatically generated! No manual override needed!
+}
 ```
 
 ---
 
-## Generate Filters
+## Generate Filters & Commands
 
-Auto-generate filter UI:
+Auto-generate filter and command methods - **no manual override needed!**
 
 ```kotlin
 @Extension
@@ -86,10 +89,18 @@ Auto-generate filter UI:
     sort = true,
     sortOptions = ["Latest", "Popular", "Rating"]
 )
+@GenerateCommands(
+    detailFetch = true,
+    chapterFetch = true,
+    contentFetch = true
+)
 abstract class MySource(deps: Dependencies) : SourceFactory(deps) {
-    override fun getFilters() = mysourceFilters()  // Generated!
+    // ✅ getFilters() and getCommands() are AUTOMATICALLY generated!
+    // No manual override needed!
 }
 ```
+
+The KSP processor generates the method overrides directly in the Extension class.
 
 ---
 

@@ -70,7 +70,7 @@ See [IMPROVEMENTS.md](./IMPROVEMENTS.md) for full details.
 
 # Disclaimer
 
-The core part of this repository all belongs to [tachiyomi](https://github.com/tachiyomiorg/tachiyomi-extensions-1.x)
+The core architecture of this repository was originally inspired by [Tachiyomi Extensions](https://github.com/tachiyomiorg/tachiyomi-extensions-1.x), but has been significantly modified and extended for IReader.
 
 ## License
 

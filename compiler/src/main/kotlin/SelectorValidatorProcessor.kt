@@ -12,7 +12,7 @@ import com.google.devtools.ksp.validate
 
 /**
  * KSP Processor that validates CSS selectors at compile time.
- * 
+ *
  * This catches common selector errors early:
  * - Unbalanced brackets
  * - Invalid pseudo-selectors
@@ -70,8 +70,8 @@ class SelectorValidatorProcessor(
     }
 
     private fun validateDetailSelectors(source: KSClassDeclaration) {
-        val annotation = source.annotations.find { 
-            it.shortName.asString() == "DetailSelectors" 
+        val annotation = source.annotations.find {
+            it.shortName.asString() == "DetailSelectors"
         } ?: return
 
         val args = annotation.arguments.associate { it.name?.asString() to it.value }
@@ -86,8 +86,8 @@ class SelectorValidatorProcessor(
     }
 
     private fun validateChapterSelectors(source: KSClassDeclaration) {
-        val annotation = source.annotations.find { 
-            it.shortName.asString() == "ChapterSelectors" 
+        val annotation = source.annotations.find {
+            it.shortName.asString() == "ChapterSelectors"
         } ?: return
 
         val args = annotation.arguments.associate { it.name?.asString() to it.value }
@@ -102,8 +102,8 @@ class SelectorValidatorProcessor(
     }
 
     private fun validateContentSelectors(source: KSClassDeclaration) {
-        val annotation = source.annotations.find { 
-            it.shortName.asString() == "ContentSelectors" 
+        val annotation = source.annotations.find {
+            it.shortName.asString() == "ContentSelectors"
         } ?: return
 
         val args = annotation.arguments.associate { it.name?.asString() to it.value }
@@ -126,8 +126,8 @@ class SelectorValidatorProcessor(
     }
 
     private fun validateExploreFetchers(source: KSClassDeclaration) {
-        val annotations = source.annotations.filter { 
-            it.shortName.asString() == "ExploreFetcher" 
+        val annotations = source.annotations.filter {
+            it.shortName.asString() == "ExploreFetcher"
         }
 
         val className = source.simpleName.asString()

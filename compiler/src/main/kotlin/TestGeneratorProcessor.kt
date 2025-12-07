@@ -16,16 +16,16 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 /**
  * KSP Processor that generates comprehensive test cases for source extensions.
- * 
+ *
  * Generates tests for:
  * - Source instantiation and properties
  * - Filter validation
- * - Fetcher endpoint validation  
+ * - Fetcher endpoint validation
  * - Selector syntax validation
  * - URL building tests
  * - Deep link handling tests
  * - Integration tests (optional)
- * 
+ *
  * Enable with: ksp { arg("generateTests", "true") }
  * For integration tests: ksp { arg("generateIntegrationTests", "true") }
  */
