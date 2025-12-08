@@ -23,24 +23,18 @@ import tachiyomix.annotations.GenerateCommands
 
 /**
  * 🐺 Fenrir Realm Source - JSON API Based (Declarative)
- * 
+ *
  * This source uses a REST API for fetching novels and chapters.
  * Uses KSP annotations for declarative configuration.
  */
 @Extension
 @AutoSourceId(seed = "Fenrir Realm")
-
-// 🔍 AUTO-GENERATE FILTERS
 @GenerateFilters(title = true)
-
-// ⚡ AUTO-GENERATE COMMANDS
 @GenerateCommands(
     detailFetch = true,
     chapterFetch = true,
     contentFetch = true
 )
-
-// 📖 DETAIL PAGE SELECTORS (for webview fallback)
 @DetailSelectors(
     title = "h1.my-2",
     cover = "img.rounded-md",
@@ -49,20 +43,15 @@ import tachiyomix.annotations.GenerateCommands
     genres = "div.flex-1 > div.flex:not(.mb-3, .mt-5) > a",
     status = "div.flex-1 > div.mb-3 > span.rounded-md"
 )
-
-// 📚 CHAPTER LIST SELECTORS (for webview fallback)
 @ChapterSelectors(
     list = "li",
     name = "a",
     link = "a"
 )
-
-// 📄 CONTENT SELECTORS
 @ContentSelectors(
     content = "[id^=\"reader-area-\"] p, [id^=\"reader-area-\"] div.paragraph",
     removeSelectors = ["script", "style", ".ads", ".advertisement"]
 )
-
 abstract class Fenrir(deps: Dependencies) : SourceFactory(deps = deps) {
 
     // ═══════════════════════════════════════════════════════════════
@@ -103,7 +92,7 @@ abstract class Fenrir(deps: Dependencies) : SourceFactory(deps = deps) {
         val responseJson = client.get(requestBuilder(url)).bodyAsText()
         val json = Json { ignoreUnknownKeys = true }
         val response = json.decodeFromString<APIResponse>(responseJson)
-        
+
         val mangas = response.data.map { novel ->
             MangaInfo(
                 key = "$baseUrl/series/${novel.slug}",
@@ -127,17 +116,17 @@ abstract class Fenrir(deps: Dependencies) : SourceFactory(deps = deps) {
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         val novelSlug = manga.key.removePrefix("$baseUrl/series/")
         val chaptersJson = client.get(requestBuilder("$baseUrl/api/novels/chapter-list/$novelSlug")).bodyAsText()
-        
+
         val json = Json { ignoreUnknownKeys = true }
         val chapters = json.decodeFromString<List<APIChapter>>(chaptersJson)
-        
+
         return chapters.map { c ->
             val chapterName =
                 (if (c.locked?.price != null) "🔒 " else "") +
                 (if (c.group?.index == null) "" else "Vol ${c.group.index} ") +
                 "Chapter ${c.number}" +
-                (if (!c.title.isNullOrBlank() && c.title.trim() != "Chapter ${c.number}") 
-                    " - ${c.title.replace(Regex("^chapter [0-9]+ . ", RegexOption.IGNORE_CASE), "")}" 
+                (if (!c.title.isNullOrBlank() && c.title.trim() != "Chapter ${c.number}")
+                    " - ${c.title.replace(Regex("^chapter [0-9]+ . ", RegexOption.IGNORE_CASE), "")}"
                 else "")
 
             val chapterPath = manga.key +
@@ -153,11 +142,11 @@ abstract class Fenrir(deps: Dependencies) : SourceFactory(deps = deps) {
     // ═══════════════════════════════════════════════════════════════
     override fun pageContentParse(document: Document): List<Page> {
         val chapter = document.select("[id^=\"reader-area-\"]").first() ?: return emptyList()
-        
+
         // Remove HTML comments and unwanted elements
         chapter.childNodes().filter { it.nodeName() == "#comment" }.forEach { it.remove() }
         chapter.select("script, style, .ads, .advertisement").remove()
-        
+
         return chapter.select("p, div.paragraph, div.text").mapNotNull { element ->
             val text = element.text().trim()
             if (text.isNotEmpty()) Text(text) else null
