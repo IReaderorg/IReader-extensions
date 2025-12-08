@@ -1,46 +1,73 @@
 # ProGuard rules for IReader Extensions
-# Extensions are loaded dynamically by the main app, so we need to keep the Extension class
+# Extensions are loaded dynamically by the main app via reflection
 
-# Keep the generated Extension class (entry point for the main app)
-# This is the class loaded by AndroidCatalogLoader via reflection
--keep class tachiyomix.extension.Extension { *; }
+# ============================================================================
+# CRITICAL: Keep the generated Extension class
+# AndroidCatalogLoader loads this via:
+#   Class.forName("tachiyomix.extension.Extension", false, loader)
+#       .getConstructor(Dependencies::class.java)
+#       .newInstance(dependencies)
+# ============================================================================
 
-# Keep the constructor that takes Dependencies
--keepclassmembers class tachiyomix.extension.Extension {
+# Keep the Extension class and ALL its members
+-keep,allowobfuscation class tachiyomix.extension.Extension {
     public <init>(ireader.core.source.Dependencies);
+    *;
 }
 
-# Keep source classes annotated with @Extension
--keep @tachiyomix.annotations.Extension class * { *; }
+# Keep the class name (don't obfuscate)
+-keepnames class tachiyomix.extension.Extension
 
-# Keep all source implementations
--keep class ireader.** extends ireader.core.source.Source { *; }
--keep class ireader.** extends ireader.core.source.SourceFactory { *; }
--keep class ireader.** extends ireader.core.source.ParsedHttpSource { *; }
+# ============================================================================
+# Keep source implementations
+# ============================================================================
 
-# Keep common utils (not yet in main app)
--keep class ireader.common.utils.** { *; }
+# Keep all classes in ireader.* packages (source code)
+-keep class ireader.** { *; }
+-keepnames class ireader.**
 
-# Keep Kotlin metadata for reflection
+# Keep common utils (bundled in APK, not in main app yet)
+-keep class ireader.common.** { *; }
+
+# ============================================================================
+# Keep Kotlin features needed for reflection
+# ============================================================================
+
 -keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
 -keepattributes RuntimeVisibleAnnotations
+-keepattributes RuntimeInvisibleAnnotations
 
-# Remove logging
--assumenosideeffects class android.util.Log {
-    public static *** d(...);
-    public static *** v(...);
-    public static *** i(...);
-}
+# Keep Kotlin metadata
+-keep class kotlin.Metadata { *; }
 
-# Optimization
--optimizationpasses 5
--allowaccessmodification
--dontpreverify
+# ============================================================================
+# Don't warn about classes in main app
+# ============================================================================
 
-# Don't warn about missing classes (they're in the main app)
 -dontwarn ireader.core.**
 -dontwarn io.ktor.**
 -dontwarn kotlinx.**
 -dontwarn com.fleeksoft.ksoup.**
 -dontwarn kotlin.**
 -dontwarn org.jetbrains.**
+-dontwarn tachiyomix.annotations.**
+
+# ============================================================================
+# Optimization settings
+# ============================================================================
+
+# Don't optimize - keep code as-is for compatibility
+-dontoptimize
+
+# Don't obfuscate - makes debugging easier
+-dontobfuscate
+
+# Remove logging in release
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+}

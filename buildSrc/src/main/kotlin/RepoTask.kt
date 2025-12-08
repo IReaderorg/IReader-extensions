@@ -282,54 +282,58 @@ open class RepoTask : DefaultTask() {
         badgings.forEach { badging ->
             print("Generating Icon for ${badging.name}...\n")
             val apkFile = File(apkDir, badging.apk)
-            if (badging.iconResourcePath != null) {
-                print("Getting Assets Icon for ${badging.name}...\n")
-                ZipFile(apkFile).use { zip ->
-                    val icon = zip.getEntry(badging.iconResourcePath)
-                    val dest = File(destDir, "${apkFile.nameWithoutExtension}.png")
-                    zip.getInputStream(icon).use { input ->
-                        dest.outputStream().use { input.copyTo(it) }
-                    }
+            val packageName = badging.pkg.substringAfter(".").substringBefore(".")
+            val destFile = File(destDir, "${apkFile.nameWithoutExtension}.png")
+            
+            // Priority 1: Try assets folder from source directory first
+            var iconFound = false
+            
+            if (!badging.assetsDir.isNullOrBlank()) {
+                // Use assetsDir if specified (for multisrc)
+                print("Trying assets from ${badging.assetsDir}...\n")
+                val assetsPath = File("${project.rootDir}/sources/${badging.assetsDir}")
+                val assetIcon = assetsPath.walkTopDown().find { it.extension == "png" }
+                if (assetIcon != null && assetIcon.exists()) {
+                    assetIcon.copyTo(destFile, overwrite = true)
+                    iconFound = true
+                    print("Got icon from assetsDir: ${assetIcon.path}\n")
                 }
-            } else {
-                print("Getting Package Icon for ${badging.name}...\n")
-                val packageName = badging.pkg.substringAfter(".").substringBefore(".")
-                if (badging.assetsDir.isNullOrBlank()) {
-                    project.copy {
-                        from("${project.rootDir}/sources/${badging.lang}/${packageName}/${badging.sourceDir}/")
-                        include("**/assets/*.png")
-                        into(destDir)
-                        eachFile {
-                            path = "${apkFile.nameWithoutExtension}.png"
+            }
+            
+            if (!iconFound) {
+                // Try source's assets folder
+                val sourceAssetsPath = File("${project.rootDir}/sources/${badging.lang}/${packageName}/${badging.sourceDir}/assets")
+                val sourceIcon = sourceAssetsPath.listFiles()?.find { it.extension == "png" }
+                if (sourceIcon != null && sourceIcon.exists()) {
+                    sourceIcon.copyTo(destFile, overwrite = true)
+                    iconFound = true
+                    print("Got icon from source assets: ${sourceIcon.path}\n")
+                }
+            }
+            
+            // Priority 2: Try xxxhdpi resource from APK (skip mdpi placeholder)
+            if (!iconFound && badging.iconResourcePath != null && badging.iconResourcePath.contains("xxxhdpi")) {
+                print("Getting xxxhdpi icon from APK for ${badging.name}...\n")
+                try {
+                    ZipFile(apkFile).use { zip ->
+                        val icon = zip.getEntry(badging.iconResourcePath)
+                        if (icon != null) {
+                            zip.getInputStream(icon).use { input ->
+                                destFile.outputStream().use { input.copyTo(it) }
+                            }
+                            iconFound = true
                         }
-                        includeEmptyDirs = false
-                        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
                     }
-                } else {
-                    print("Getting Default Assets Icon for ${badging.name}...\n")
-                    project.copy {
-                        from("${project.rootDir}/sources/${badging.assetsDir}")
-                        include("**/*.png")
-                        into(destDir)
-                        eachFile {
-                            path = "${apkFile.nameWithoutExtension}.png"
-                        }
-                        includeEmptyDirs = false
-                        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-                    }
+                } catch (e: Exception) {
+                    print("Failed to extract icon from APK: ${e.message}\n")
                 }
-
-                val iconFile =
-                    File("${project.buildDir}/repo/icon/${apkFile.nameWithoutExtension}.png")
-                if (!iconFile.exists()) {
-                    print(
-                        "WARNING: There is no Icon for $packageName, ${apkFile.nameWithoutExtension}" +
-                                " Make sure that app has same name in build.gradle.kts as subproject name\n"
-                    )
-                }
-
+            }
+            
+            if (!iconFound) {
+                print(
+                    "WARNING: There is no Icon for $packageName, ${apkFile.nameWithoutExtension}" +
+                            " Make sure that app has same name in build.gradle.kts as subproject name\n"
+                )
             }
         }
     }

@@ -12,8 +12,7 @@
     android:icon="@mipmap/ic_launcher"
     android:hasCode="true"
     android:allowBackup="false"
-    android:supportsRtl="true"
-    tools:replace="android:icon">
+    android:supportsRtl="true">
 
     <!-- Disable androidx-startup InitializationProvider to avoid provider conflicts -->
     <provider
