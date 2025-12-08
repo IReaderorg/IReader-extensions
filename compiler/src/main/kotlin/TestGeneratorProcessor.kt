@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) IReader Project
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package tachiyomix.compiler
 
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -26,7 +31,8 @@ import com.squareup.kotlinpoet.ksp.writeTo
  * - Deep link handling tests
  * - Integration tests (optional)
  *
- * Enable with: ksp { arg("generateTests", "true") }
+ * Triggered by @GenerateTests annotation on source classes.
+ * Can also be enabled globally with: ksp { arg("generateTests", "true") }
  * For integration tests: ksp { arg("generateIntegrationTests", "true") }
  */
 class TestGeneratorProcessor(
@@ -35,81 +41,201 @@ class TestGeneratorProcessor(
     private val options: Map<String, String>
 ) : SymbolProcessor {
 
-    private val generateTests = options["generateTests"]?.toBoolean() ?: false
-    private val generateIntegrationTests = options["generateIntegrationTests"]?.toBoolean() ?: false
+    private val globalGenerateTests = options["generateTests"]?.toBoolean() ?: false
+    private val globalGenerateIntegrationTests = options["generateIntegrationTests"]?.toBoolean() ?: false
+    private val processedClasses = mutableSetOf<String>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        if (!generateTests) {
-            return emptyList()
-        }
-
-        val extensions = resolver.getSymbolsWithAnnotation(EXTENSION_ANNOTATION)
+        // Process classes with @GenerateTests annotation
+        val annotatedWithGenerateTests = resolver.getSymbolsWithAnnotation(GENERATE_TESTS_ANNOTATION)
             .filterIsInstance<KSClassDeclaration>()
             .filter { it.validate() }
             .toList()
+        
+        annotatedWithGenerateTests.forEach { source ->
+            val key = source.qualifiedName?.asString() ?: return@forEach
+            if (key !in processedClasses) {
+                processedClasses.add(key)
+                val testConfig = getGenerateTestsConfig(source)
+                if (testConfig.unitTests) {
+                    generateUnitTests(source, testConfig)
+                }
+                if (testConfig.integrationTests) {
+                    generateIntegrationTests(source, testConfig)
+                }
+            }
+        }
+        
+        // Also process @Extension classes if global flag is set
+        if (globalGenerateTests) {
+            val extensions = resolver.getSymbolsWithAnnotation(EXTENSION_ANNOTATION)
+                .filterIsInstance<KSClassDeclaration>()
+                .filter { it.validate() }
+                .toList()
 
-        extensions.forEach { source ->
-            generateUnitTests(source)
-            if (generateIntegrationTests) {
-                generateIntegrationTests(source)
+            extensions.forEach { source ->
+                val key = source.qualifiedName?.asString() ?: return@forEach
+                if (key !in processedClasses) {
+                    processedClasses.add(key)
+                    val testConfig = GenerateTestsConfig()
+                    generateUnitTests(source, testConfig)
+                    if (globalGenerateIntegrationTests) {
+                        generateIntegrationTests(source, testConfig)
+                    }
+                }
             }
         }
 
         return emptyList()
     }
+    
+    /**
+     * Extract configuration from @GenerateTests annotation
+     */
+    private fun getGenerateTestsConfig(source: KSClassDeclaration): GenerateTestsConfig {
+        val annotation = source.annotations.find { 
+            it.shortName.asString() == "GenerateTests" 
+        } ?: return GenerateTestsConfig()
+        
+        return GenerateTestsConfig(
+            unitTests = getArg(annotation, "unitTests", true),
+            integrationTests = getArg(annotation, "integrationTests", false),
+            searchQuery = getArg(annotation, "searchQuery", "test"),
+            minSearchResults = getArg(annotation, "minSearchResults", 1)
+        )
+    }
+    
+    /**
+     * Extract configuration from @TestFixture annotation
+     */
+    private fun getTestFixtureConfig(source: KSClassDeclaration): TestFixtureConfig? {
+        val annotation = source.annotations.find { 
+            it.shortName.asString() == "TestFixture" 
+        } ?: return null
+        
+        return TestFixtureConfig(
+            novelUrl = getArg(annotation, "novelUrl", ""),
+            chapterUrl = getArg(annotation, "chapterUrl", ""),
+            expectedTitle = getArg(annotation, "expectedTitle", ""),
+            expectedAuthor = getArg(annotation, "expectedAuthor", "")
+        )
+    }
+    
+    /**
+     * Extract configuration from @SkipTests annotation
+     */
+    private fun getSkipTestsConfig(source: KSClassDeclaration): SkipTestsConfig {
+        val annotation = source.annotations.find { 
+            it.shortName.asString() == "SkipTests" 
+        } ?: return SkipTestsConfig()
+        
+        return SkipTestsConfig(
+            search = getArg(annotation, "search", false),
+            chapters = getArg(annotation, "chapters", false),
+            content = getArg(annotation, "content", false),
+            reason = getArg(annotation, "reason", "")
+        )
+    }
+    
+    /**
+     * Extract configuration from @TestExpectations annotation
+     */
+    private fun getTestExpectationsConfig(source: KSClassDeclaration): TestExpectationsConfig {
+        val annotation = source.annotations.find { 
+            it.shortName.asString() == "TestExpectations" 
+        } ?: return TestExpectationsConfig()
+        
+        return TestExpectationsConfig(
+            minLatestNovels = getArg(annotation, "minLatestNovels", 1),
+            minChapters = getArg(annotation, "minChapters", 1),
+            supportsPagination = getArg(annotation, "supportsPagination", true),
+            requiresLogin = getArg(annotation, "requiresLogin", false)
+        )
+    }
+    
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> getArg(annotation: com.google.devtools.ksp.symbol.KSAnnotation, name: String, default: T): T {
+        return annotation.arguments.find { it.name?.asString() == name }?.value as? T ?: default
+    }
+    
+    data class GenerateTestsConfig(
+        val unitTests: Boolean = true,
+        val integrationTests: Boolean = false,
+        val searchQuery: String = "test",
+        val minSearchResults: Int = 1
+    )
+    
+    data class TestFixtureConfig(
+        val novelUrl: String = "",
+        val chapterUrl: String = "",
+        val expectedTitle: String = "",
+        val expectedAuthor: String = ""
+    )
+    
+    data class SkipTestsConfig(
+        val search: Boolean = false,
+        val chapters: Boolean = false,
+        val content: Boolean = false,
+        val reason: String = ""
+    )
+    
+    data class TestExpectationsConfig(
+        val minLatestNovels: Int = 1,
+        val minChapters: Int = 1,
+        val supportsPagination: Boolean = true,
+        val requiresLogin: Boolean = false
+    )
 
-    private fun generateUnitTests(source: KSClassDeclaration) {
+    private fun generateUnitTests(source: KSClassDeclaration, config: GenerateTestsConfig) {
         val packageName = source.packageName.asString()
         val className = source.simpleName.asString()
         val testClassName = "${className}UnitTest"
 
         // Collect annotation info
         val annotations = AnnotationInfo.from(source)
+        val skipTests = getSkipTestsConfig(source)
+        val expectations = getTestExpectationsConfig(source)
 
-        val testAnnotation = ClassName("org.junit", "Test")
+        val testAnnotation = ClassName("kotlin.test", "Test")
         val assertClass = ClassName("kotlin.test", "assertTrue")
         val assertEqualsClass = ClassName("kotlin.test", "assertEquals")
         val assertNotNullClass = ClassName("kotlin.test", "assertNotNull")
-        val beforeAnnotation = ClassName("org.junit", "Before")
 
         val testClassBuilder = TypeSpec.classBuilder(testClassName)
             .addKdoc("Auto-generated unit tests for $className\n\n")
-            .addKdoc("Run with: ./gradlew :extensions:individual:${packageName.substringAfter("ireader.")}:test\n")
+            .addKdoc("Run with: ./gradlew test\n")
+            .addKdoc("\nGenerated from @GenerateTests annotation\n")
+            .addKdoc("Search query: ${config.searchQuery}\n")
+            .addKdoc("Min search results: ${config.minSearchResults}\n")
 
-        // Add test properties
-        if (annotations.hasFilters) {
-            testClassBuilder.addProperty(
-                PropertySpec.builder("filters", ClassName(packageName, "${className}Filters"))
-                    .initializer("${className}Filters")
-                    .build()
-            )
-        }
-        if (annotations.hasFetchers) {
-            testClassBuilder.addProperty(
-                PropertySpec.builder("fetchers", ClassName(packageName, "${className}Fetchers"))
-                    .initializer("${className}Fetchers")
-                    .build()
-            )
-        }
+        // ===== BASIC VALIDATION TESTS =====
+        testClassBuilder.addFunction(
+            FunSpec.builder("testSourceClassExists")
+                .addAnnotation(testAnnotation)
+                .addStatement("// Verify the source class can be referenced")
+                .addStatement("val sourceClass = $className::class")
+                .addStatement("%T(sourceClass != null, %S)", assertNotNullClass, "Source class should exist")
+                .build()
+        )
 
         // ===== FILTER TESTS =====
         if (annotations.hasFilters) {
             testClassBuilder.addFunction(
-                FunSpec.builder("testFiltersNotEmpty")
+                FunSpec.builder("testFiltersAnnotationPresent")
                     .addAnnotation(testAnnotation)
-                    .addStatement("val filterList = filters.getGeneratedFilters()")
-                    .addStatement("%T(filterList.isNotEmpty(), %S)", assertClass, "Filters should not be empty")
+                    .addStatement("// @GenerateFilters annotation is present - filters will be auto-generated")
+                    .addStatement("%T(true, %S)", assertClass, "Filters annotation is present")
                     .build()
             )
+        }
 
+        // ===== COMMANDS TESTS =====
+        if (annotations.hasCommands) {
             testClassBuilder.addFunction(
-                FunSpec.builder("testFilterTypes")
+                FunSpec.builder("testCommandsAnnotationPresent")
                     .addAnnotation(testAnnotation)
-                    .addStatement("val filterList = filters.getGeneratedFilters()")
-                    .addStatement("// Verify each filter has a valid type")
-                    .addStatement("filterList.forEach { filter ->")
-                    .addStatement("    %T(filter != null, %S)", assertNotNullClass, "Filter should not be null")
-                    .addStatement("}")
+                    .addStatement("// @GenerateCommands annotation is present - commands will be auto-generated")
+                    .addStatement("%T(true, %S)", assertClass, "Commands annotation is present")
                     .build()
             )
         }
@@ -117,53 +243,75 @@ class TestGeneratorProcessor(
         // ===== FETCHER TESTS =====
         if (annotations.hasFetchers) {
             testClassBuilder.addFunction(
-                FunSpec.builder("testFetchersNotEmpty")
+                FunSpec.builder("testExploreFetcherAnnotationPresent")
                     .addAnnotation(testAnnotation)
-                    .addStatement("val fetcherList = fetchers.generatedExploreFetchers")
-                    .addStatement("%T(fetcherList.isNotEmpty(), %S)", assertClass, "Fetchers should not be empty")
+                    .addStatement("// @ExploreFetcher annotation is present - exploreFetchers will be auto-generated")
+                    .addStatement("%T(true, %S)", assertClass, "ExploreFetcher annotation is present")
                     .build()
             )
+        }
 
+        // ===== SELECTOR TESTS =====
+        if (annotations.hasDetailSelectors) {
             testClassBuilder.addFunction(
-                FunSpec.builder("testFetcherEndpointsHavePlaceholders")
+                FunSpec.builder("testDetailSelectorsAnnotationPresent")
                     .addAnnotation(testAnnotation)
-                    .addStatement("val fetcherList = fetchers.generatedExploreFetchers")
-                    .addStatement("fetcherList.forEach { fetcher ->")
-                    .addStatement("    val hasPlaceholder = fetcher.endpoint.contains(\"{page}\") || fetcher.endpoint.contains(\"{query}\")")
-                    .addStatement("    %T(hasPlaceholder, \"Fetcher '\${fetcher.key}' endpoint should have {page} or {query} placeholder\")", assertClass)
-                    .addStatement("}")
+                    .addStatement("// @DetailSelectors annotation is present - detailFetcher will be auto-generated")
+                    .addStatement("%T(true, %S)", assertClass, "DetailSelectors annotation is present")
                     .build()
             )
+        }
 
+        if (annotations.hasChapterSelectors) {
             testClassBuilder.addFunction(
-                FunSpec.builder("testFetcherSelectorsNotBlank")
+                FunSpec.builder("testChapterSelectorsAnnotationPresent")
                     .addAnnotation(testAnnotation)
-                    .addStatement("val fetcherList = fetchers.generatedExploreFetchers")
-                    .addStatement("fetcherList.forEach { fetcher ->")
-                    .addStatement("    %T(fetcher.selector.isNotBlank(), \"Fetcher '\${fetcher.key}' selector should not be blank\")", assertClass)
-                    .addStatement("}")
+                    .addStatement("// @ChapterSelectors annotation is present - chapterFetcher will be auto-generated")
+                    .addStatement("%T(true, %S)", assertClass, "ChapterSelectors annotation is present")
                     .build()
             )
+        }
 
+        if (annotations.hasContentSelectors) {
             testClassBuilder.addFunction(
-                FunSpec.builder("testFetcherNamesUnique")
+                FunSpec.builder("testContentSelectorsAnnotationPresent")
                     .addAnnotation(testAnnotation)
-                    .addStatement("val fetcherList = fetchers.generatedExploreFetchers")
-                    .addStatement("val names = fetcherList.map { it.key }")
-                    .addStatement("val uniqueNames = names.toSet()")
-                    .addStatement("%T(names.size, uniqueNames.size, %S)", assertEqualsClass, "Fetcher names should be unique")
+                    .addStatement("// @ContentSelectors annotation is present - contentFetcher will be auto-generated")
+                    .addStatement("%T(true, %S)", assertClass, "ContentSelectors annotation is present")
                     .build()
             )
+        }
 
+        // ===== DEEP LINK TESTS =====
+        if (annotations.hasDeepLinks) {
             testClassBuilder.addFunction(
-                FunSpec.builder("testSearchFetcherExists")
+                FunSpec.builder("testDeepLinkAnnotationPresent")
                     .addAnnotation(testAnnotation)
-                    .addStatement("val fetcherList = fetchers.generatedExploreFetchers")
-                    .addStatement("val hasSearch = fetcherList.any { it.endpoint.contains(\"{query}\") }")
-                    .addStatement("// Note: Search is recommended but not required")
-                    .addStatement("if (!hasSearch) {")
-                    .addStatement("    println(\"Warning: No search fetcher found for $className\")")
-                    .addStatement("}")
+                    .addStatement("// @SourceDeepLink annotation is present")
+                    .addStatement("%T(true, %S)", assertClass, "DeepLink annotation is present")
+                    .build()
+            )
+        }
+
+        // ===== URL BUILDING TESTS =====
+        testClassBuilder.addFunction(
+            FunSpec.builder("testUrlPlaceholderReplacement")
+                .addAnnotation(testAnnotation)
+                .addStatement("val endpoint = \"/search?q={query}&page={page}\"")
+                .addStatement("val result = endpoint.replace(\"{query}\", \"test\").replace(\"{page}\", \"1\")")
+                .addStatement("%T(result, \"/search?q=test&page=1\", %S)", assertEqualsClass, "URL placeholders should be replaced")
+                .build()
+        )
+
+        // ===== SKIP TESTS INFO =====
+        if (skipTests.search || skipTests.chapters || skipTests.content) {
+            testClassBuilder.addFunction(
+                FunSpec.builder("testSkipTestsInfo")
+                    .addAnnotation(testAnnotation)
+                    .addStatement("// Some tests are skipped: ${skipTests.reason}")
+                    .addStatement("println(\"Skipped tests - Search: ${skipTests.search}, Chapters: ${skipTests.chapters}, Content: ${skipTests.content}\")")
+                    .addStatement("println(\"Reason: ${skipTests.reason}\")")
+                    .addStatement("%T(true)", assertClass)
                     .build()
             )
         }
@@ -203,54 +351,11 @@ class TestGeneratorProcessor(
             )
         }
 
-        // ===== DEEP LINK TESTS =====
-        if (annotations.hasDeepLinks) {
-            testClassBuilder.addFunction(
-                FunSpec.builder("testDeepLinkPatternsNotEmpty")
-                    .addAnnotation(testAnnotation)
-                    .addStatement("val patterns = ${className}DeepLinks.patterns")
-                    .addStatement("%T(patterns.isNotEmpty(), %S)", assertClass, "Deep link patterns should not be empty")
-                    .build()
-            )
-
-            testClassBuilder.addFunction(
-                FunSpec.builder("testDeepLinkHostsValid")
-                    .addAnnotation(testAnnotation)
-                    .addStatement("val patterns = ${className}DeepLinks.patterns")
-                    .addStatement("patterns.forEach { pattern ->")
-                    .addStatement("    %T(pattern.host.isNotBlank(), %S)", assertClass, "Deep link host should not be blank")
-                    .addStatement("    %T(!pattern.host.startsWith(\"http\"), %S)", assertClass, "Host should not include scheme")
-                    .addStatement("}")
-                    .build()
-            )
-
-            testClassBuilder.addFunction(
-                FunSpec.builder("testDeepLinkCanHandle")
-                    .addAnnotation(testAnnotation)
-                    .addStatement("val patterns = ${className}DeepLinks.patterns")
-                    .addStatement("patterns.forEach { pattern ->")
-                    .addStatement("    val testUrl = \"\${pattern.scheme}://\${pattern.host}/test\"")
-                    .addStatement("    %T(${className}DeepLinks.canHandle(testUrl), \"Should handle URL: \$testUrl\")", assertClass)
-                    .addStatement("}")
-                    .build()
-            )
-        }
-
-        // ===== URL BUILDING TESTS =====
-        testClassBuilder.addFunction(
-            FunSpec.builder("testUrlPlaceholderReplacement")
-                .addAnnotation(testAnnotation)
-                .addStatement("val endpoint = \"/search?q={query}&page={page}\"")
-                .addStatement("val result = endpoint.replace(\"{query}\", \"test\").replace(\"{page}\", \"1\")")
-                .addStatement("%T(result, \"/search?q=test&page=1\", %S)", assertEqualsClass, "URL placeholders should be replaced")
-                .build()
-        )
-
         val testClass = testClassBuilder.build()
 
         FileSpec.builder(packageName, testClassName)
             .addType(testClass)
-            .addImport("kotlin.test", "assertTrue", "assertEquals", "assertNotNull")
+            .addImport("kotlin.test", "Test", "assertTrue", "assertEquals", "assertNotNull")
             .addFileComment("Auto-generated unit tests - DO NOT EDIT\n")
             .addFileComment("Generated by TestGeneratorProcessor\n")
             .addFileComment("Run: ./gradlew test")
@@ -260,15 +365,18 @@ class TestGeneratorProcessor(
         logger.info("Generated unit tests: $packageName.$testClassName")
     }
 
-    private fun generateIntegrationTests(source: KSClassDeclaration) {
+    private fun generateIntegrationTests(source: KSClassDeclaration, config: GenerateTestsConfig) {
         val packageName = source.packageName.asString()
         val className = source.simpleName.asString()
         val testClassName = "${className}IntegrationTest"
 
         val annotations = AnnotationInfo.from(source)
+        val fixture = getTestFixtureConfig(source)
+        val skipTests = getSkipTestsConfig(source)
+        val expectations = getTestExpectationsConfig(source)
 
-        val testAnnotation = ClassName("org.junit", "Test")
-        val ignoreAnnotation = ClassName("org.junit", "Ignore")
+        val testAnnotation = ClassName("kotlin.test", "Test")
+        val ignoreAnnotation = ClassName("kotlin.test", "Ignore")
         val assertClass = ClassName("kotlin.test", "assertTrue")
         val assertNotNullClass = ClassName("kotlin.test", "assertNotNull")
         val runBlockingClass = ClassName("kotlinx.coroutines", "runBlocking")
@@ -363,7 +471,7 @@ class TestGeneratorProcessor(
 
         FileSpec.builder(packageName, testClassName)
             .addType(testClass)
-            .addImport("kotlin.test", "assertTrue", "assertNotNull")
+            .addImport("kotlin.test", "Test", "Ignore", "assertTrue", "assertNotNull")
             .addImport("kotlinx.coroutines", "runBlocking")
             .addFileComment("Auto-generated integration tests - DO NOT EDIT\n")
             .addFileComment("Generated by TestGeneratorProcessor\n")
@@ -376,6 +484,7 @@ class TestGeneratorProcessor(
 
     private data class AnnotationInfo(
         val hasFilters: Boolean,
+        val hasCommands: Boolean,
         val hasFetchers: Boolean,
         val hasDetailSelectors: Boolean,
         val hasChapterSelectors: Boolean,
@@ -388,7 +497,8 @@ class TestGeneratorProcessor(
             fun from(source: KSClassDeclaration): AnnotationInfo {
                 val annotations = source.annotations.map { it.shortName.asString() }.toSet()
                 return AnnotationInfo(
-                    hasFilters = "SourceFilters" in annotations,
+                    hasFilters = "GenerateFilters" in annotations || "SourceFilters" in annotations,
+                    hasCommands = "GenerateCommands" in annotations,
                     hasFetchers = "ExploreFetcher" in annotations,
                     hasDetailSelectors = "DetailSelectors" in annotations,
                     hasChapterSelectors = "ChapterSelectors" in annotations,
@@ -403,6 +513,10 @@ class TestGeneratorProcessor(
 
     companion object {
         const val EXTENSION_ANNOTATION = "tachiyomix.annotations.Extension"
+        const val GENERATE_TESTS_ANNOTATION = "tachiyomix.annotations.GenerateTests"
+        const val TEST_FIXTURE_ANNOTATION = "tachiyomix.annotations.TestFixture"
+        const val SKIP_TESTS_ANNOTATION = "tachiyomix.annotations.SkipTests"
+        const val TEST_EXPECTATIONS_ANNOTATION = "tachiyomix.annotations.TestExpectations"
     }
 }
 

@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) IReader Project
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 package tachiyomix.compiler
 
 import com.google.devtools.ksp.getClassDeclarationByName
