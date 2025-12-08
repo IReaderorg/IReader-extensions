@@ -36,6 +36,11 @@ kotlin {
                 implementation(libs.findLibrary("ktor-contentNegotiation").get())
                 implementation(libs.findLibrary("ktor-serialization").get())
 
+                // Test dependencies for KSP-generated tests
+                implementation(libs.findLibrary("kotlin-test").get())
+                implementation(libs.findLibrary("kotlin-test-junit").get())
+                implementation(libs.findLibrary("coroutines").get())
+
                 implementation(project(":common"))
             }
 

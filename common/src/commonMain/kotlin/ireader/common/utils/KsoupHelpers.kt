@@ -4,556 +4,617 @@ import com.fleeksoft.ksoup.nodes.Element
 import com.fleeksoft.ksoup.select.Elements
 import ireader.core.source.attrOrNull
 
-// ═══════════════════════════════════════════════════════════════════════════
-// KSOUP COMPATIBILITY HELPERS
-// These provide utility methods for ksoup Elements/Element that mirror
-// common Jsoup patterns but work with Kotlin Multiplatform
-// ═══════════════════════════════════════════════════════════════════════════
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ELEMENT EXTENSION FUNCTIONS
+// FUNCTIONS WITH ELEMENTS AS PARAMETER (Elements : Nodes<Element>)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Get all sibling elements (both before and after) for this element.
+ * Get all sibling elements for each element in the collection.
  *
- * @return Elements containing all siblings (excluding this element)
- */
-fun Element.siblings(): Elements {
-    val result = Elements()
-    val parent = this.parent() ?: return result
-    for (child in parent.children()) {
-        if (child != this) {
-            result.add(child)
-        }
-    }
-    return result
-}
-
-/**
- * Get all ancestor elements up to the root.
- *
- * @return Elements containing all ancestors from parent to root
- */
-fun Element.ancestors(): Elements {
-    val result = Elements()
-    var current = this.parent()
-    while (current != null) {
-        result.add(current)
-        current = current.parent()
-    }
-    return result
-}
-
-/**
- * Get the nth parent of this element.
- *
- * @param level How many levels up (1 = parent, 2 = grandparent, etc.)
- * @return The ancestor at the specified level, or null if not found
- */
-fun Element.nthParent(level: Int): Element? {
-    var current: Element? = this
-    repeat(level) {
-        current = current?.parent()
-    }
-    return current
-}
-
-/**
- * Get text content with whitespace normalized.
- *
- * @return Text with multiple whitespace collapsed to single spaces
- */
-fun Element.normalizedText(): String {
-    return this.text().replace(Regex("\\s+"), " ").trim()
-}
-
-/**
- * Get own text (excluding children's text).
- *
- * @return Only the direct text content of this element
- */
-fun Element.ownTextTrimmed(): String {
-    return this.ownText().trim()
-}
-
-/**
- * Check if element has a specific class.
- *
- * @param className The class name to check
- * @return true if element has the class
- */
-fun Element.hasClassName(className: String): Boolean {
-    return this.hasClass(className)
-}
-
-/**
- * Get attribute value or null if empty/missing.
- *
- * @param attributeKey The attribute name
- * @return Attribute value or null if empty
- */
-fun Element.attrOrNull(attributeKey: String): String? {
-    val value = this.attr(attributeKey)
-    return value.ifBlank { null }
-}
-
-/**
- * Get absolute URL from an attribute.
- *
- * @param attributeKey The attribute containing the URL (e.g., "href", "src")
- * @return Absolute URL string
- */
-fun Element.absUrl(attributeKey: String): String {
-    return this.attr("abs:$attributeKey")
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ELEMENTS EXTENSION FUNCTIONS
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Get the next sibling element for each element in the set.
- *
- * @return Elements containing the next sibling of each element (if exists)
- */
-fun Elements.next(): Elements {
-    val result = Elements()
-    for (element in this) {
-        element.nextElementSibling()?.let { result.add(it) }
-    }
-    return result
-}
-
-/**
- * Get the previous sibling element for each element in the set.
- *
- * @return Elements containing the previous sibling of each element (if exists)
- */
-fun Elements.prev(): Elements {
-    val result = Elements()
-    for (element in this) {
-        element.previousElementSibling()?.let { result.add(it) }
-    }
-    return result
-}
-
-/**
- * Get the parent element for each element in the set.
- *
- * @return Elements containing the parent of each element (if exists)
- */
-fun Elements.parents(): Elements {
-    val result = Elements()
-    for (element in this) {
-        element.parent()?.let { result.add(it) }
-    }
-    return result
-}
-
-/**
- * Get all sibling elements for each element in the set.
- *
- * @return Elements containing all siblings of all elements
- */
-fun Elements.siblings(): Elements {
-    val result = Elements()
-    for (element in this) {
-        result.addAll(element.siblings())
-    }
-    return result
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// STANDALONE FUNCTIONS WITH ELEMENTS PARAMETER
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Get the next sibling element for each element in the set.
- *
- * @param elements The elements to process
- * @return Elements containing the next sibling of each element (if exists)
- */
-fun next(elements: Elements): Elements {
-    val result = Elements()
-    for (element in elements) {
-        element.nextElementSibling()?.let { result.add(it) }
-    }
-    return result
-}
-
-/**
- * Get the previous sibling element for each element in the set.
- *
- * @param elements The elements to process
- * @return Elements containing the previous sibling of each element (if exists)
- */
-fun prev(elements: Elements): Elements {
-    val result = Elements()
-    for (element in elements) {
-        element.previousElementSibling()?.let { result.add(it) }
-    }
-    return result
-}
-
-/**
- * Get the parent element for each element in the set.
- *
- * @param elements The elements to process
- * @return Elements containing the parent of each element (if exists)
- */
-fun parents(elements: Elements): Elements {
-    val result = Elements()
-    for (element in elements) {
-        element.parent()?.let { result.add(it) }
-    }
-    return result
-}
-
-/**
- * Get all sibling elements for each element in the set.
- *
- * @param elements The elements to process
- * @return Elements containing all siblings of all elements
+ * @param elements The elements collection
+ * @return Elements containing all siblings
  */
 fun siblings(elements: Elements): Elements {
-    val result = Elements()
-    for (element in elements) {
-        result.addAll(element.siblings())
-    }
-    return result
+    return elements.siblings()
+}
+
+/**
+ * Get all ancestor elements for each element in the collection.
+ *
+ * @param elements The elements collection
+ * @return Elements containing all ancestors (deduplicated)
+ */
+fun ancestors(elements: Elements): Elements {
+    return elements.ancestors()
+}
+
+/**
+ * Get the nth parent for each element in the collection.
+ *
+ * @param elements The elements collection
+ * @param level How many levels up (1 = parent, 2 = grandparent, etc.)
+ * @return Elements containing the ancestor at the specified level
+ */
+fun nthParent(elements: Elements, level: Int): Elements {
+    return elements.nthParent(level)
+}
+
+/**
+ * Get normalized text content from all elements.
+ *
+ * @param elements The elements collection
+ * @return List of text content with whitespace normalized
+ */
+fun normalizedTexts(elements: Elements): List<String> {
+    return elements.normalizedTexts()
+}
+
+/**
+ * Get own text (trimmed) from all elements.
+ *
+ * @param elements The elements collection
+ * @return List of own text content (trimmed)
+ */
+fun ownTextsTrimmed(elements: Elements): List<String> {
+    return elements.ownTextsTrimmed()
+}
+
+/**
+ * Get absolute URLs from an attribute for all elements.
+ *
+ * @param elements The elements collection
+ * @param attributeKey The attribute containing the URL
+ * @return List of absolute URL strings
+ */
+fun absUrls(elements: Elements, attributeKey: String): List<String> {
+    return elements.absUrls(attributeKey)
+}
+
+/**
+ * Get the next sibling element for each element.
+ *
+ * @param elements The elements collection
+ * @return Elements containing the next sibling of each element
+ */
+fun next(elements: Elements): Elements {
+    return elements.next()
+}
+
+/**
+ * Get the previous sibling element for each element.
+ *
+ * @param elements The elements collection
+ * @return Elements containing the previous sibling of each element
+ */
+fun prev(elements: Elements): Elements {
+    return elements.prev()
+}
+
+/**
+ * Get the parent element for each element.
+ *
+ * @param elements The elements collection
+ * @return Elements containing the parent of each element
+ */
+fun parents(elements: Elements): Elements {
+    return elements.parents()
 }
 
 /**
  * Get attribute values from all elements.
  *
- * @param elements The elements to process
+ * @param elements The elements collection
  * @param attributeKey The attribute name
- * @return List of attribute values (empty strings filtered out)
+ * @return List of attribute values
  */
 fun attrs(elements: Elements, attributeKey: String): List<String> {
-    return elements.mapNotNull { it.attrOrNull(attributeKey) }
+    return elements.attrs(attributeKey)
 }
 
 /**
- * Get text content from all elements as a list.
+ * Get text content from all elements.
  *
- * @param elements The elements to process
- * @return List of text content from each element
+ * @param elements The elements collection
+ * @return List of text content
  */
 fun texts(elements: Elements): List<String> {
-    return elements.map { it.text() }
+    return elements.texts()
 }
 
 /**
  * Get text content from all elements, filtered for non-blank.
  *
- * @param elements The elements to process
+ * @param elements The elements collection
  * @return List of non-blank text content
  */
 fun textsNotBlank(elements: Elements): List<String> {
-    return elements.map { it.text().trim() }.filter { it.isNotBlank() }
+    return elements.textsNotBlank()
 }
 
 /**
- * Get own text from all elements as a list.
+ * Get own text from all elements.
  *
- * @param elements The elements to process
- * @return List of own text content from each element
+ * @param elements The elements collection
+ * @return List of own text content
  */
 fun ownTexts(elements: Elements): List<String> {
-    return elements.map { it.ownText() }
+    return elements.ownTexts()
 }
 
 /**
  * Filter elements that have a specific attribute.
  *
- * @param elements The elements to process
+ * @param elements The elements collection
  * @param attributeKey The attribute name to check
  * @return Elements that have the specified attribute
  */
 fun filterByAttr(elements: Elements, attributeKey: String): Elements {
-    val result = Elements()
-    for (element in elements) {
-        if (element.hasAttr(attributeKey)) {
-            result.add(element)
-        }
-    }
-    return result
+    return elements.filterByAttr(attributeKey)
 }
 
 /**
  * Filter elements that have a specific class.
  *
- * @param elements The elements to process
+ * @param elements The elements collection
  * @param className The class name to check
  * @return Elements that have the specified class
  */
 fun filterByClass(elements: Elements, className: String): Elements {
-    val result = Elements()
-    for (element in elements) {
-        if (element.hasClass(className)) {
-            result.add(element)
-        }
-    }
-    return result
+    return elements.filterByClass(className)
 }
 
 /**
- * Get elements at even indices (0, 2, 4, ...).
+ * Get elements at even indices.
  *
- * @param elements The elements to process
+ * @param elements The elements collection
  * @return Elements at even positions
  */
 fun even(elements: Elements): Elements {
-    val result = Elements()
-    elements.forEachIndexed { index, element ->
-        if (index % 2 == 0) result.add(element)
-    }
-    return result
+    return elements.even()
 }
 
 /**
- * Get elements at odd indices (1, 3, 5, ...).
+ * Get elements at odd indices.
  *
- * @param elements The elements to process
+ * @param elements The elements collection
  * @return Elements at odd positions
  */
 fun odd(elements: Elements): Elements {
-    val result = Elements()
-    elements.forEachIndexed { index, element ->
-        if (index % 2 == 1) result.add(element)
-    }
-    return result
-}
-
-/**
- * Take first n elements.
- *
- * @param elements The elements to process
- * @param n Number of elements to take
- * @return First n elements
- */
-fun take(elements: Elements, n: Int): Elements {
-    val result = Elements()
-    for (i in 0 until minOf(n, elements.size)) {
-        result.add(elements[i])
-    }
-    return result
-}
-
-/**
- * Drop first n elements.
- *
- * @param elements The elements to process
- * @param n Number of elements to drop
- * @return Elements after dropping first n
- */
-fun drop(elements: Elements, n: Int): Elements {
-    val result = Elements()
-    for (i in n until elements.size) {
-        result.add(elements[i])
-    }
-    return result
-}
-
-/**
- * Take last n elements.
- *
- * @param elements The elements to process
- * @param n Number of elements to take from end
- * @return Last n elements
- */
-fun takeLast(elements: Elements, n: Int): Elements {
-    val result = Elements()
-    val start = maxOf(0, elements.size - n)
-    for (i in start until elements.size) {
-        result.add(elements[i])
-    }
-    return result
-}
-
-/**
- * Drop last n elements.
- *
- * @param elements The elements to process
- * @param n Number of elements to drop from end
- * @return Elements after dropping last n
- */
-fun dropLast(elements: Elements, n: Int): Elements {
-    val result = Elements()
-    val end = maxOf(0, elements.size - n)
-    for (i in 0 until end) {
-        result.add(elements[i])
-    }
-    return result
-}
-
-/**
- * Get attribute values from all elements.
- *
- * @param attributeKey The attribute name
- * @return List of attribute values (empty strings filtered out)
- */
-fun Elements.attrs(attributeKey: String): List<String> {
-    return this.mapNotNull { it.attrOrNull(attributeKey) }
-}
-
-/**
- * Get text content from all elements as a list.
- *
- * @return List of text content from each element
- */
-fun Elements.texts(): List<String> {
-    return this.map { it.text() }
-}
-
-/**
- * Get text content from all elements, filtered for non-blank.
- *
- * @return List of non-blank text content
- */
-fun Elements.textsNotBlank(): List<String> {
-    return this.map { it.text().trim() }.filter { it.isNotBlank() }
-}
-
-/**
- * Get own text from all elements as a list.
- *
- * @return List of own text content from each element
- */
-fun Elements.ownTexts(): List<String> {
-    return this.map { it.ownText() }
-}
-
-/**
- * Filter elements that have a specific attribute.
- *
- * @param attributeKey The attribute name to check
- * @return Elements that have the specified attribute
- */
-fun Elements.hasAttr(attributeKey: String): Elements {
-    val result = Elements()
-    for (element in this) {
-        if (element.hasAttr(attributeKey)) {
-            result.add(element)
-        }
-    }
-    return result
-}
-
-/**
- * Filter elements that have a specific class.
- *
- * @param className The class name to check
- * @return Elements that have the specified class
- */
-fun Elements.hasClass(className: String): Elements {
-    val result = Elements()
-    for (element in this) {
-        if (element.hasClass(className)) {
-            result.add(element)
-        }
-    }
-    return result
-}
-
-/**
- * Get elements at even indices (0, 2, 4, ...).
- *
- * @return Elements at even positions
- */
-fun Elements.even(): Elements {
-    val result = Elements()
-    this.forEachIndexed { index, element ->
-        if (index % 2 == 0) result.add(element)
-    }
-    return result
-}
-
-/**
- * Get elements at odd indices (1, 3, 5, ...).
- *
- * @return Elements at odd positions
- */
-fun Elements.odd(): Elements {
-    val result = Elements()
-    this.forEachIndexed { index, element ->
-        if (index % 2 == 1) result.add(element)
-    }
-    return result
+    return elements.odd()
 }
 
 /**
  * Get element at specific index, or null if out of bounds.
  *
+ * @param elements The elements collection
  * @param index The index
  * @return Element at index or null
  */
-fun Elements.getOrNull(index: Int): Element? {
-    return if (index in 0 until this.size) this[index] else null
+fun getOrNull(elements: Elements, index: Int): Element? {
+    return elements.getOrNull(index)
 }
 
 /**
  * Take first n elements.
  *
+ * @param elements The elements collection
  * @param n Number of elements to take
  * @return First n elements
  */
-fun Elements.take(n: Int): Elements {
-    val result = Elements()
-    for (i in 0 until minOf(n, this.size)) {
-        result.add(this[i])
-    }
-    return result
+fun take(elements: Elements, n: Int): Elements {
+    return elements.take(n)
 }
 
 /**
  * Drop first n elements.
  *
+ * @param elements The elements collection
  * @param n Number of elements to drop
  * @return Elements after dropping first n
  */
-fun Elements.drop(n: Int): Elements {
-    val result = Elements()
-    for (i in n until this.size) {
-        result.add(this[i])
-    }
-    return result
+fun drop(elements: Elements, n: Int): Elements {
+    return elements.drop(n)
 }
 
 /**
  * Take last n elements.
  *
+ * @param elements The elements collection
  * @param n Number of elements to take from end
  * @return Last n elements
  */
-fun Elements.takeLast(n: Int): Elements {
-    val result = Elements()
-    val start = maxOf(0, this.size - n)
-    for (i in start until this.size) {
-        result.add(this[i])
-    }
-    return result
+fun takeLast(elements: Elements, n: Int): Elements {
+    return elements.takeLast(n)
 }
 
 /**
  * Drop last n elements.
  *
+ * @param elements The elements collection
  * @param n Number of elements to drop from end
  * @return Elements after dropping last n
  */
-fun Elements.dropLast(n: Int): Elements {
-    val result = Elements()
-    val end = maxOf(0, this.size - n)
-    for (i in 0 until end) {
-        result.add(this[i])
-    }
-    return result
+fun dropLast(elements: Elements, n: Int): Elements {
+    return elements.dropLast(n)
+}
+
+/**
+ * Check if any element has a specific class.
+ *
+ * @param elements The elements collection
+ * @param className The class name to check
+ * @return true if any element has the class
+ */
+fun hasClassName(elements: Elements, className: String): Boolean {
+    return elements.hasClassName(className)
+}
+
+/**
+ * Get attribute value or null from the first element.
+ *
+ * @param elements The elements collection
+ * @param attributeKey The attribute name
+ * @return Attribute value or null
+ */
+fun attrOrNull(elements: Elements, attributeKey: String): String? {
+    return elements.attrOrNull(attributeKey)
+}
+
+/**
+ * Get the element at the specified index (jQuery-style eq).
+ *
+ * @param elements The elements collection
+ * @param index The index (supports negative indices)
+ * @return Elements containing only the element at that index
+ */
+fun eq(elements: Elements, index: Int): Elements {
+    return elements.eq(index)
+}
+
+/**
+ * Get the first element wrapped in Elements.
+ *
+ * @param elements The elements collection
+ * @return Elements containing only the first element
+ */
+fun firstAsElements(elements: Elements): Elements {
+    return elements.firstAsElements()
+}
+
+/**
+ * Get the last element wrapped in Elements.
+ *
+ * @param elements The elements collection
+ * @return Elements containing only the last element
+ */
+fun lastAsElements(elements: Elements): Elements {
+    return elements.lastAsElements()
+}
+
+/**
+ * Filter elements that do NOT match the selector.
+ *
+ * @param elements The elements collection
+ * @param selector CSS selector to exclude
+ * @return Elements that don't match the selector
+ */
+fun not(elements: Elements, selector: String): Elements {
+    return elements.not(selector)
+}
+
+/**
+ * Check if any element matches the selector.
+ *
+ * @param elements The elements collection
+ * @param selector CSS selector to check
+ * @return true if any element matches
+ */
+fun isMatch(elements: Elements, selector: String): Boolean {
+    return elements.`is`(selector)
+}
+
+/**
+ * Check if any element has descendants matching the selector.
+ *
+ * @param elements The elements collection
+ * @param selector CSS selector to check
+ * @return true if any element has matching descendants
+ */
+fun has(elements: Elements, selector: String): Boolean {
+    return elements.has(selector)
+}
+
+/**
+ * Filter elements that have descendants matching the selector.
+ *
+ * @param elements The elements collection
+ * @param selector CSS selector to check
+ * @return Elements that have matching descendants
+ */
+fun filterHas(elements: Elements, selector: String): Elements {
+    return elements.filterHas(selector)
+}
+
+/**
+ * Get the closest ancestor matching the selector for each element.
+ *
+ * @param elements The elements collection
+ * @param selector CSS selector to match
+ * @return Elements containing the closest matching ancestor
+ */
+fun closest(elements: Elements, selector: String): Elements {
+    return elements.closest(selector)
+}
+
+/**
+ * Get all children of all elements.
+ *
+ * @param elements The elements collection
+ * @return Elements containing all children
+ */
+fun children(elements: Elements): Elements {
+    return elements.children()
+}
+
+/**
+ * Get all descendants matching the selector.
+ *
+ * @param elements The elements collection
+ * @param selector CSS selector
+ * @return Elements containing all matching descendants
+ */
+fun find(elements: Elements, selector: String): Elements {
+    return elements.find(selector)
+}
+
+/**
+ * Add a class to all elements.
+ *
+ * @param elements The elements collection
+ * @param className The class name to add
+ * @return The modified Elements
+ */
+fun addClass(elements: Elements, className: String): Elements {
+    return elements.addClass(className)
+}
+
+/**
+ * Remove a class from all elements.
+ *
+ * @param elements The elements collection
+ * @param className The class name to remove
+ * @return The modified Elements
+ */
+fun removeClass(elements: Elements, className: String): Elements {
+    return elements.removeClass(className)
+}
+
+/**
+ * Toggle a class on all elements.
+ *
+ * @param elements The elements collection
+ * @param className The class name to toggle
+ * @return The modified Elements
+ */
+fun toggleClass(elements: Elements, className: String): Elements {
+    return elements.toggleClass(className)
+}
+
+/**
+ * Set an attribute on all elements.
+ *
+ * @param elements The elements collection
+ * @param attributeKey The attribute name
+ * @param attributeValue The attribute value
+ * @return The modified Elements
+ */
+fun attr(elements: Elements, attributeKey: String, attributeValue: String): Elements {
+    return elements.attr(attributeKey, attributeValue)
+}
+
+/**
+ * Remove an attribute from all elements.
+ *
+ * @param elements The elements collection
+ * @param attributeKey The attribute name to remove
+ * @return The modified Elements
+ */
+fun removeAttr(elements: Elements, attributeKey: String): Elements {
+    return elements.removeAttr(attributeKey)
+}
+
+/**
+ * Get the combined outer HTML of all elements.
+ *
+ * @param elements The elements collection
+ * @return Combined outer HTML string
+ */
+fun outerHtml(elements: Elements): String {
+    return elements.outerHtml()
+}
+
+/**
+ * Get the combined inner HTML of all elements.
+ *
+ * @param elements The elements collection
+ * @return Combined inner HTML string
+ */
+fun html(elements: Elements): String {
+    return elements.html()
+}
+
+/**
+ * Wrap each element with the specified HTML.
+ *
+ * @param elements The elements collection
+ * @param html The wrapping HTML
+ * @return The modified Elements
+ */
+fun wrap(elements: Elements, html: String): Elements {
+    return elements.wrap(html)
+}
+
+/**
+ * Unwrap each element (replace with its children).
+ *
+ * @param elements The elements collection
+ * @return The modified Elements
+ */
+fun unwrap(elements: Elements): Elements {
+    return elements.unwrap()
+}
+
+/**
+ * Remove all elements from the DOM.
+ *
+ * @param elements The elements collection
+ * @return The modified Elements
+ */
+fun removeElements(elements: Elements): Elements {
+    return elements.remove()
+}
+
+/**
+ * Empty all elements (remove all children).
+ *
+ * @param elements The elements collection
+ * @return The modified Elements
+ */
+fun empty(elements: Elements): Elements {
+    return elements.empty()
+}
+
+/**
+ * Get the tag name of the first element.
+ *
+ * @param elements The elements collection
+ * @return Tag name or null if no elements
+ */
+fun tagName(elements: Elements): String? {
+    return elements.tagName()
+}
+
+/**
+ * Get all unique tag names in the set.
+ *
+ * @param elements The elements collection
+ * @return Set of tag names
+ */
+fun tagNames(elements: Elements): Set<String> {
+    return elements.tagNames()
+}
+
+/**
+ * Get the value attribute of the first element.
+ *
+ * @param elements The elements collection
+ * @return Value or empty string
+ */
+fun value(elements: Elements): String {
+    return elements.`val`()
+}
+
+/**
+ * Set the value attribute on all elements.
+ *
+ * @param elements The elements collection
+ * @param value The value to set
+ * @return The modified Elements
+ */
+fun value(elements: Elements, value: String): Elements {
+    return elements.`val`(value)
+}
+
+/**
+ * Get data attribute value from the first element.
+ *
+ * @param elements The elements collection
+ * @param key The data key (without "data-" prefix)
+ * @return Data value or null
+ */
+fun data(elements: Elements, key: String): String? {
+    return elements.data(key)
+}
+
+/**
+ * Get all data attributes from the first element.
+ *
+ * @param elements The elements collection
+ * @return Map of data attribute keys to values
+ */
+fun dataAttributes(elements: Elements): Map<String, String> {
+    return elements.dataAttributes()
+}
+
+/**
+ * Filter elements by tag name.
+ *
+ * @param elements The elements collection
+ * @param tagName The tag name to filter by
+ * @return Elements with the specified tag name
+ */
+fun filterByTag(elements: Elements, tagName: String): Elements {
+    return elements.filterByTag(tagName)
+}
+
+/**
+ * Get elements that contain the specified text.
+ *
+ * @param elements The elements collection
+ * @param text The text to search for (case-insensitive)
+ * @return Elements containing the text
+ */
+fun filterByText(elements: Elements, text: String): Elements {
+    return elements.filterByText(text)
+}
+
+/**
+ * Get elements that have the specified attribute value.
+ *
+ * @param elements The elements collection
+ * @param attributeKey The attribute name
+ * @param attributeValue The attribute value to match
+ * @return Elements with matching attribute value
+ */
+fun filterByAttrValue(elements: Elements, attributeKey: String, attributeValue: String): Elements {
+    return elements.filterByAttrValue(attributeKey, attributeValue)
+}
+
+/**
+ * Get elements that have attribute value containing the specified text.
+ *
+ * @param elements The elements collection
+ * @param attributeKey The attribute name
+ * @param text The text to search for in attribute value
+ * @return Elements with attribute value containing the text
+ */
+fun filterByAttrContaining(elements: Elements, attributeKey: String, text: String): Elements {
+    return elements.filterByAttrContaining(attributeKey, text)
+}
+
+/**
+ * Reverse the order of elements.
+ *
+ * @param elements The elements collection
+ * @return Elements in reversed order
+ */
+fun reversed(elements: Elements): Elements {
+    return elements.reversed()
+}
+
+/**
+ * Get distinct elements (remove duplicates).
+ *
+ * @param elements The elements collection
+ * @return Elements with duplicates removed
+ */
+fun distinct(elements: Elements): Elements {
+    return elements.distinct()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STRING EXTENSION FUNCTIONS FOR HTML PARSING
+// FUNCTIONS WITH ELEMENTS
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**

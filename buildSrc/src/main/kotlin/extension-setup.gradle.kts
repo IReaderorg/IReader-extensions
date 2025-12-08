@@ -155,6 +155,12 @@ dependencies {
     compileOnly(libs.findLibrary("ktor-android").get())
     compileOnly(libs.findLibrary("ktor-okhttp").get())
 
+    // Test dependencies for KSP-generated tests
+    compileOnly(libs.findLibrary("kotlin-test").get())
+    compileOnly(libs.findLibrary("kotlin-test-junit").get())
+    compileOnly(libs.findLibrary("junit4").get())
+    compileOnly(libs.findLibrary("coroutines").get())
+
     compileOnly(project(":annotations"))
     compileOnly(project(":multisrc"))
     compileOnly(project(":common"))

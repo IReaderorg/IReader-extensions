@@ -20,6 +20,7 @@ import ireader.core.source.model.MangasPageInfo
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
+import ireader.common.utils.next
 
 @Extension
 abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
@@ -124,12 +125,12 @@ abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         val description = document.select("div.intro").eachText().joinToString("\n")
         // not sure why its not working.
         val category = document.select("div.detail p.line a")
-            .next()
+            .let { next(it) }
             .text()
             .split(",")
 
         val status = document.select("div.detail > p:nth-child(6)")
-            .next()
+            .let { next(it) }
             .text()
             .replace("/[\t\n]/g", "")
             .handleStatus()
