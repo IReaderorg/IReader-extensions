@@ -2,7 +2,13 @@
 # Extensions are loaded dynamically by the main app, so we need to keep the Extension class
 
 # Keep the generated Extension class (entry point for the main app)
--keep class ireader.**.Extension { *; }
+# This is the class loaded by AndroidCatalogLoader via reflection
+-keep class tachiyomix.extension.Extension { *; }
+
+# Keep the constructor that takes Dependencies
+-keepclassmembers class tachiyomix.extension.Extension {
+    public <init>(ireader.core.source.Dependencies);
+}
 
 # Keep source classes annotated with @Extension
 -keep @tachiyomix.annotations.Extension class * { *; }
