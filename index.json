@@ -521,19 +521,6 @@
     "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
   },
   {
-    "pkg": "ireader.mtlnovelin.mtlnovelin.in",
-    "apk": "ireader-in-mtlnovelin-v2.2.apk",
-    "name": "MtlNovelIn",
-    "id": 1158147437730880777,
-    "lang": "in",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "mtlnovelin",
-    "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
-  },
-  {
     "pkg": "ireader.mysticalseries.mysticalseries.en",
     "apk": "ireader-en-mysticalseries-v1.2.apk",
     "name": "MysticalSeries",
@@ -690,19 +677,6 @@
     "assetsDir": "multisrc/madara/zinnovel/assets"
   },
   {
-    "pkg": "ireader.ltnovel.ltnovel.en",
-    "apk": "ireader-en-ltnovel-v2.2.apk",
-    "name": "Ltnovel",
-    "id": 9215118415900410639,
-    "lang": "en",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "ltnovel",
-    "assetsDir": "multisrc/madara/ltnovel/assets"
-  },
-  {
     "pkg": "ireader.mydramanovel.en",
     "apk": "ireader-en-mydramanovel-v2.1.apk",
     "name": "MyDramaNovel",
@@ -752,18 +726,6 @@
     "assetsDir": "en/novelbuddy/main/assets"
   },
   {
-    "pkg": "ireader.noveldeglace.fr",
-    "apk": "ireader-fr-noveldeglace-v2.2.apk",
-    "name": "NovelDeGlace",
-    "id": 4140598854940859954,
-    "lang": "fr",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.novelfire.en",
     "apk": "ireader-en-novelfire-v2.11.apk",
     "name": "Novelfire",
@@ -811,19 +773,6 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.novelmt.novelmt.en",
-    "apk": "ireader-en-novelmt-v2.2.apk",
-    "name": "Novelmt",
-    "id": 8917153280498398435,
-    "lang": "en",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "novelmt",
-    "assetsDir": "multisrc/madara/novelmt/assets"
   },
   {
     "pkg": "ireader.novelonline.en",
@@ -1078,7 +1027,7 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.skynovel.skynovel.en",
+    "pkg": "ireader.skynovel.en",
     "apk": "ireader-en-skynovel-v2.6.apk",
     "name": "SkyNovel",
     "id": 8270913328350885364,
@@ -1087,8 +1036,7 @@
     "version": "2.6",
     "description": "",
     "nsfw": false,
-    "sourceDir": "skynovel",
-    "assetsDir": "multisrc/skynovel/skynovel/assets"
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.storyseedling.en",
