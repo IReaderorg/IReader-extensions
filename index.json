@@ -173,6 +173,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.epiknovel.tu",
+    "apk": "ireader-tu-epiknovel-v2.2.apk",
+    "name": "EpikNovel",
+    "id": 4844890656048697396,
+    "lang": "tu",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.fanmtl.en",
     "apk": "ireader-en-fanmtl-v2.2.apk",
     "name": "fanmtl",
@@ -521,6 +533,19 @@
     "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
   },
   {
+    "pkg": "ireader.mtlnovelin.mtlnovelin.in",
+    "apk": "ireader-in-mtlnovelin-v2.2.apk",
+    "name": "MtlNovelIn",
+    "id": 1158147437730880777,
+    "lang": "in",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mtlnovelin",
+    "assetsDir": "multisrc/mtlnovel/mtlnovelen/assets"
+  },
+  {
     "pkg": "ireader.mysticalseries.mysticalseries.en",
     "apk": "ireader-en-mysticalseries-v1.2.apk",
     "name": "MysticalSeries",
@@ -677,6 +702,19 @@
     "assetsDir": "multisrc/madara/zinnovel/assets"
   },
   {
+    "pkg": "ireader.ltnovel.ltnovel.en",
+    "apk": "ireader-en-ltnovel-v2.2.apk",
+    "name": "Ltnovel",
+    "id": 9215118415900410639,
+    "lang": "en",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "ltnovel",
+    "assetsDir": "multisrc/madara/ltnovel/assets"
+  },
+  {
     "pkg": "ireader.mydramanovel.en",
     "apk": "ireader-en-mydramanovel-v2.1.apk",
     "name": "MyDramaNovel",
@@ -726,6 +764,18 @@
     "assetsDir": "en/novelbuddy/main/assets"
   },
   {
+    "pkg": "ireader.noveldeglace.fr",
+    "apk": "ireader-fr-noveldeglace-v2.2.apk",
+    "name": "NovelDeGlace",
+    "id": 4140598854940859954,
+    "lang": "fr",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.novelfire.en",
     "apk": "ireader-en-novelfire-v2.11.apk",
     "name": "Novelfire",
@@ -763,6 +813,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.novelgecesi.tu",
+    "apk": "ireader-tu-novelgecesi-v2.1.apk",
+    "name": "NovelGecesi",
+    "id": 525740147206608797,
+    "lang": "tu",
+    "code": 1,
+    "version": "2.1",
+    "description": "Türkçe novel okuma sitesi",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.novelhall.en",
     "apk": "ireader-en-novelhall-v2.6.apk",
     "name": "NovelHall",
@@ -773,6 +835,19 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.novelmt.novelmt.en",
+    "apk": "ireader-en-novelmt-v2.2.apk",
+    "name": "Novelmt",
+    "id": 8917153280498398435,
+    "lang": "en",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "novelmt",
+    "assetsDir": "multisrc/madara/novelmt/assets"
   },
   {
     "pkg": "ireader.novelonline.en",
@@ -931,6 +1006,19 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.readwn.readwn.en",
+    "apk": "ireader-en-readwn-v2.2.apk",
+    "name": "Readwn",
+    "id": 360679230228192343,
+    "lang": "en",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "readwn",
+    "assetsDir": "multisrc/madara/readwn/assets"
+  },
+  {
     "pkg": "ireader.realmnovel.ar",
     "apk": "ireader-ar-realmnovel-v2.2.apk",
     "name": "Realmnovel",
@@ -1027,7 +1115,7 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.skynovel.en",
+    "pkg": "ireader.skynovel.skynovel.en",
     "apk": "ireader-en-skynovel-v2.6.apk",
     "name": "SkyNovel",
     "id": 8270913328350885364,
@@ -1036,7 +1124,8 @@
     "version": "2.6",
     "description": "",
     "nsfw": false,
-    "sourceDir": "main"
+    "sourceDir": "skynovel",
+    "assetsDir": "multisrc/skynovel/skynovel/assets"
   },
   {
     "pkg": "ireader.storyseedling.en",
@@ -1085,6 +1174,19 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.wbnovel.wbnovel.in",
+    "apk": "ireader-in-wbnovel-v2.2.apk",
+    "name": "WbNovel",
+    "id": 6480076862656966258,
+    "lang": "in",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "wbnovel",
+    "assetsDir": "multisrc/skynovel/wbnovel/assets"
   },
   {
     "pkg": "ireader.webnovelcom.en",
