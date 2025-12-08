@@ -102,14 +102,14 @@ android {
         includeInApk = false
     }
     
-    // Minimize APK size - extensions only contain source code, all deps in main app
+    // Extensions are loaded dynamically - minification causes classloader issues
+    // The extension's classes reference Kotlin stdlib which must be resolved from parent classloader
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = false  // No resources to shrink
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            // Keep only the Extension class and source implementation
-            proguardFiles.add(file("$rootDir/extensions/proguard-rules.pro"))
+            // DISABLED: R8 inlines Kotlin stdlib calls causing IllegalAccessError
+            // Extensions must use parent classloader for Kotlin/deps
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
         debug {
             isMinifyEnabled = false
