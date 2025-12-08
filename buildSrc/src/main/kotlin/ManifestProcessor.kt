@@ -41,16 +41,26 @@ private fun ManifestProcessorTask.processExtension(extension: Extension) {
 
     val app = (parser["application"] as NodeList).first() as Node
 
-    // Set icon - tools:replace in base manifest handles merge conflicts
+    // Icon is set in base AndroidManifest.xml with tools:replace to handle merge conflicts
+    // The minimal 67-byte icon is in extensions/res/mipmap-mdpi/
+    
+    // Update source.icon metadata with the correct URL for remote icons
     if (extension.icon == DEFAULT_ICON || extension.icon.startsWith("http")) {
-        // Use minimal placeholder icon for remote icon sources
-        app.attributes()["android:icon"] = "@mipmap/ic_launcher"
-    } else if (!extension.assetsDir.isNullOrBlank()) {
-        // Using assets dir - icon comes from there
-        app.attributes()["android:icon"] = "@mipmap/ic_launcher"
-    } else {
-        // Using local res folder
-        app.attributes()["android:icon"] = "@mipmap/ic_launcher"
+        // Find and update the source.icon meta-data node
+        val metaDataNodes = app.children().filterIsInstance<Node>()
+        val iconMetaData = metaDataNodes.find { node ->
+            node.name().toString().contains("meta-data") &&
+            node.attribute("{http://schemas.android.com/apk/res/android}name") == "source.icon"
+        }
+        if (iconMetaData != null) {
+            // Update the value to the remote icon URL
+            val iconUrl = if (extension.icon == DEFAULT_ICON) {
+                createExtensionIconLink(extension)
+            } else {
+                extension.icon
+            }
+            iconMetaData.attributes()["{http://schemas.android.com/apk/res/android}value"] = iconUrl
+        }
     }
 
     // Add source class metadata
