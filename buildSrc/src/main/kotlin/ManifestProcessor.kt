@@ -41,14 +41,17 @@ private fun ManifestProcessorTask.processExtension(extension: Extension) {
 
     val app = (parser["application"] as NodeList).first() as Node
 
-    // Only add ic_launcher if icon is NOT using assets (i.e., using remote URL or default)
-//    if (extension.icon == DEFAULT_ICON || extension.icon.startsWith("http")) {
-//        // Don't add icon attribute - will use remote icon
-//    } else if (extension.assetsDir.isNullOrBlank()) {
-//        // Using local res folder - remove existing icon first to avoid duplicates
-//        app.attributes().remove("{http://schemas.android.com/apk/res/android}icon")
-//        app.attributes()["android:icon"] = "@mipmap/ic_launcher"
-//    }
+    // Set icon - tools:replace in base manifest handles merge conflicts
+    if (extension.icon == DEFAULT_ICON || extension.icon.startsWith("http")) {
+        // Use minimal placeholder icon for remote icon sources
+        app.attributes()["android:icon"] = "@mipmap/ic_launcher"
+    } else if (!extension.assetsDir.isNullOrBlank()) {
+        // Using assets dir - icon comes from there
+        app.attributes()["android:icon"] = "@mipmap/ic_launcher"
+    } else {
+        // Using local res folder
+        app.attributes()["android:icon"] = "@mipmap/ic_launcher"
+    }
 
     // Add source class metadata
     Node(

@@ -9,10 +9,11 @@
 
   <application
     android:label="${appName}"
-    android:icon="@mipmap/ic_launcher"
     android:hasCode="true"
     android:allowBackup="false"
-    android:supportsRtl="true">
+    android:supportsRtl="true"
+    tools:node="merge"
+    tools:replace="android:icon">
 
     <!-- Disable androidx-startup InitializationProvider to avoid provider conflicts -->
     <provider
