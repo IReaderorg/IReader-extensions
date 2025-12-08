@@ -384,12 +384,12 @@ class ExtensionProcessor(
             val listType = ClassName("kotlin.collections", "List").parameterizedBy(baseExploreFetcherClass)
 
             val fetchersCode = annotations.mapIndexed { index, ann ->
-                val name = getArg(ann, "name", "")
-                val endpoint = getArg(ann, "endpoint", "")
-                val selector = getArg(ann, "selector", "")
-                val nameSelector = getArg(ann, "nameSelector", "")
-                val linkSelector = getArg(ann, "linkSelector", "")
-                val coverSelector = getArg(ann, "coverSelector", "")
+                val name = escapeKotlinString(getArg(ann, "name", ""))
+                val endpoint = escapeKotlinString(getArg(ann, "endpoint", ""))
+                val selector = escapeKotlinString(getArg(ann, "selector", ""))
+                val nameSelector = escapeKotlinString(getArg(ann, "nameSelector", ""))
+                val linkSelector = escapeKotlinString(getArg(ann, "linkSelector", ""))
+                val coverSelector = escapeKotlinString(getArg(ann, "coverSelector", ""))
                 val isSearch = getArg(ann, "isSearch", false)
                 val typeValue = if (isSearch) "SourceFactory.Type.Search" else "SourceFactory.Type.Others"
 
@@ -422,12 +422,12 @@ class ExtensionProcessor(
         private fun generateDetailFetcherProperty(annotation: KSAnnotation): PropertySpec {
             val detailClass = ClassName("ireader.core.source", "SourceFactory", "Detail")
 
-            val title = getArg(annotation, "title", "")
-            val cover = getArg(annotation, "cover", "")
-            val author = getArg(annotation, "author", "")
-            val description = getArg(annotation, "description", "")
-            val genres = getArg(annotation, "genres", "")
-            val status = getArg(annotation, "status", "")
+            val title = escapeKotlinString(getArg(annotation, "title", ""))
+            val cover = escapeKotlinString(getArg(annotation, "cover", ""))
+            val author = escapeKotlinString(getArg(annotation, "author", ""))
+            val description = escapeKotlinString(getArg(annotation, "description", ""))
+            val genres = escapeKotlinString(getArg(annotation, "genres", ""))
+            val status = escapeKotlinString(getArg(annotation, "status", ""))
 
             return PropertySpec.builder("detailFetcher", detailClass)
                 .addModifiers(KModifier.OVERRIDE)
@@ -452,10 +452,10 @@ class ExtensionProcessor(
         private fun generateChapterFetcherProperty(annotation: KSAnnotation): PropertySpec {
             val chaptersClass = ClassName("ireader.core.source", "SourceFactory", "Chapters")
 
-            val list = getArg(annotation, "list", "")
-            val name = getArg(annotation, "name", "")
-            val link = getArg(annotation, "link", "")
-            val date = getArg(annotation, "date", "")
+            val list = escapeKotlinString(getArg(annotation, "list", ""))
+            val name = escapeKotlinString(getArg(annotation, "name", ""))
+            val link = escapeKotlinString(getArg(annotation, "link", ""))
+            val date = escapeKotlinString(getArg(annotation, "date", ""))
             val reversed = getArg(annotation, "reversed", false)
 
             val dateSelector = if (date.isNotEmpty()) """uploadDateSelector = "$date",""" else ""
@@ -482,8 +482,8 @@ class ExtensionProcessor(
         private fun generateContentFetcherProperty(annotation: KSAnnotation): PropertySpec {
             val contentClass = ClassName("ireader.core.source", "SourceFactory", "Content")
 
-            val content = getArg(annotation, "content", "")
-            val title = getArg(annotation, "title", "")
+            val content = escapeKotlinString(getArg(annotation, "content", ""))
+            val title = escapeKotlinString(getArg(annotation, "title", ""))
 
             val titleSelector = if (title.isNotEmpty()) """pageTitleSelector = "$title",""" else ""
 
@@ -496,6 +496,19 @@ class ExtensionProcessor(
     )""")
                     .build())
                 .build()
+        }
+
+        /**
+         * Escape special characters in strings for Kotlin code generation
+         */
+        private fun escapeKotlinString(str: String): String {
+            return str
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t")
+                .replace("$", "\\$")
         }
     }
 
