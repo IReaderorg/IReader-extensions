@@ -173,18 +173,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.epiknovel.tu",
-    "apk": "ireader-tu-epiknovel-v2.2.apk",
-    "name": "EpikNovel",
-    "id": 4844890656048697396,
-    "lang": "tu",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.fanmtl.en",
     "apk": "ireader-en-fanmtl-v2.2.apk",
     "name": "fanmtl",
@@ -813,18 +801,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.novelgecesi.tu",
-    "apk": "ireader-tu-novelgecesi-v2.1.apk",
-    "name": "NovelGecesi",
-    "id": 525740147206608797,
-    "lang": "tu",
-    "code": 1,
-    "version": "2.1",
-    "description": "Türkçe novel okuma sitesi",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.novelhall.en",
     "apk": "ireader-en-novelhall-v2.6.apk",
     "name": "NovelHall",
@@ -1006,19 +982,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.readwn.readwn.en",
-    "apk": "ireader-en-readwn-v2.2.apk",
-    "name": "Readwn",
-    "id": 360679230228192343,
-    "lang": "en",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "readwn",
-    "assetsDir": "multisrc/madara/readwn/assets"
-  },
-  {
     "pkg": "ireader.realmnovel.ar",
     "apk": "ireader-ar-realmnovel-v2.2.apk",
     "name": "Realmnovel",
@@ -1174,19 +1137,6 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.wbnovel.wbnovel.in",
-    "apk": "ireader-in-wbnovel-v2.2.apk",
-    "name": "WbNovel",
-    "id": 6480076862656966258,
-    "lang": "in",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "wbnovel",
-    "assetsDir": "multisrc/skynovel/wbnovel/assets"
   },
   {
     "pkg": "ireader.webnovelcom.en",
