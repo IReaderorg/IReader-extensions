@@ -32,7 +32,7 @@ tasks.register("buildJsSources") {
   dependsOn(":js-sources:createSourceIndex")
 }
 
-// Make repo task also build JS sources
+// Make repo task depend on JS sources
 tasks.named<RepoTask>("repo") {
   dependsOn(":js-sources:createSourceIndex")
 }

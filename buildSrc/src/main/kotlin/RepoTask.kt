@@ -368,9 +368,25 @@ open class RepoTask : DefaultTask() {
         apkDir.listFiles()
             ?.forEach { apk ->
                 print("Generating Jar for ${apk.name}...\n")
+                // Validate APK is a valid zip file before processing
+                if (!isValidZipFile(apk)) {
+                    print("WARNING: Skipping corrupted APK: ${apk.name}\n")
+                    return@forEach
+                }
                 val jarFile = File(jarDir, apk.name.replace(".apk", ".jar"))
                 dex2jar(apk, jarFile, apk.name)
             }
+    }
+    
+    private fun isValidZipFile(file: File): Boolean {
+        return try {
+            ZipFile(file).use { zip ->
+                zip.entries().hasMoreElements()
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
 
@@ -400,7 +416,10 @@ open class RepoTask : DefaultTask() {
             // source at: https://github.com/DexPatcher/dex2jar/tree/v2.1-20190905-lanchon/dex-tools/src/main/java/com/googlecode/dex2jar/tools/Dex2jarCmd.java
             try {
                 val jarFilePath = jarFile.toPath()
-                val reader = MultiDexFileReader.open(dexFile.inputStream())
+                // Read file bytes instead of using InputStream - MultiDexFileReader needs random access
+                // to read the ZIP structure and find DEX files inside APKs
+                val fileBytes = java.nio.file.Files.readAllBytes(dexFile.toPath())
+                val reader = MultiDexFileReader.open(fileBytes)
                 val handler = BaksmaliBaseDexExceptionHandler()
                 Dex2jar
                     .from(reader)
