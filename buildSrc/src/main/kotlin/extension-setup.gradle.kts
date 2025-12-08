@@ -100,6 +100,42 @@ android {
     dependenciesInfo {
         includeInApk = false
     }
+    
+    // Minimize APK size - extensions only contain source code, all deps in main app
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = false  // No resources to shrink
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            // Keep only the Extension class and source implementation
+            proguardFiles.add(file("$rootDir/extensions/proguard-rules.pro"))
+        }
+        debug {
+            isMinifyEnabled = false
+        }
+    }
+    
+    // Disable unnecessary build features
+    buildFeatures {
+        buildConfig = false
+        resValues = false
+        shaders = false
+    }
+    
+    packaging {
+        resources {
+            // Exclude all unnecessary files
+            excludes += listOf(
+                "META-INF/*.kotlin_module",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "META-INF/*.version",
+                "kotlin/**",
+                "DebugProbesKt.bin"
+            )
+        }
+    }
 
     if (System.getenv("STORE_PATH") != null) {
         signingConfigs {
@@ -144,11 +180,14 @@ tasks.findByName("repo")?.finalizedBy("extensionJar")
 
 // Dependencies
 dependencies {
-    implementation(project(":defaultRes"))
+    // defaultRes removed - icons are not needed, main app provides them
+    // implementation(project(":defaultRes"))
+    
+    // common included - contains utils not yet in main app (ireader.common.utils)
     implementation(project(":common"))
     val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-    // Core dependencies (KMP-compatible)
+    // Core dependencies (KMP-compatible) - all compileOnly since main app has them
     compileOnly(libs.findLibrary("ireader-core").get())
     compileOnly(libs.findLibrary("stdlib").get())
     compileOnly(libs.findLibrary("ksoup").get())
