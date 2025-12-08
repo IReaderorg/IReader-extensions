@@ -6,6 +6,9 @@ import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
+import ireader.core.source.model.CommandList
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
@@ -14,44 +17,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
-import tachiyomix.annotations.AutoSourceId
-import tachiyomix.annotations.DetailSelectors
-import tachiyomix.annotations.ChapterSelectors
-import tachiyomix.annotations.ContentSelectors
-import tachiyomix.annotations.GenerateFilters
-import tachiyomix.annotations.GenerateCommands
 
 /**
- * 🐺 Fenrir Realm Source - JSON API Based (Declarative)
- *
- * This source uses a REST API for fetching novels and chapters.
- * Uses KSP annotations for declarative configuration.
+ * 🐺 Fenrir Realm Source - JSON API Based
  */
 @Extension
-@AutoSourceId(seed = "Fenrir Realm")
-@GenerateFilters(title = true)
-@GenerateCommands(
-    detailFetch = true,
-    chapterFetch = true,
-    contentFetch = true
-)
-@DetailSelectors(
-    title = "h1.my-2",
-    cover = "img.rounded-md",
-    author = "div.flex-1 > div.mb-3 > a.inline-flex",
-    description = "div.overflow-hidden.transition-all p",
-    genres = "div.flex-1 > div.flex:not(.mb-3, .mt-5) > a",
-    status = "div.flex-1 > div.mb-3 > span.rounded-md"
-)
-@ChapterSelectors(
-    list = "li",
-    name = "a",
-    link = "a"
-)
-@ContentSelectors(
-    content = "[id^=\"reader-area-\"] p, [id^=\"reader-area-\"] div.paragraph",
-    removeSelectors = ["script", "style", ".ads", ".advertisement"]
-)
 abstract class Fenrir(deps: Dependencies) : SourceFactory(deps = deps) {
 
     // ═══════════════════════════════════════════════════════════════
@@ -63,13 +33,53 @@ abstract class Fenrir(deps: Dependencies) : SourceFactory(deps = deps) {
     override val name: String get() = "Fenrir Realm"
 
     // ═══════════════════════════════════════════════════════════════
-    // 🔍 USE GENERATED HELPERS (from KSP)
+    // 🔍 FILTERS & COMMANDS
     // ═══════════════════════════════════════════════════════════════
-    override fun getFilters() = FenrirGenerated.getFilters()
-    override fun getCommands() = FenrirGenerated.getCommands()
+    override fun getFilters(): FilterList = listOf(Filter.Title())
+
+    override fun getCommands(): CommandList = listOf(
+        Command.Detail.Fetch(),
+        Command.Content.Fetch(),
+        Command.Chapter.Fetch(),
+    )
 
     // No exploreFetchers - we use API instead
     override val exploreFetchers: List<BaseExploreFetcher> = emptyList()
+
+    // ═══════════════════════════════════════════════════════════════
+    // 📖 DETAIL FETCHER (for WebView fallback)
+    // ═══════════════════════════════════════════════════════════════
+    override val detailFetcher: Detail
+        get() = Detail(
+            nameSelector = "h1.my-2",
+            coverSelector = "img.rounded-md",
+            coverAtt = "src",
+            authorBookSelector = "div.flex-1 > div.mb-3 > a.inline-flex",
+            descriptionSelector = "div.overflow-hidden.transition-all p",
+            categorySelector = "div.flex-1 > div.flex:not(.mb-3, .mt-5) > a",
+            statusSelector = "div.flex-1 > div.mb-3 > span.rounded-md",
+            addBaseurlToCoverLink = true
+        )
+
+    // ═══════════════════════════════════════════════════════════════
+    // 📚 CHAPTER FETCHER (for WebView fallback)
+    // ═══════════════════════════════════════════════════════════════
+    override val chapterFetcher: Chapters
+        get() = Chapters(
+            selector = "li",
+            nameSelector = "a",
+            linkSelector = "a",
+            linkAtt = "href",
+            addBaseUrlToLink = true
+        )
+
+    // ═══════════════════════════════════════════════════════════════
+    // 📄 CONTENT FETCHER (for WebView fallback)
+    // ═══════════════════════════════════════════════════════════════
+    override val contentFetcher: Content
+        get() = Content(
+            pageContentSelector = "[id^=\"reader-area-\"] p, [id^=\"reader-area-\"] div.paragraph"
+        )
 
     // ═══════════════════════════════════════════════════════════════
     // 🌐 API-BASED NOVEL LISTING
