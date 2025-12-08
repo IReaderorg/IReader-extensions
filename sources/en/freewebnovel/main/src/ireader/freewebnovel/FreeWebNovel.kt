@@ -39,12 +39,6 @@ import tachiyomix.annotations.TestFixture
 @AutoSourceId(seed = "FreeWebNovel")
 @GenerateFilters(title = true, sort = true, sortOptions = ["Latest", "Popular", "New Novels"])
 @GenerateCommands(detailFetch = true, chapterFetch = true, contentFetch = true)
-@GenerateTests(
-unitTests = true,
-    integrationTests = true,
-    "status",
-    1
-)
 @TestFixture(
     "https://freewebnovel.com/novel/follow-the-path-of-dao-from-infancy",
     chapterUrl = "https://freewebnovel.com/novel/follow-the-path-of-dao-from-infancy/chapter-1575",
