@@ -1,6 +1,13 @@
 # Repo branch - allow all built files
-# Only ignore OS/editor files
+*.iml
+.gradle
+/local.properties
+/.idea/*
+!/.idea/codeStyleSettings.xml
+!/.idea/inspectionProfiles/
+!/.idea/fileTemplates/
 .DS_Store
-Thumbs.db
-*.swp
-*~
+build
+/captures
+.externalNativeBuild
+**.idsig
