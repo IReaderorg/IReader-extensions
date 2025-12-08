@@ -1,3 +1,5 @@
+import gradle.kotlin.dsl.accessors._94b0bf080c12013c97710991d04ed1cb.testImplementation
+
 /**
  * Gradle plugin for building IReader extensions as JS bundles for iOS.
  * This complements the Android extension-setup.gradle.kts for KMP support.
@@ -42,6 +44,10 @@ kotlin {
                 implementation(libs.findLibrary("coroutines").get())
 
                 implementation(project(":common"))
+                implementation(libs.findLibrary("robolectric").get())
+                implementation(libs.findLibrary("testRunner").get())
+                implementation(libs.findLibrary("extJunit").get())
+                implementation(libs.findLibrary("truth").get())
             }
 
             kotlin.srcDirs(

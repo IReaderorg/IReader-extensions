@@ -6,6 +6,6 @@ listOf("ar").map { lang ->
     lang = lang,
     description = "",
     nsfw = false,
-    icon = DEFAULT_ICON,enableJs = true,
+    icon = DEFAULT_ICON,
   )
 }.also(::register)

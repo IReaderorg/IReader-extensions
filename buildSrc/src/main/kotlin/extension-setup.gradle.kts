@@ -5,7 +5,7 @@ import com.android.builder.model.ProductFlavor
 
 /**
  * Extension Setup Plugin
- * 
+ *
  * Configures sources to build:
  * - APK (Android)
  * - JAR (JVM/Desktop)
@@ -129,15 +129,15 @@ tasks.register("deploy", DeployTask::class.java)
 tasks.register<Jar>("extensionJar") {
     group = "build"
     description = "Create JAR containing all extension classes"
-    
+
     archiveBaseName.set("${project.name}-extensions")
     archiveVersion.set("1.0.0")
-    
+
     from(android.sourceSets.getByName("main").java.srcDirs)
     extensionList.forEach { extension ->
         from(android.sourceSets.getByName(extension.flavor).java.srcDirs)
     }
-    
+
     manifest {
         attributes(
             "Implementation-Title" to project.name,
@@ -151,7 +151,7 @@ tasks.findByName("repo")?.finalizedBy("extensionJar")
 // Dependencies
 dependencies {
     implementation(project(":defaultRes"))
-
+    implementation(project(":common"))
     val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
 
     // Core dependencies (KMP-compatible)
@@ -172,13 +172,24 @@ dependencies {
     compileOnly(libs.findLibrary("kotlin-test-junit").get())
     compileOnly(libs.findLibrary("junit4").get())
     compileOnly(libs.findLibrary("coroutines").get())
-    
+    compileOnly(libs.findLibrary("robolectric").get())
+    compileOnly(libs.findLibrary("testRunner").get())
+    compileOnly(libs.findLibrary("extJunit").get())
+    compileOnly("androidx.test:core:1.6.1")
+
     // testImplementation for actual test execution
     testImplementation(libs.findLibrary("kotlin-test").get())
     testImplementation(libs.findLibrary("kotlin-test-junit").get())
     testImplementation(libs.findLibrary("junit4").get())
     testImplementation(libs.findLibrary("coroutines").get())
-    
+
+    // Robolectric and AndroidX Test dependencies for integration tests
+    testImplementation(libs.findLibrary("robolectric").get())
+    testImplementation(libs.findLibrary("testRunner").get())
+    testImplementation(libs.findLibrary("extJunit").get())
+    testImplementation(libs.findLibrary("truth").get())
+    testImplementation("androidx.test:core:1.6.1")
+
     // Core dependencies for test compilation (needed for KSP-generated Extension class)
     testImplementation(libs.findLibrary("ireader-core").get())
     testImplementation(libs.findLibrary("stdlib").get())
@@ -245,13 +256,13 @@ if (hasJsExtensions) {
     tasks.register<Copy>("collectJsInitFiles") {
         group = "js"
         description = "Collect KSP-generated JS init files for iOS build"
-        
+
         jsEnabledExtensions.forEach { extension ->
             from("build/generated/ksp/${extension.flavor}Release/kotlin") {
                 include("**/js/*.kt")
             }
         }
-        
+
         into(layout.buildDirectory.dir("js-sources"))
     }
 
@@ -261,14 +272,14 @@ if (hasJsExtensions) {
     tasks.register("generateJsSourceIndex") {
         group = "js"
         description = "Generate index.json for JS sources"
-        
+
         val outputDir = layout.buildDirectory.dir("js-dist")
         outputs.dir(outputDir)
-        
+
         doLast {
             val indexFile = outputDir.get().file("index.json").asFile
             indexFile.parentFile.mkdirs()
-            
+
             val sources = jsEnabledExtensions.joinToString(",\n") { ext ->
                 """    {
       "id": "${ext.sourceId}",
@@ -279,14 +290,14 @@ if (hasJsExtensions) {
       "nsfw": ${ext.nsfw}
     }"""
             }
-            
+
             indexFile.writeText("""{
   "version": 1,
   "sources": [
 $sources
   ]
 }""")
-            
+
             logger.lifecycle("Generated JS source index at ${indexFile.absolutePath}")
         }
     }

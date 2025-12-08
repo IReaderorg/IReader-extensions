@@ -8,7 +8,6 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import ireader.common.utils.next
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -39,13 +38,19 @@ import tachiyomix.annotations.TestFixture
 @AutoSourceId(seed = "FreeWebNovel")
 @GenerateFilters(title = true, sort = true, sortOptions = ["Latest", "Popular", "New Novels"])
 @GenerateCommands(detailFetch = true, chapterFetch = true, contentFetch = true)
+@GenerateTests(
+    unitTests = true,
+    integrationTests = true,
+    "status",
+    1
+)
 @TestFixture(
     "https://freewebnovel.com/novel/follow-the-path-of-dao-from-infancy",
     chapterUrl = "https://freewebnovel.com/novel/follow-the-path-of-dao-from-infancy/chapter-1575",
     expectedAuthor = "Ancient Xi",
     expectedTitle = "Follow the path of Dao from infancy"
 )
-@TestExpectations
+@TestExpectations()
 abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     override val name = "FreeWebNovel"
@@ -132,9 +137,9 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         cover = baseUrl + document.select("div.m-book1 div.pic img").attr("src"),
         description = document.select("div.inner p").eachText().joinToString("\n"),
         author = document.select("div.right a.a1").attr("title"),
-        genres = next(document.select("[title=Genre]")).text().split(",").map { it.trim() },
+        genres = ireader.common.utils.next(document.select("[title=Genre]")).text().split(",").map { it.trim() },
         key = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href"),
-        status = next(document.select("[title=Status]")).text().handleStatus()
+        status = ireader.common.utils.next(document.select("[title=Status]")).text().handleStatus()
     )
 
     private fun String.handleStatus(): Long = when (this) {

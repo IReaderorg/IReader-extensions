@@ -138,7 +138,7 @@ listOf("en").map { lang ->
         libVersion = "2",
         lang = lang,
         // Enable JS generation
-        enableJs = true,
+        
     )
 }.also(::register)
 ```

@@ -266,7 +266,7 @@ register(
         versionCode = 1,
         libVersion = "2",
         lang = "en",
-        enableJs = true,  // Enable JS compilation
+          // Enable JS compilation
     )
 )
 ```
