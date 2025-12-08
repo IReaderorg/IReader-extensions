@@ -261,12 +261,12 @@
   },
   {
     "pkg": "ireader.freewebnovel.en",
-    "apk": "ireader-en-freewebnovel-v2.11.apk",
+    "apk": "ireader-en-freewebnovel-v2.12.apk",
     "name": "FreeWebNovel",
     "id": 3970612267773145070,
     "lang": "en",
-    "code": 11,
-    "version": "2.11",
+    "code": 12,
+    "version": "2.12",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
