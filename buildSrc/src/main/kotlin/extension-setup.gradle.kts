@@ -34,7 +34,8 @@ android {
         named("main") {
             manifest.srcFile("$rootDir/extensions/AndroidManifest.xml")
             java.srcDirs("main/src")
-            res.srcDirs("main/res")
+            // Include minimal icon from extensions/res (67 bytes)
+            res.srcDirs("main/res", "$rootDir/extensions/res")
             resources.setSrcDirs(emptyList<Any>())
         }
         extensionList.forEach { extension ->
@@ -180,8 +181,7 @@ tasks.findByName("repo")?.finalizedBy("extensionJar")
 
 // Dependencies
 dependencies {
-    // defaultRes removed - icons are not needed, main app provides them
-    // implementation(project(":defaultRes"))
+    // No defaultRes - no icons needed
     
     // common included - contains utils not yet in main app (ireader.common.utils)
     implementation(project(":common"))

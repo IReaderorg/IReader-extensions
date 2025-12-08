@@ -11,7 +11,9 @@
     android:label="${appName}"
     android:hasCode="true"
     android:allowBackup="false"
-    android:supportsRtl="true">
+    android:supportsRtl="true"
+    tools:replace="android:icon"
+    android:icon="@mipmap/ic_launcher">
     
     <!-- Disable androidx-startup InitializationProvider to avoid provider conflicts -->
     <provider
