@@ -1,16 +1,7 @@
 name: Build JS Sources
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'sources/**/build.gradle.kts'
-      - 'js-sources/**'
-      - 'common/**'
-      - 'annotations/**'
-      - 'compiler/**'
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Manual trigger only
 
 concurrency:
   group: ${{ github.workflow }}

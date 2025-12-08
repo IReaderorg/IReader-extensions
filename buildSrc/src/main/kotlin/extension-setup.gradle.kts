@@ -45,6 +45,17 @@ android {
                 }
             }
         }
+        // Configure test source set to include KSP-generated test files
+        named("test") {
+            java.srcDirs(
+                extensionList.flatMap { extension ->
+                    listOf(
+                        "build/generated/ksp/${extension.flavor}Debug/kotlin",
+                        "build/generated/ksp/${extension.flavor}Release/kotlin"
+                    )
+                }
+            )
+        }
     }
     flavorDimensions.add("default")
     productFlavors {
@@ -156,10 +167,32 @@ dependencies {
     compileOnly(libs.findLibrary("ktor-okhttp").get())
 
     // Test dependencies for KSP-generated tests
+    // compileOnly for main source set (so generated tests compile)
     compileOnly(libs.findLibrary("kotlin-test").get())
     compileOnly(libs.findLibrary("kotlin-test-junit").get())
     compileOnly(libs.findLibrary("junit4").get())
     compileOnly(libs.findLibrary("coroutines").get())
+    
+    // testImplementation for actual test execution
+    testImplementation(libs.findLibrary("kotlin-test").get())
+    testImplementation(libs.findLibrary("kotlin-test-junit").get())
+    testImplementation(libs.findLibrary("junit4").get())
+    testImplementation(libs.findLibrary("coroutines").get())
+    
+    // Core dependencies for test compilation (needed for KSP-generated Extension class)
+    testImplementation(libs.findLibrary("ireader-core").get())
+    testImplementation(libs.findLibrary("stdlib").get())
+    testImplementation(libs.findLibrary("ksoup").get())
+    testImplementation(libs.findLibrary("kotlinx-datetime").get())
+    testImplementation(libs.findLibrary("ktor-core").get())
+    testImplementation(libs.findLibrary("ktor-contentNegotiation").get())
+    testImplementation(libs.findLibrary("ktor-serialization").get())
+    testImplementation(libs.findLibrary("ktor-cio").get())
+    testImplementation(libs.findLibrary("ktor-android").get())
+    testImplementation(libs.findLibrary("ktor-okhttp").get())
+    testImplementation(project(":annotations"))
+    testImplementation(project(":multisrc"))
+    testImplementation(project(":common"))
 
     compileOnly(project(":annotations"))
     compileOnly(project(":multisrc"))

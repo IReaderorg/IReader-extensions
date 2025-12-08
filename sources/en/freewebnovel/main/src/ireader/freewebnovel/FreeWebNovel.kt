@@ -8,6 +8,7 @@ import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import ireader.common.utils.next
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -20,7 +21,13 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
-import tachiyomix.annotations.*
+import tachiyomix.annotations.AutoSourceId
+import tachiyomix.annotations.Extension
+import tachiyomix.annotations.GenerateCommands
+import tachiyomix.annotations.GenerateFilters
+import tachiyomix.annotations.GenerateTests
+import tachiyomix.annotations.TestExpectations
+import tachiyomix.annotations.TestFixture
 
 /**
  * 📚 FreeWebNovel Source
@@ -33,7 +40,7 @@ import tachiyomix.annotations.*
 @GenerateFilters(title = true, sort = true, sortOptions = ["Latest", "Popular", "New Novels"])
 @GenerateCommands(detailFetch = true, chapterFetch = true, contentFetch = true)
 @GenerateTests(
-unitTests = false,
+unitTests = true,
     integrationTests = true,
     "status",
     1
@@ -126,25 +133,15 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         cover = baseUrl + element.select("div.pic img").attr("src")
     )
 
-    override fun detailParse(document: Document): MangaInfo {
-        // Get genre - find the element after [title=Genre] using nextElementSibling
-        val genreElement = document.select("[title=Genre]").firstOrNull()
-        val genres = genreElement?.nextElementSibling()?.text()?.split(",")?.map { it.trim() } ?: emptyList()
-        
-        // Get status - find the element after [title=Status] using nextElementSibling
-        val statusElement = document.select("[title=Status]").firstOrNull()
-        val status = statusElement?.nextElementSibling()?.text()?.handleStatus() ?: MangaInfo.ONGOING
-        
-        return MangaInfo(
-            title = document.select("div.m-desc h1.tit").text(),
-            cover = baseUrl + document.select("div.m-book1 div.pic img").attr("src"),
-            description = document.select("div.inner p").eachText().joinToString("\n"),
-            author = document.select("div.right a.a1").attr("title"),
-            genres = genres,
-            key = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href"),
-            status = status
-        )
-    }
+    override fun detailParse(document: Document) = MangaInfo(
+        title = document.select("div.m-desc h1.tit").text(),
+        cover = baseUrl + document.select("div.m-book1 div.pic img").attr("src"),
+        description = document.select("div.inner p").eachText().joinToString("\n"),
+        author = document.select("div.right a.a1").attr("title"),
+        genres = next(document.select("[title=Genre]")).text().split(",").map { it.trim() },
+        key = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href"),
+        status = next(document.select("[title=Status]")).text().handleStatus()
+    )
 
     private fun String.handleStatus(): Long = when (this) {
         "OnGoing" -> MangaInfo.ONGOING
