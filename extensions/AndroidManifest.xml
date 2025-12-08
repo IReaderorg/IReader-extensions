@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
   <uses-feature android:name="ireader" />
 
   <application
     android:label="${appName}">
+    
+    <!-- Disable androidx-startup InitializationProvider to avoid provider conflicts -->
+    <provider
+        android:name="androidx.startup.InitializationProvider"
+        android:authorities="${applicationId}.androidx-startup"
+        tools:node="remove" />
+    
     <meta-data
       android:name="source.id"
       android:value="${sourceId}" />

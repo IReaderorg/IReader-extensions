@@ -22,6 +22,7 @@ plugins {
 val extensionList: List<Extension> by extra
 
 android {
+    // Note: namespace is set per-flavor below to avoid provider conflicts
     namespace = "ireader.extension"
     compileSdk = Config.compileSdk
     defaultConfig {
@@ -64,6 +65,8 @@ android {
                 dimension = "default"
                 versionCode = extension.versionCode
                 versionName = extension.versionName
+                // Set unique applicationId per extension to avoid provider conflicts
+                applicationId = extension.applicationId
                 manifestPlaceholders.putAll(
                     mapOf(
                         "appName" to "IReader: ${extension.name} (${extension.lang})",

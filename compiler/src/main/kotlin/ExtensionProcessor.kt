@@ -49,42 +49,20 @@ class ExtensionProcessor(
     private val options: Map<String, String>
 ) : SymbolProcessor {
 
-    private var processed = false
-
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        if (processed) return emptyList()
+        // Get all classes annotated with the Extension annotation
+        val extensions = resolver.getSymbolsWithAnnotation(EXTENSION_FQ_ANNOTATION)
 
-        val allExtensions = resolver.getSymbolsWithAnnotation(EXTENSION_FQ_ANNOTATION)
-            .filterIsInstance<KSClassDeclaration>()
-            .toList()
+        // Find the extension that will be instantiated by the app
+        val extension = getClassToGenerate(extensions)
 
-        if (allExtensions.isEmpty()) {
-            val extensionGenerated = resolver.getClassDeclarationByName(EXTENSION_FQ_CLASS) != null
-            if (!extensionGenerated) {
-                return emptyList()
-            }
-            processed = true
-            return emptyList()
-        }
-
-        val validExtensions = allExtensions.filter { it.validate() }
-        val deferredExtensions = allExtensions.filterNot { it.validate() }
-
-        if (validExtensions.isEmpty() && deferredExtensions.isNotEmpty()) {
-            return deferredExtensions
-        }
-
-        val extension = getClassToGenerate(validExtensions)
-
+        // If no extension is found, we either have already processed it or we forgot to annotate our
+        // implementation, so make sure we always have one
         if (extension == null) {
-            if (deferredExtensions.isNotEmpty()) {
-                return deferredExtensions
-            }
             val extensionGenerated = resolver.getClassDeclarationByName(EXTENSION_FQ_CLASS) != null
             check(extensionGenerated) {
                 "No extension found. Please ensure at least one Source is annotated with @Extension"
             }
-            processed = true
             return emptyList()
         }
 
@@ -94,10 +72,12 @@ class ExtensionProcessor(
         val variant = getVariant(buildDir)
         val arguments = parseArguments(variant)
 
+        // Check that the extension is open or abstract
         check(extension.isOpen()) {
             "[$extension] must be open or abstract"
         }
 
+        // Check that the extension implements the Source interface
         val sourceClass = resolver.getClassDeclarationByName(SOURCE_FQ_CLASS)
             ?: throw Exception("This class is not implementing the Source interface")
 
@@ -105,6 +85,7 @@ class ExtensionProcessor(
             "$extension doesn't implement $sourceClass"
         }
 
+        // Check that the extension implements the DeepLinkSource interface if the manifest has them
         if (arguments.hasDeeplinks) {
             val deepLinkClass = resolver.getClassDeclarationByName(DEEPLINKSOURCE_FQ_CLASS)!!
             check(deepLinkClass.asStarProjectedType().isAssignableFrom(extensionType)) {
@@ -112,37 +93,49 @@ class ExtensionProcessor(
             }
         }
 
+        // Check that the extension matches its package name
         checkMatchesPkgName(extension, buildDir)
 
+        // Generate the source implementation
         val dependencies = resolver.getClassDeclarationByName(DEPENDENCIES_FQ_CLASS)!!
         extension.accept(SourceVisitor(arguments, dependencies), Unit)
 
-        processed = true
-        return deferredExtensions
+        return emptyList()
     }
 
-    private fun getClassToGenerate(extensions: List<KSClassDeclaration>): KSClassDeclaration? {
-        return when (extensions.size) {
-            0 -> null
-            1 -> extensions.first()
+    /**
+     * Returns the source class to generate, or null if more than one was detected and they don't
+     * inherit each other.
+     */
+    private fun getClassToGenerate(extensions: Sequence<KSAnnotated>): KSClassDeclaration? {
+        val candidates = extensions.filterIsInstance<KSClassDeclaration>()
+            .filter { it.validate() }
+            .toList()
+
+        val classToGenerate = when (candidates.size) {
+            0 -> return null
+            1 -> candidates.first()
             else -> {
-                val candidate = extensions.find { candidate ->
+                val candidate = candidates.find { candidate ->
                     val type = candidate.asStarProjectedType()
-                    extensions.all { it === candidate || it.asStarProjectedType().isAssignableFrom(type) }
+                    candidates.all { it === candidate || it.asStarProjectedType().isAssignableFrom(type) }
                 }
                 checkNotNull(candidate) {
-                    "Found [${extensions.joinToString()}] annotated with @Extension but they don't" +
+                    "Found [${candidates.joinToString()}] annotated with @Extension but they don't" +
                         " inherit each other. Only one class can be generated"
                 }
                 candidate
             }
         }
+        return classToGenerate
     }
 
     private fun checkMatchesPkgName(source: KSClassDeclaration, buildDir: String) {
+        // Disable pkgname checks for the multisrc
         if ("/sources/multisrc" in buildDir || "\\sources\\multisrc" in buildDir) return
 
         val pkgName = source.packageName.asString()
+
         val normalizedBuildDir = buildDir.replace("\\", "/")
         val sourceDir = normalizedBuildDir.substringBeforeLast("/build/").substringAfterLast("/")
         val expectedPkgName = "ireader.$sourceDir"

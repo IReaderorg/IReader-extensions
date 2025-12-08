@@ -399,7 +399,7 @@ object MySiteConfig
 
 | Annotation | Generated File |
 |------------|----------------|
-| `@Extension` | `Extension.kt` (in tachiyomix.extension) |
+| `@Extension` | `Extension.kt` (in `tachiyomix.extension` package) |
 | `@AutoSourceId` | `{ClassName}SourceId.kt` |
 | `@MadaraSource` | `{Name}Generated.kt` |
 | `@ThemeSource` | `{Name}Generated.kt` |
