@@ -41,27 +41,10 @@ private fun ManifestProcessorTask.processExtension(extension: Extension) {
 
     val app = (parser["application"] as NodeList).first() as Node
 
-    // Icon is set in base AndroidManifest.xml with tools:replace to handle merge conflicts
-    // The minimal 67-byte icon is in extensions/res/mipmap-mdpi/
-    
-    // Update source.icon metadata with the correct URL for remote icons
-    if (extension.icon == DEFAULT_ICON || extension.icon.startsWith("http")) {
-        // Find and update the source.icon meta-data node
-        val metaDataNodes = app.children().filterIsInstance<Node>()
-        val iconMetaData = metaDataNodes.find { node ->
-            node.name().toString().contains("meta-data") &&
-            node.attribute("{http://schemas.android.com/apk/res/android}name") == "source.icon"
-        }
-        if (iconMetaData != null) {
-            // Update the value to the remote icon URL
-            val iconUrl = if (extension.icon == DEFAULT_ICON) {
-                createExtensionIconLink(extension)
-            } else {
-                extension.icon
-            }
-            iconMetaData.attributes()["{http://schemas.android.com/apk/res/android}value"] = iconUrl
-        }
-    }
+    // Icon handling:
+    // - android:icon is set in base AndroidManifest.xml with tools:replace (uses minimal 67-byte PNG)
+    // - source.icon metadata is set via ${sourceIcon} placeholder in extension-setup.gradle.kts
+    //   which already handles DEFAULT_ICON -> createExtensionIconLink() conversion
 
     // Add source class metadata
     Node(
