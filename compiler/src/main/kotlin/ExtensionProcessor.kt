@@ -49,18 +49,43 @@ class ExtensionProcessor(
     private val options: Map<String, String>
 ) : SymbolProcessor {
 
+    // Cache the build directory to avoid creating multiple files
+    private var cachedBuildDir: String? = null
+    private var alreadyProcessed = false
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
+        // Prevent multiple processing
+        if (alreadyProcessed) return emptyList()
+
         // Get all classes annotated with the Extension annotation
         val extensions = resolver.getSymbolsWithAnnotation(EXTENSION_FQ_ANNOTATION)
 
         // Find the extension that will be instantiated by the app
         val extension = getClassToGenerate(extensions)
 
-        // If no extension is found, we either have already processed it or we forgot to annotate our
-        // implementation, so make sure we always have one
+        // If no extension is found, check if we should wait for ThemeSourceProcessor
+        // to generate one (e.g., from @MadaraSource)
         if (extension == null) {
             val extensionGenerated = resolver.getClassDeclarationByName(EXTENSION_FQ_CLASS) != null
-            check(extensionGenerated) {
+            if (extensionGenerated) {
+                // Already generated in a previous round
+                return emptyList()
+            }
+
+            // Check if there are @MadaraSource or @ThemeSource annotations that will generate @Extension
+            // These processors generate classes with @Extension that we need to process
+            val madaraSources = resolver.getSymbolsWithAnnotation("tachiyomix.annotations.MadaraSource").toList()
+            val themeSources = resolver.getSymbolsWithAnnotation("tachiyomix.annotations.ThemeSource").toList()
+
+            if (madaraSources.isNotEmpty() || themeSources.isNotEmpty()) {
+                // Return the theme source symbols as deferred - this tells KSP to do another round
+                // after ThemeSourceProcessor generates the @Extension annotated classes
+                logger.info("ExtensionProcessor: Deferring to wait for ThemeSourceProcessor (${madaraSources.size} Madara, ${themeSources.size} Theme sources)")
+                return madaraSources + themeSources
+            }
+
+            // Final check - no extension found and no theme sources to generate one
+            check(false) {
                 "No extension found. Please ensure at least one Source is annotated with @Extension"
             }
             return emptyList()
@@ -69,8 +94,21 @@ class ExtensionProcessor(
         val extensionType = extension.asStarProjectedType()
 
         val buildDir = getBuildDir()
+        
+        // Skip processing for unit test source sets
+        if (isTestSourceSet(buildDir)) {
+            logger.info("ExtensionProcessor: Skipping unit test source set")
+            return emptyList()
+        }
+        
         val variant = getVariant(buildDir)
-        val arguments = parseArguments(variant)
+        val arguments = tryParseArguments(variant)
+        
+        // If we can't parse arguments, we're likely in a test source set
+        if (arguments == null) {
+            logger.info("ExtensionProcessor: Skipping - no variant arguments found for '$variant'")
+            return emptyList()
+        }
 
         // Check that the extension is open or abstract
         check(extension.isOpen()) {
@@ -100,6 +138,7 @@ class ExtensionProcessor(
         val dependencies = resolver.getClassDeclarationByName(DEPENDENCIES_FQ_CLASS)!!
         extension.accept(SourceVisitor(arguments, dependencies), Unit)
 
+        alreadyProcessed = true
         return emptyList()
     }
 
@@ -521,7 +560,24 @@ class ExtensionProcessor(
     }
 
     private fun getBuildDir(): String {
-        return codeGenerator.collectVariantName("").convertToOsPath()
+        // Return cached value if available to avoid creating multiple files
+        cachedBuildDir?.let { return it }
+        
+        val dir = codeGenerator.collectVariantName("_ext_processor_marker").convertToOsPath()
+        cachedBuildDir = dir
+        return dir
+    }
+
+    /**
+     * Check if we're processing a unit test source set.
+     * Unit test KSP tasks have paths containing "UnitTest".
+     */
+    private fun isTestSourceSet(buildDir: String): Boolean {
+        val normalizedPath = buildDir.lowercase()
+        // Only skip explicit unit test source sets
+        return normalizedPath.contains("unittest") || 
+               normalizedPath.contains("debugunittest") ||
+               normalizedPath.contains("releaseunittest")
     }
 
     private fun getVariant(buildDir: String): String {
@@ -536,6 +592,14 @@ class ExtensionProcessor(
             id = options["${variant}_id"]!!.toLong(),
             hasDeeplinks = options["${variant}_has_deeplinks"].toBoolean()
         )
+    }
+
+    private fun tryParseArguments(variant: String): Arguments? {
+        val name = options["${variant}_name"] ?: return null
+        val lang = options["${variant}_lang"] ?: return null
+        val id = options["${variant}_id"]?.toLongOrNull() ?: return null
+        val hasDeeplinks = options["${variant}_has_deeplinks"].toBoolean()
+        return Arguments(name, lang, id, hasDeeplinks)
     }
 
     private data class Arguments(
