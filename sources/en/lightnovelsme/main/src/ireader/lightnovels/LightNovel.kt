@@ -1,4 +1,4 @@
-package ireader.lightnovels
+package ireader.lightnovelsme
 
 import kotlinx.serialization.json.Json
 
