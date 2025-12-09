@@ -26,7 +26,6 @@ import kotlinx.coroutines.withContext
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
-import ireader.common.utils.DateParser
 
 @Extension
 abstract class KissNovel(private val deps: Dependencies) : ParsedHttpSource(deps) {

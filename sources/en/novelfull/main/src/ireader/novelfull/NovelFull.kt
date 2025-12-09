@@ -144,8 +144,7 @@ abstract class NovelFull(deps: Dependencies) : ParsedHttpSource(deps) {
         val category = document.select("div.info > div:nth-child(3) a")
             .eachText()
 
-        val status = document.select("div.info > div:nth-child(5) a")
-            .next()
+        val status = next(document.select("div.info > div:nth-child(5) a"))
             .text()
             .replace("/[\t\n]/g", "")
             .handleStatus()

@@ -9,9 +9,6 @@ import io.ktor.client.request.post
 import io.ktor.client.request.url
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
-import ireader.common.utils.DateParser
-import ireader.common.utils.SelectorConstants
-import ireader.common.utils.StatusParser
 import ireader.core.http.okhttp
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
@@ -40,7 +37,7 @@ abstract class BoxNovel(private val deps: Dependencies) : ParsedHttpSource(deps)
     override val baseUrl = "https://boxnovel.com"
 
     override val lang = "en"
-    
+
     companion object {
         private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36"
     }

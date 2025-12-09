@@ -1,4 +1,4 @@
-package ireader.lightnovelsme
+package ireader.lightnovels
 
 import kotlinx.serialization.json.Json
 
@@ -38,9 +38,9 @@ import ireader.core.util.DefaultDispatcher
 import kotlinx.coroutines.withContext
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
+import io.ktor.client.HttpClient
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
-import ireader.common.utils.DateParser
 
 /**
  * 💡 LightNovels.me - JSON API Based Source
@@ -176,7 +176,7 @@ abstract class LightNovel(private val deps: Dependencies) : HttpSource(deps) {
         append("referer", baseUrl)
     }
 
-    override fun getCoverRequest(url: String): Pair<io.ktor.client.HttpClient, HttpRequestBuilder> {
+    override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
         return client to HttpRequestBuilder().apply {
             url(url)
             headers {

@@ -26,7 +26,6 @@ import ireader.core.source.model.Text
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
-import ireader.common.utils.DateParser
 
 abstract class Madara(
     private val deps: Dependencies,

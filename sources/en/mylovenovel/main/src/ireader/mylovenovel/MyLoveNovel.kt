@@ -20,7 +20,6 @@ import ireader.core.source.model.MangasPageInfo
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
-import ireader.common.utils.next
 
 @Extension
 abstract class MyLoveNovel(deps: Dependencies) : ParsedHttpSource(deps) {

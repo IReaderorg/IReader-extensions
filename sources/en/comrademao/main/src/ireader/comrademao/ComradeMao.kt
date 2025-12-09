@@ -22,7 +22,6 @@ import ireader.core.source.model.Text
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import tachiyomix.annotations.Extension
-import ireader.common.utils.DateParser
 
 @Extension
 abstract class ComradeMao(private val deps: Dependencies) : HttpSource(deps) {

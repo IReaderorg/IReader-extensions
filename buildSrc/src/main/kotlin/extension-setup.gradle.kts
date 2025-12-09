@@ -101,7 +101,7 @@ android {
     dependenciesInfo {
         includeInApk = false
     }
-    
+
     // Extensions are loaded dynamically - minification causes classloader issues
     // The extension's classes reference Kotlin stdlib which must be resolved from parent classloader
     buildTypes {
@@ -115,14 +115,14 @@ android {
             isMinifyEnabled = false
         }
     }
-    
+
     // Disable unnecessary build features
     buildFeatures {
         buildConfig = false
         resValues = false
         shaders = false
     }
-    
+
     packaging {
         resources {
             // Exclude all unnecessary files
@@ -182,9 +182,7 @@ tasks.findByName("repo")?.finalizedBy("extensionJar")
 // Dependencies
 dependencies {
     // No defaultRes - no icons needed
-    
-    // common included - contains utils not yet in main app (ireader.common.utils)
-    implementation(project(":common"))
+
     val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
 
     // Core dependencies (KMP-compatible) - all compileOnly since main app has them
@@ -240,7 +238,6 @@ dependencies {
 
     compileOnly(project(":annotations"))
     compileOnly(project(":multisrc"))
-    compileOnly(project(":common"))
     ksp(project(":compiler"))
 
     extensionList.forEach { extension ->

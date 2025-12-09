@@ -28,8 +28,8 @@ import ireader.core.source.model.Text
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
+import ireader.core.source.helpers.DateParser
 import tachiyomix.annotations.Extension
-import ireader.common.utils.DateParser
 
 @Extension
 abstract class WuxiaWorld(private val deps: Dependencies) : ParsedHttpSource(deps) {

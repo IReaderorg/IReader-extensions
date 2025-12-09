@@ -137,9 +137,9 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         cover = baseUrl + document.select("div.m-book1 div.pic img").attr("src"),
         description = document.select("div.inner p").eachText().joinToString("\n"),
         author = document.select("div.right a.a1").attr("title"),
-        genres = ireader.common.utils.next(document.select("[title=Genre]")).text().split(",").map { it.trim() },
+        genres = next(document.select("[title=Genre]")).text().split(",").map { it.trim() },
         key = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href"),
-        status = ireader.common.utils.next(document.select("[title=Status]")).text().handleStatus()
+        status = next(document.select("[title=Status]")).text().handleStatus()
     )
 
     private fun String.handleStatus(): Long = when (this) {
