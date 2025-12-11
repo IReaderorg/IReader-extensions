@@ -59,31 +59,31 @@ open class RepoTask : DefaultTask() {
 
         extractApks(apkDir)
         generateJars(apkDir, repoDir)
-        
+
         // Generate JS bundles for iOS
         val jsSources = generateJsBundles(jsDir)
-        
+
         val rawBadgings = parseBadgings(apkDir) ?: return
         val badgings = ensureValidState(rawBadgings)
         extractIcons(apkDir, iconDir, badgings)
 
         // Generate repo index with JS info
         generateRepo(repoDir, badgings, jsSources)
-        
+
         // Create .gitignore
         createGitignore(repoDir)
     }
-    
+
     private fun createGitignore(repoDir: File) {
         File(repoDir, ".gitignore").writeText("""
             # Ignore nothing - all files should be committed
             !*
         """.trimIndent())
     }
-    
+
     /**
      * Generate JS bundles for iOS and return list of JS source info.
-     * 
+     *
      * All JS-enabled sources are compiled into a single bundle (sources-bundle.js).
      * Each source has its own init function (e.g., initFreeWebNovelKmp).
      * The iOS app loads the bundle once and calls the appropriate init function.
@@ -91,33 +91,33 @@ open class RepoTask : DefaultTask() {
     private fun generateJsBundles(jsDir: File): List<JsSourceInfo> {
         jsDir.mkdirs()
         val jsSources = mutableListOf<JsSourceInfo>()
-        
+
         // Copy webpack bundled JS from js-sources module (self-contained, includes all deps)
         val webpackDir = File(project.rootDir, "js-sources/build/kotlin-webpack/js/productionExecutable")
         val jsSourcesDistDir = File(project.rootDir, "js-sources/build/js-dist")
-        
+
         if (webpackDir.exists()) {
             print("Copying JS sources from js-sources module (webpack bundle)...\n")
-            
+
             // Parse js-sources index.json to get source info
             val indexFile = File(jsSourcesDistDir, "index.json")
             if (indexFile.exists()) {
                 try {
                     val indexJson = Json.decodeFromString<JsIndex>(indexFile.readText())
-                    
+
                     // Copy the single webpack bundle (contains ALL sources)
                     val bundleFile = File(webpackDir, "sources-bundle.js")
                     if (bundleFile.exists()) {
                         val destFile = File(jsDir, "sources-bundle.js")
                         bundleFile.copyTo(destFile, overwrite = true)
                         print("  - ${destFile.name} (${destFile.length() / 1024}KB) - contains ${indexJson.sources.size} source(s)\n")
-                        
+
                         // Copy source map
                         val mapFile = File(webpackDir, "sources-bundle.js.map")
                         if (mapFile.exists()) {
                             mapFile.copyTo(File(jsDir, "sources-bundle.js.map"), overwrite = true)
                         }
-                        
+
                         // Add each source to the index (all use the same bundle file)
                         indexJson.sources.forEach { source ->
                             jsSources.add(JsSourceInfo(
@@ -145,7 +145,7 @@ open class RepoTask : DefaultTask() {
         } else {
             print("No JS bundles found. Run ':js-sources:jsBrowserProductionWebpack' first to generate JS output.\n")
         }
-        
+
         return jsSources
     }
 
@@ -253,7 +253,7 @@ open class RepoTask : DefaultTask() {
                 print("  - $id: ${dupes.map { it.apk }.joinToString(", ")}\n")
             }
         }
-        
+
         // Return deduplicated list - keep the one with highest version code
         return badgings.groupBy { it.pkg }
             .map { (_, versions) -> versions.maxByOrNull { it.code } ?: versions.first() }
@@ -284,10 +284,10 @@ open class RepoTask : DefaultTask() {
             val apkFile = File(apkDir, badging.apk)
             val packageName = badging.pkg.substringAfter(".").substringBefore(".")
             val destFile = File(destDir, "${apkFile.nameWithoutExtension}.png")
-            
+
             // Priority 1: Try assets folder from source directory first
             var iconFound = false
-            
+
             if (!badging.assetsDir.isNullOrBlank()) {
                 // Use assetsDir if specified (for multisrc)
                 print("Trying assets from ${badging.assetsDir}...\n")
@@ -299,7 +299,7 @@ open class RepoTask : DefaultTask() {
                     print("Got icon from assetsDir: ${assetIcon.path}\n")
                 }
             }
-            
+
             if (!iconFound) {
                 // Try source's assets folder
                 val sourceAssetsPath = File("${project.rootDir}/sources/${badging.lang}/${packageName}/${badging.sourceDir}/assets")
@@ -310,7 +310,7 @@ open class RepoTask : DefaultTask() {
                     print("Got icon from source assets: ${sourceIcon.path}\n")
                 }
             }
-            
+
             // Priority 2: Try xxxhdpi resource from APK (skip mdpi placeholder)
             if (!iconFound && badging.iconResourcePath != null && badging.iconResourcePath.contains("xxxhdpi")) {
                 print("Getting xxxhdpi icon from APK for ${badging.name}...\n")
@@ -328,7 +328,7 @@ open class RepoTask : DefaultTask() {
                     print("Failed to extract icon from APK: ${e.message}\n")
                 }
             }
-            
+
             if (!iconFound) {
                 print(
                     "WARNING: There is no Icon for $packageName, ${apkFile.nameWithoutExtension}" +
@@ -340,7 +340,7 @@ open class RepoTask : DefaultTask() {
 
     private fun generateRepo(repoDir: File, badgings: List<Badging>, jsSources: List<JsSourceInfo>) {
         val sortedBadgings = badgings.sortedBy { it.pkg }
-        
+
         // Generate index.min.json as a flat array for backward compatibility with merge script
         // The merge script expects: [{"pkg":...}, {"pkg":...}]
         File(repoDir, "index.min.json").writer().use {
@@ -350,7 +350,7 @@ open class RepoTask : DefaultTask() {
         File(repoDir, "index.json").writer().use {
             it.write(prettyJson.encodeToString(sortedBadgings))
         }
-        
+
         // Generate separate JS index if there are JS sources
         if (jsSources.isNotEmpty()) {
             val jsIndex = JsIndex(
@@ -362,7 +362,7 @@ open class RepoTask : DefaultTask() {
                 it.write(prettyJson.encodeToString(jsIndex))
             }
         }
-        
+
         print("Generated repo index with ${sortedBadgings.size} extensions and ${jsSources.size} JS sources\n")
     }
 
@@ -381,7 +381,7 @@ open class RepoTask : DefaultTask() {
                 dex2jar(apk, jarFile, apk.name)
             }
     }
-    
+
     private fun isValidZipFile(file: File): Boolean {
         return try {
             ZipFile(file).use { zip ->
@@ -435,6 +435,7 @@ open class RepoTask : DefaultTask() {
                     .printIR(false)
                     .noCode(false)
                     .skipExceptions(false)
+                    .dontSanitizeNames(true)
                     .to(jarFilePath)
             } catch (e: Exception) {
                 print(e)
@@ -464,7 +465,7 @@ open class RepoTask : DefaultTask() {
         val sourceDir: String? = null,
         val assetsDir: String? = null,
     )
-    
+
     // JS source info for iOS
     @Serializable
     private data class JsSourceInfo(
@@ -474,19 +475,19 @@ open class RepoTask : DefaultTask() {
         val file: String,
         val initFunction: String
     )
-    
+
     @Serializable
     private data class JsSection(
         val note: String,
         val sources: List<JsSourceInfo>
     )
-    
+
     @Serializable
     private data class RepoIndex(
         val extensions: List<Badging>,
         val js: JsSection? = null
     )
-    
+
     // For parsing js-sources index.json
     @Serializable
     private data class JsIndex(
@@ -494,7 +495,7 @@ open class RepoTask : DefaultTask() {
         val note: String? = null,
         val sources: List<JsIndexSource> = emptyList()
     )
-    
+
     @Serializable
     private data class JsIndexSource(
         val id: String,
