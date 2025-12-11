@@ -13,8 +13,16 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.tasks.TaskAction
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.MethodVisitor
+import org.objectweb.asm.Opcodes
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
 import java.util.zip.ZipFile
 
 /*
@@ -272,7 +280,7 @@ open class RepoTask : DefaultTask() {
         if (destDir.listFiles().orEmpty().isEmpty()) {
             throw GradleException(
                 "The repo directory doesn't have any apk. Rerun this task after " +
-                        "executing the :assembleDebug or :assembleRelease tasks"
+                    "executing the :assembleDebug or :assembleRelease tasks"
             )
         }
     }
@@ -332,7 +340,7 @@ open class RepoTask : DefaultTask() {
             if (!iconFound) {
                 print(
                     "WARNING: There is no Icon for $packageName, ${apkFile.nameWithoutExtension}" +
-                            " Make sure that app has same name in build.gradle.kts as subproject name\n"
+                        " Make sure that app has same name in build.gradle.kts as subproject name\n"
                 )
             }
         }
@@ -437,10 +445,84 @@ open class RepoTask : DefaultTask() {
                     .skipExceptions(false)
                     .dontSanitizeNames(true)
                     .to(jarFilePath)
+
+                // Post-process: Fix stackmap frames by stripping them and downgrading to Java 6
+                // Java 6 classes don't require stackmap frames, so the JVM uses type inference
+                fixStackmapFrames(jarFile)
             } catch (e: Exception) {
                 print(e)
             }
+        }
 
+        /**
+         * Fix stackmap frames in a JAR by stripping StackMapTable attributes and
+         * downgrading class version to Java 6 (50). This avoids VerifyError from
+         * invalid stackmap frames produced by dex2jar for Kotlin coroutines.
+         */
+        private fun fixStackmapFrames(jarFile: File) {
+            val jarPath = jarFile.toPath()
+            FileSystems.newFileSystem(jarPath, null as ClassLoader?)?.use { fs ->
+                Files.walk(fs.getPath("/"))
+                    .filter { it.toString().endsWith(".class") }
+                    .forEach { classPath ->
+                        try {
+                            val bytes = Files.readAllBytes(classPath)
+                            if (bytes.size >= 4) {
+                                val fixed = stripFramesAndDowngrade(bytes)
+                                Files.write(classPath, fixed,
+                                    StandardOpenOption.CREATE,
+                                    StandardOpenOption.TRUNCATE_EXISTING)
+                            }
+                        } catch (e: Exception) {
+                            // Skip files that can't be processed
+                        }
+                    }
+            }
+        }
+
+        /**
+         * Strip StackMapTable frames and downgrade class to Java 6.
+         */
+        private fun stripFramesAndDowngrade(classBytes: ByteArray): ByteArray {
+            val cr = ClassReader(classBytes)
+            val cw = ClassWriter(0)
+
+            cr.accept(object : ClassVisitor(Opcodes.ASM9, cw) {
+                override fun visit(
+                    version: Int,
+                    access: Int,
+                    name: String?,
+                    signature: String?,
+                    superName: String?,
+                    interfaces: Array<out String>?
+                ) {
+                    // Downgrade to Java 6 (V1_6 = 50) which doesn't require StackMapTable
+                    super.visit(Opcodes.V1_6, access, name, signature, superName, interfaces)
+                }
+
+                override fun visitMethod(
+                    access: Int,
+                    name: String?,
+                    descriptor: String?,
+                    signature: String?,
+                    exceptions: Array<out String>?
+                ): MethodVisitor {
+                    val mv = super.visitMethod(access, name, descriptor, signature, exceptions)
+                    return object : MethodVisitor(Opcodes.ASM9, mv) {
+                        override fun visitFrame(
+                            type: Int,
+                            numLocal: Int,
+                            local: Array<out Any>?,
+                            numStack: Int,
+                            stack: Array<out Any>?
+                        ) {
+                            // Skip all frame instructions - not needed for Java 6
+                        }
+                    }
+                }
+            }, ClassReader.SKIP_FRAMES)
+
+            return cw.toByteArray()
         }
     }
 
