@@ -102,42 +102,6 @@ android {
         includeInApk = false
     }
 
-    // Extensions are loaded dynamically - minification causes classloader issues
-    // The extension's classes reference Kotlin stdlib which must be resolved from parent classloader
-    buildTypes {
-        release {
-            // DISABLED: R8 inlines Kotlin stdlib calls causing IllegalAccessError
-            // Extensions must use parent classloader for Kotlin/deps
-            isMinifyEnabled = false
-            isShrinkResources = false
-        }
-        debug {
-            isMinifyEnabled = false
-        }
-    }
-
-    // Disable unnecessary build features
-    buildFeatures {
-        buildConfig = false
-        resValues = false
-        shaders = false
-    }
-
-    packaging {
-        resources {
-            // Exclude all unnecessary files
-            excludes += listOf(
-                "META-INF/*.kotlin_module",
-                "META-INF/DEPENDENCIES",
-                "META-INF/LICENSE*",
-                "META-INF/NOTICE*",
-                "META-INF/*.version",
-                "kotlin/**",
-                "DebugProbesKt.bin"
-            )
-        }
-    }
-
     if (System.getenv("STORE_PATH") != null) {
         signingConfigs {
             create("release") {
