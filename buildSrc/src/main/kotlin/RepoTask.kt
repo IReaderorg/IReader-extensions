@@ -386,8 +386,54 @@ open class RepoTask : DefaultTask() {
                     return@forEach
                 }
                 val jarFile = File(jarDir, apk.name.replace(".apk", ".jar"))
-                dex2jar(apk, jarFile, apk.name)
+
+                // Try to find pre-compiled JVM classes first (from Kotlin compilation)
+                // These are in build/tmp/kotlin-classes/{flavor}Release/
+                val flavorName = extractFlavorFromApkName(apk.name)
+                val classesDir = File(project.buildDir, "tmp/kotlin-classes/${flavorName}Release")
+
+                if (classesDir.exists() && classesDir.isDirectory) {
+                    print("  Using pre-compiled JVM classes from: ${classesDir.path}\n")
+                    createJarFromClasses(classesDir, jarFile)
+                } else {
+                    // Fallback to dex2jar if pre-compiled classes not found
+                    print("  Pre-compiled classes not found, using dex2jar\n")
+                    dex2jar(apk, jarFile, apk.name)
+                }
             }
+    }
+
+    /**
+     * Extract flavor name from APK filename.
+     * e.g., "ireader-en-freewebnovel-v2.12.apk" -> "enFreewebnovel"
+     */
+    private fun extractFlavorFromApkName(apkName: String): String {
+        // Format: ireader-{lang}-{name}-v{version}.apk
+        val parts = apkName.removePrefix("ireader-").removeSuffix(".apk").split("-")
+        if (parts.size >= 2) {
+            val lang = parts[0]
+            val name = parts.subList(1, parts.size - 1).joinToString("") {
+                it.replaceFirstChar { c -> c.uppercase() }
+            }.replaceFirstChar { it.lowercase() }
+            return "$lang${name.replaceFirstChar { it.uppercase() }}"
+        }
+        return apkName.removeSuffix(".apk")
+    }
+
+    /**
+     * Create a JAR file from a directory of compiled .class files.
+     */
+    private fun createJarFromClasses(classesDir: File, jarFile: File) {
+        java.util.jar.JarOutputStream(jarFile.outputStream()).use { jos ->
+            classesDir.walkTopDown()
+                .filter { it.isFile && it.extension == "class" }
+                .forEach { classFile ->
+                    val entryName = classFile.relativeTo(classesDir).path.replace("\\", "/")
+                    jos.putNextEntry(java.util.jar.JarEntry(entryName))
+                    classFile.inputStream().use { it.copyTo(jos) }
+                    jos.closeEntry()
+                }
+        }
     }
 
     private fun isValidZipFile(file: File): Boolean {
