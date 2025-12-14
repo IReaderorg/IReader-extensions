@@ -19,8 +19,8 @@ import com.fleeksoft.ksoup.Ksoup
 
 /**
  * 🌍 RealmNovel - Arabic Novel Source
- * 
- * Uses SourceFactory with declarative fetchers.
+ *
+ * NEED UPDATE TO USE API instead of web scrapping
  */
 @Extension
 @AutoSourceId(seed = "RealmNovel")

@@ -5,6 +5,5 @@ listOf("ar").map { lang ->
     libVersion = "2",
     lang = lang,
     description = "",
-    nsfw = false,
-    enableJs = true)
+    nsfw = false)
 }.also(::register)

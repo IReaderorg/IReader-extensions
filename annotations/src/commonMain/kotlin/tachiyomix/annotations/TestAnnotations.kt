@@ -22,6 +22,14 @@ package tachiyomix.annotations
  * ║                                                                          ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  * 
+ * SUPPORTED SOURCE TYPES:
+ * ───────────────────────
+ * Works with ALL source types:
+ *   • SourceFactory - Uses getListings() for browsing
+ *   • HttpSource (direct) - Falls back to getFilters() for browsing
+ *   • ParsedHttpSource - Uses getListings() for browsing
+ *   • Madara/Theme sources - Uses getListings() for browsing
+ * 
  * ENABLING TEST GENERATION:
  * ─────────────────────────
  * Add to your build.gradle.kts:
@@ -41,7 +49,7 @@ package tachiyomix.annotations
  *   • Fetcher configuration tests
  * 
  * Integration tests (make network requests):
- *   • Fetch latest novels
+ *   • Fetch latest novels (via listings OR filters)
  *   • Search functionality
  *   • Novel details parsing
  *   • Chapter list parsing
