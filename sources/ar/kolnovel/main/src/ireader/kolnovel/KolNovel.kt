@@ -15,21 +15,35 @@ import ireader.core.source.model.MangaInfo.Companion.ONGOING
 import ireader.core.source.model.MangaInfo.Companion.ON_HIATUS
 import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.GenerateTests
+import tachiyomix.annotations.TestExpectations
+import tachiyomix.annotations.TestFixture
 
+@GenerateTests(
+    integrationTests = true,
+    unitTests = true,
+    searchQuery = "status",
+    minSearchResults = 1
+)
+@TestFixture(
+    "https://free.kolnovel.com/series/%d8%b3%d8%ac%d9%84%d8%a7%d8%aa-%d8%a7%d9%84%d8%ad%d8%b1%d9%88%d8%a8-%d8%a7%d9%84%d8%a8%d8%af%d8%a7%d8%a6%d9%8a%d8%a9/",
+    chapterUrl = "https://free.kolnovel.com/shaag24%d8%b3%d8%ac%d9%84%d8%a7%d8%aa-%d8%a7%d9%84%d8%ad%d8%b1%d9%88%d8%a8-%d8%a7%d9%84%d8%a8%d8%af%d8%a7%d8%a6%d9%8a%d8%a9z435ggye-227002243341/",
+    expectedTitle = "سجلات الحروب البدائية"
+)
 @Extension
 abstract class KolNovel(deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
     override val lang: String
         get() = "ar"
-    
+
     override val baseUrl: String
-        get() = "https://kolnovel.site"
-    
+        get() = "https://free.kolnovel.com"
+
     override val id: Long
         get() = 41
     override val name: String
-        get() = "KolNovel"
+        get() = "KolNovel-free"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
@@ -60,7 +74,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "a img",
-                coverAtt = "data-src",
+                coverAtt = "src",
                 nextPageSelector = "a.next.page-numbers"
             ),
             BaseExploreFetcher(
@@ -72,7 +86,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "a img",
-                coverAtt = "data-src",
+                coverAtt = "src",
                 nextPageSelector = "a.next.page-numbers",
                 type = SourceFactory.Type.Search
             ),
@@ -85,7 +99,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "a img",
-                coverAtt = "data-src",
+                coverAtt = "src",
                 nextPageSelector = "a.next.page-numbers"
             ),
             BaseExploreFetcher(
@@ -97,7 +111,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "a img",
-                coverAtt = "data-src",
+                coverAtt = "src",
                 nextPageSelector = "a.next.page-numbers"
             ),
         )
@@ -106,7 +120,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Detail(
             nameSelector = "h1.entry-title",
             coverSelector = "div.sertothumb img",
-            coverAtt = "data-src",
+            coverAtt = "src",
             descriptionSelector = "div.entry-content p",
             authorBookSelector = "div.serl:contains(الكاتب) span a",
             categorySelector = "div.sertogenre a",
@@ -143,7 +157,7 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
             nameSelector = "a div.epl-num, a div.epl-title",
             linkSelector = "a",
             linkAtt = "href",
-            reverseChapterList = true,
+            reverseChapterList = false,
         )
 
     override val contentFetcher: Content
