@@ -322,12 +322,12 @@
   },
   {
     "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v2.15.apk",
+    "apk": "ireader-ar-kolnovel-v2.16.apk",
     "name": "KolNovel",
     "id": 1070515268391361388,
     "lang": "ar",
-    "code": 15,
-    "version": "2.15",
+    "code": 16,
+    "version": "2.16",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -739,18 +739,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.novel4up.ar",
-    "apk": "ireader-ar-novel4up-v2.2.apk",
-    "name": "Novel4Up",
-    "id": 2811323081963026244,
-    "lang": "ar",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.novelbuddy.en",
     "apk": "ireader-en-novelbuddy-v2.11.apk",
     "name": "Novelbuddy",
@@ -875,12 +863,12 @@
   },
   {
     "pkg": "ireader.novelparadise.ar",
-    "apk": "ireader-ar-novelparadise-v2.3.apk",
+    "apk": "ireader-ar-novelparadise-v2.4.apk",
     "name": "NovelParadise",
     "id": 7351326936191662005,
     "lang": "ar",
-    "code": 3,
-    "version": "2.3",
+    "code": 4,
+    "version": "2.4",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
