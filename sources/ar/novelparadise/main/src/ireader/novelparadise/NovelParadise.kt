@@ -90,12 +90,12 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
             coverAtt = "src",
             authorBookSelector = ".serl:nth-child(3) .serval",
             categorySelector = ".sertogenre a",
-            descriptionSelector = ".sersysfull strong",
+            descriptionSelector = ".sersysn p",
         )
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = ".ts-chl-collapsible-content li a",
+            selector = ".eplisterfull li a",
             nameSelector = ".epl-num",
             linkSelector = "a",
             linkAtt = "href",
