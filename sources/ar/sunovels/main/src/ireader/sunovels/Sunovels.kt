@@ -28,7 +28,7 @@ import tachiyomix.annotations.TestFixture
 
 /**
  * ☀️ Sunovels - Arabic Novel Source
- * 
+ *
  * This is a Next.js SPA site that requires WebView-based fetching for chapters.
  * The site structure:
  * - Library: /library (with client-side pagination)
@@ -36,6 +36,10 @@ import tachiyomix.annotations.TestFixture
  * - Novel detail: /novel/{slug}
  * - Chapter: /novel/{slug}/{chapter_number}
  * - Chapters are loaded via tab navigation (client-side)
+ *
+ * ⚠️ IMPORTANT: The library page uses lazy-loaded images (placeholder.gif).
+ * Cover images are only available on the novel detail page via preload links.
+ * The app will show covers after opening novel details.
  */
 @GenerateTests(
     unitTests = true,
@@ -76,14 +80,16 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
 
     // ═══════════════════════════════════════════════════════════════
     // 📚 EXPLORE FETCHERS
-    // Site uses client-side rendering, so we use basic endpoints
+    // Site uses client-side rendering with lazy-loaded images.
+    // Server-side HTML has placeholder.gif, JavaScript loads real images.
+    // Cover images will only be available after opening novel details.
     // ═══════════════════════════════════════════════════════════════
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
                 "Latest",
                 endpoint = "/library",
-                selector = "article ul li, article list listitem",
+                selector = "article ul li",
                 nameSelector = "h4",
                 linkSelector = "a",
                 linkAtt = "href",
@@ -91,12 +97,16 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
                 coverAtt = "src",
                 addBaseUrlToLink = true,
                 addBaseurlToCoverLink = true,
-                maxPage = 1  // Client-side pagination
+                maxPage = 1,  // Client-side pagination
+                onCover = { cover, _ ->
+                    // Filter out placeholder images
+                    if (cover.contains("placeholder")) "" else cover
+                }
             ),
             BaseExploreFetcher(
                 "Search",
                 endpoint = "/search?title={query}",
-                selector = "article ul li, article list listitem",
+                selector = "article ul li",
                 nameSelector = "h4",
                 linkSelector = "a",
                 linkAtt = "href",
@@ -104,7 +114,11 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
                 coverAtt = "src",
                 addBaseUrlToLink = true,
                 addBaseurlToCoverLink = true,
-                type = SourceFactory.Type.Search
+                type = SourceFactory.Type.Search,
+                onCover = { cover, _ ->
+                    // Filter out placeholder images
+                    if (cover.contains("placeholder")) "" else cover
+                }
             )
         )
 
@@ -112,7 +126,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
     // 📖 DETAIL FETCHER
     // Novel detail page structure:
     // - Title: article h3 (Arabic title)
-    // - Cover: article figure img
+    // - Cover: Extracted from <link rel="preload" as="image" href="/uploads/...">
     // - Description: article > div > div p (first paragraph in info tab)
     // - Categories: article ul li a
     // - Status: article strong (مستمر/مكتمل)
@@ -120,8 +134,8 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
     override val detailFetcher: Detail
         get() = Detail(
             nameSelector = "article h3",
-            coverSelector = "article figure img",
-            coverAtt = "src",
+            coverSelector = "link[rel='preload'][as='image'][href*='/uploads/']",
+            coverAtt = "href",
             descriptionSelector = "article > div > div p",
             authorBookSelector = ".author",
             categorySelector = "article ul li a[href*='category']",
@@ -180,19 +194,19 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
 
     private fun parseChaptersFromHtml(document: Document): List<ChapterInfo> {
         val chapters = mutableListOf<ChapterInfo>()
-        
+
         // Select chapter links - they follow pattern /novel/{slug}/{number}
         val chapterLinks = document.select("a[href*='/novel/'][href~=/\\d+$]")
-        
+
         for (element in chapterLinks) {
             val href = element.attr("href")
             // Skip non-chapter links
             if (!href.matches(Regex(".*/novel/[^/]+/\\d+.*"))) continue
-            
-            val name = element.select("strong").text().ifBlank { 
+
+            val name = element.select("strong").text().ifBlank {
                 element.text().trim()
             }
-            
+
             if (name.isNotBlank()) {
                 val fullUrl = if (href.startsWith("http")) href else "$baseUrl$href"
                 chapters.add(
@@ -203,7 +217,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
                 )
             }
         }
-        
+
         return chapters.distinctBy { it.key }
     }
 
@@ -215,7 +229,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
     override val contentFetcher: Content
         get() = Content(
             pageTitleSelector = "banner h2",
-            pageContentSelector = "main > div > p, body > div > div > p",
+            pageContentSelector = ".chapter-content p:not(.d-none)",
             onContent = { contents ->
                 contents
                     .filter { it.isNotBlank() }
@@ -229,13 +243,13 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
      */
     override fun pageContentParse(document: Document): List<Page> {
         val content = mutableListOf<String>()
-        
+
         // Get chapter title from banner h2
         val title = document.select("banner h2, header h2").firstOrNull()?.text()?.trim()
         if (!title.isNullOrBlank()) {
             content.add(title)
         }
-        
+
         // The main content is in a div with multiple p elements
         // Try multiple selectors to find the content
         val paragraphs = document.select("main > div > p")
@@ -246,9 +260,9 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
             .filter { !it.contains("Tahtoh", ignoreCase = true) }  // Remove watermark
             .filter { !it.startsWith("©") }  // Remove copyright
             .filter { it.length > 10 }  // Filter out very short strings
-        
+
         content.addAll(paragraphs)
-        
+
         // If still no content, try getting all text from main
         if (content.isEmpty()) {
             val mainText = document.select("main").text()
@@ -256,7 +270,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
                 content.add(mainText)
             }
         }
-        
+
         return content.toPage()
     }
 
