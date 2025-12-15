@@ -716,12 +716,12 @@
   },
   {
     "pkg": "ireader.mydramanovel.en",
-    "apk": "ireader-en-mydramanovel-v2.1.apk",
+    "apk": "ireader-en-mydramanovel-v2.2.apk",
     "name": "MyDramaNovel",
     "id": 6394637986413384415,
     "lang": "en",
-    "code": 1,
-    "version": "2.1",
+    "code": 2,
+    "version": "2.2",
     "description": "Translating Tomorrow",
     "nsfw": false,
     "sourceDir": "main"
@@ -1056,12 +1056,12 @@
   },
   {
     "pkg": "ireader.riwyat.ar",
-    "apk": "ireader-ar-riwyat-v2.9.apk",
+    "apk": "ireader-ar-riwyat-v2.10.apk",
     "name": "Riwyat",
     "id": 3911602848528027929,
     "lang": "ar",
-    "code": 9,
-    "version": "2.9",
+    "code": 10,
+    "version": "2.10",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
