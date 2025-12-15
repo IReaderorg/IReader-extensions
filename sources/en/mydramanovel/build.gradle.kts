@@ -1,7 +1,7 @@
 listOf("en").map { lang ->
     Extension(
         name = "MyDramaNovel",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = lang,
         description = "Translating Tomorrow's TV Drama Hits, Straight from the Pages of Chinese Novels",

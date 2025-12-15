@@ -13,8 +13,25 @@ import ireader.core.source.model.Page
 import ireader.core.source.SourceFactory
 import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.GenerateTests
+import tachiyomix.annotations.TestExpectations
+import tachiyomix.annotations.TestFixture
 
 @Extension
+@GenerateTests(
+    unitTests = true,
+    integrationTests = true,
+    "status",
+    1
+)
+@TestFixture(
+    "https://cenele.com/cont/beyond-the-timescape/",
+    chapterUrl = "https://cenele.com/cont/beyond-the-timescape/%d8%a7%d9%84%d9%81%d8%b5%d9%84-1321/",
+    expectedAuthor = "",
+    expectedTitle = "ما وراء الأفق الزمن",
+
+    )
+@TestExpectations()
 abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
@@ -25,7 +42,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
     override val id: Long
         get() = 23
     override val name: String
-        get() = "Riwyat"
+        get() = "Riwyat(cenele)"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
@@ -124,7 +141,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
             nameSelector = ".manga-title h1",
             coverSelector = ".summary_image img",
             coverAtt = "src",
-            descriptionSelector = "#tab-manga-about",
+            descriptionSelector = ".description-summary p",
             statusSelector = ".genres",
             onStatus = { status ->
                 if (status.contains("مستمرة")) {

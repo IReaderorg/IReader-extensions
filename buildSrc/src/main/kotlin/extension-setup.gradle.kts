@@ -47,8 +47,14 @@ android {
                 }
             }
         }
-        // Note: Test source sets are not configured here to avoid cross-flavor dependencies.
-        // Tests can be run manually by users who enable them.
+        // Configure test source sets to include KSP-generated tests
+        named("test") {
+            // Include KSP-generated test files for all flavors
+            extensionList.forEach { extension ->
+                kotlin.srcDir("build/generated/ksp/${extension.flavor}Debug/kotlin")
+                kotlin.srcDir("build/generated/ksp/${extension.flavor}Release/kotlin")
+            }
+        }
     }
     flavorDimensions.add("default")
     productFlavors {
