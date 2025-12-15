@@ -1140,18 +1140,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.teamxnovel.ar",
-    "apk": "ireader-ar-teamxnovel-v2.2.apk",
-    "name": "Teamxnovel",
-    "id": 5927308915940879829,
-    "lang": "ar",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.uptvs.fa",
     "apk": "ireader-fa-uptvs-v2.2.apk",
     "name": "Uptvs",
