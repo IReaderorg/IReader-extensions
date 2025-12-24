@@ -1,0 +1,112 @@
+{
+  "source": "fanmtl",
+  "baseUrl": "https://www.fanmtl.com",
+  "lang": "en",
+  "version": 1,
+  "lastVerified": "2024-12-24T00:00:00Z",
+  "sourceFile": "sources/en/fanmtl/main/src/ireader/fanmtl/fanmtl.kt",
+  "testUrls": {
+    "latest": "https://www.fanmtl.com/list/all/all-newstime-0.html",
+    "novel": "https://www.fanmtl.com/novel/6954065.html",
+    "chapter": "https://www.fanmtl.com/novel/6954065_1.html",
+    "search": "https://www.fanmtl.com/e/search/index.php?keyboard=douluo"
+  },
+  "selectors": {
+    "explore": {
+      "selector": {
+        "selector": "ul > li",
+        "expectedMinCount": 10
+      },
+      "nameSelector": {
+        "selector": "h4",
+        "expectedMinCount": 1
+      },
+      "coverSelector": {
+        "selector": "figure img",
+        "attribute": "src",
+        "expectedPattern": ".*\\.(jpg|png|webp).*"
+      },
+      "linkSelector": {
+        "selector": "a",
+        "attribute": "href",
+        "expectedPattern": "/novel/\\d+\\.html"
+      }
+    },
+    "search": {
+      "selector": {
+        "selector": "li.novel-item",
+        "expectedMinCount": 1
+      },
+      "nameSelector": {
+        "selector": "a",
+        "attribute": "title",
+        "expectedMinLength": 3
+      },
+      "coverSelector": {
+        "selector": ".cover-wrap img",
+        "attribute": "data-src",
+        "expectedPattern": ".*\\.(jpg|png|webp).*"
+      }
+    },
+    "detail": {
+      "nameSelector": {
+        "selector": "h1",
+        "expected": "Douluo Continent: Me! Qiu'er's fiancé, may we have many children and much happiness.",
+        "expectedMinLength": 10
+      },
+      "coverSelector": {
+        "selector": "figure img",
+        "attribute": "src",
+        "expectedPattern": ".*\\.(jpg|png|webp).*"
+      },
+      "authorBookSelector": {
+        "selector": "div:contains(Author)",
+        "expectedMinLength": 1
+      },
+      "categorySelector": {
+        "selector": "ul li a[href*='/list/']",
+        "expectedMinCount": 1
+      },
+      "descriptionSelector": {
+        "selector": ".summary .content, .description",
+        "expectedMinLength": 50
+      },
+      "statusSelector": {
+        "selector": "strong:contains(Ongoing), strong:contains(Completed)",
+        "expectedPattern": "(Ongoing|Completed)"
+      }
+    },
+    "chapters": {
+      "selector": {
+        "selector": "ul > li > a[href*='_']",
+        "expectedMinCount": 50
+      },
+      "nameSelector": {
+        "selector": "strong",
+        "expectedMinLength": 3
+      }
+    },
+    "content": {
+      "pageTitleSelector": {
+        "selector": "h2",
+        "expectedMinLength": 5
+      },
+      "pageContentSelector": {
+        "selector": "article > div > div > p",
+        "expectedMinCount": 5,
+        "expectedMinLength": 100
+      }
+    }
+  },
+  "urlValidation": {
+    "novelUrlPattern": "^https://www\\.fanmtl\\.com/novel/\\d+\\.html$",
+    "chapterUrlPattern": "^https://www\\.fanmtl\\.com/novel/\\d+_\\d+\\.html$",
+    "coverUrlPattern": "^https?://.*\\.(jpg|png|webp|gif)"
+  },
+  "metadata": {
+    "requiresJs": false,
+    "hasCloudflare": false,
+    "rateLimit": 1000,
+    "notes": "FanMTL is a machine translation site. Selectors are stable."
+  }
+}

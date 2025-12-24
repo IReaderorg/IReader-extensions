@@ -1,0 +1,182 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Source Health Snapshot",
+  "description": "Schema for IReader extension selector snapshots",
+  "type": "object",
+  "required": ["source", "baseUrl", "lang", "version", "testUrls", "selectors"],
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "Source name (lowercase, matches package name)"
+    },
+    "baseUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL of the website"
+    },
+    "lang": {
+      "type": "string",
+      "description": "Language code (en, ar, etc.)"
+    },
+    "version": {
+      "type": "integer",
+      "description": "Snapshot schema version",
+      "default": 1
+    },
+    "lastVerified": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO timestamp of last successful verification"
+    },
+    "sourceFile": {
+      "type": "string",
+      "description": "Relative path to the Kotlin source file"
+    },
+    "testUrls": {
+      "type": "object",
+      "description": "URLs used for testing",
+      "properties": {
+        "latest": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for latest novels listing"
+        },
+        "search": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for search results"
+        },
+        "novel": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for a specific novel detail page"
+        },
+        "chapter": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for a specific chapter content page"
+        }
+      },
+      "required": ["novel", "chapter"]
+    },
+    "selectors": {
+      "type": "object",
+      "description": "Selector definitions grouped by page type",
+      "properties": {
+        "explore": {
+          "$ref": "#/definitions/selectorGroup",
+          "description": "Selectors for novel listing pages"
+        },
+        "search": {
+          "$ref": "#/definitions/selectorGroup",
+          "description": "Selectors for search results"
+        },
+        "detail": {
+          "$ref": "#/definitions/selectorGroup",
+          "description": "Selectors for novel detail page"
+        },
+        "chapters": {
+          "$ref": "#/definitions/selectorGroup",
+          "description": "Selectors for chapter list"
+        },
+        "content": {
+          "$ref": "#/definitions/selectorGroup",
+          "description": "Selectors for chapter content"
+        }
+      }
+    },
+    "urlValidation": {
+      "type": "object",
+      "description": "URL pattern validation rules",
+      "properties": {
+        "novelUrlPattern": {
+          "type": "string",
+          "description": "Regex pattern for valid novel URLs"
+        },
+        "chapterUrlPattern": {
+          "type": "string",
+          "description": "Regex pattern for valid chapter URLs"
+        },
+        "coverUrlPattern": {
+          "type": "string",
+          "description": "Regex pattern for valid cover image URLs"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "properties": {
+        "requiresJs": {
+          "type": "boolean",
+          "description": "Whether the site requires JavaScript rendering"
+        },
+        "hasCloudflare": {
+          "type": "boolean",
+          "description": "Whether the site has Cloudflare protection"
+        },
+        "rateLimit": {
+          "type": "integer",
+          "description": "Recommended delay between requests in ms"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about the source"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "selectorGroup": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/selectorDefinition"
+      }
+    },
+    "selectorDefinition": {
+      "type": "object",
+      "required": ["selector"],
+      "properties": {
+        "selector": {
+          "type": "string",
+          "description": "CSS selector"
+        },
+        "attribute": {
+          "type": "string",
+          "description": "Attribute to extract (null for text content)",
+          "default": null
+        },
+        "expected": {
+          "type": "string",
+          "description": "Expected exact value (for verification)"
+        },
+        "expectedPattern": {
+          "type": "string",
+          "description": "Regex pattern for expected value"
+        },
+        "expectedMinLength": {
+          "type": "integer",
+          "description": "Minimum expected length of result"
+        },
+        "expectedMinCount": {
+          "type": "integer",
+          "description": "Minimum expected number of matched elements"
+        },
+        "transform": {
+          "type": "string",
+          "enum": ["trim", "lowercase", "uppercase", "strip_html"],
+          "description": "Transformation to apply before comparison"
+        },
+        "optional": {
+          "type": "boolean",
+          "description": "Whether this selector is optional",
+          "default": false
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notes about this selector"
+        }
+      }
+    }
+  }
+}

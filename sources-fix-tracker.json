@@ -1,0 +1,90 @@
+{
+  "lastUpdated": "2024-12-22",
+  "status": "in_progress",
+  "fixed": [
+    "allnovelfull",
+    "fanmtl",
+    "freewebnovel",
+    "novelfull",
+    "royalroad"
+  ],
+  "failed": [],
+  "skipped": [],
+  "removed": [
+    "bestlightnovel",
+    "boxnovelcom",
+    "comrademao",
+    "daonovel"
+  ],
+  "needs_review": [
+    {
+      "name": "coolnovel",
+      "reason": "Manga/manhwa site that redirects to external sources for content. Wrong package name (ireader.daonovel instead of ireader.coolnovel). May not be suitable as novel source.",
+      "url": "https://www.novelcool.com"
+    },
+    {
+      "name": "dreambigtl",
+      "reason": "Blogger-based site with non-standard structure. Novels page at /p/novels.html lists TOC pages. Each novel has a TOC page (e.g., /p/the-beginning-after-end-toc.html) with chapters as paragraph links. Chapter content in article .post-body div. Needs custom implementation for: 1) Novel listing from /p/novels.html, 2) Detail extraction from TOC pages (title in h1, cover in article img, description in paragraphs before 'Table of Contents'), 3) Chapter list from TOC page (article p a links), 4) Content from .post-body div. Site has 3 novels with 300+ chapters each.",
+      "url": "https://dreambigtl.com",
+      "structure": {
+        "novels_page": "/p/novels.html",
+        "toc_pattern": "/p/{novel-name}-toc.html",
+        "chapter_pattern": "/{year}/{month}/{chapter-name}.html",
+        "selectors": {
+          "novel_list": "article .post-body a[href*='-toc.html']",
+          "detail_title": "article h1",
+          "detail_cover": "article img",
+          "detail_description": "article p (before 'Table of Contents')",
+          "chapter_list": "article p a",
+          "content": ".post-body div, .post-body p"
+        }
+      }
+    }
+  ],
+  "pending": [
+    "fastnovel",
+    "fenrir",
+    "fictionzone",
+    "genesistranslator",
+    "kissnovellove",
+    "koreanonline",
+    "libread",
+    "lightnovelpub",
+    "lightnovelreader",
+    "lightnovels",
+    "lnmtl",
+    "mostnovel",
+    "mtlnation",
+    "mydramanovel",
+    "mylovenovel",
+    "novelbuddy",
+    "novelfire",
+    "novelfullme",
+    "novelhall",
+    "novelmtl",
+    "novelonline",
+    "novelowlcom",
+    "novelscafes",
+    "novelsemperor",
+    "novelstic",
+    "noveltop1net",
+    "novelupdates",
+    "pandanovel",
+    "pawread",
+    "qidianundergrond",
+    "ranobes",
+    "readmtl",
+    "realwebnovel",
+    "reaperscans",
+    "scribblehub",
+    "skynovel",
+    "storyseedling",
+    "webnovelcom",
+    "webnovelsite",
+    "wnmtl",
+    "wuxiaclick",
+    "wuxiaworld",
+    "wuxiaworldsite",
+    "wuxiaworldsiteco"
+  ]
+}

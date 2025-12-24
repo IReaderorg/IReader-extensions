@@ -1,0 +1,201 @@
+name: Source Health Check
+
+on:
+  # # Run weekly on Sunday at midnight UTC
+  # schedule:
+  #   - cron: '0 0 * * 0'
+  
+  # Manual trigger only
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Specific source to check (leave empty for all)'
+        required: false
+        default: ''
+      use_js:
+        description: 'Use JavaScript rendering'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r scripts/source-health/requirements.txt
+      
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+        if: ${{ github.event.inputs.use_js == 'true' }}
+      
+      - name: Validate sources
+        id: validate
+        run: |
+          if [ -n "${{ github.event.inputs.source }}" ]; then
+            python scripts/source-health/validate.py \
+              --source "${{ github.event.inputs.source }}" \
+              --output health-report.json \
+              --verbose \
+              ${{ github.event.inputs.use_js == 'true' && '--js' || '' }}
+          else
+            python scripts/source-health/validate.py \
+              --all \
+              --output health-report.json \
+              ${{ github.event.inputs.use_js == 'true' && '--js' || '' }}
+          fi
+        continue-on-error: true
+      
+      - name: Upload health report
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-report
+          path: health-report.json
+          retention-days: 30
+      
+      - name: Parse report and create summary
+        run: |
+          python -c "
+          import json
+          from pathlib import Path
+          
+          report = json.loads(Path('health-report.json').read_text())
+          
+          print('## Source Health Report')
+          print()
+          print(f'**Generated:** {report[\"generated_at\"]}')
+          print()
+          print('### Summary')
+          print(f'- ✅ Healthy: {report[\"healthy\"]}')
+          print(f'- ⚠️ Degraded: {report[\"degraded\"]}')
+          print(f'- ❌ Broken: {report[\"broken\"]}')
+          print()
+          
+          # List broken sources
+          broken = [s for s in report['sources'] if s['overall_status'] == 'broken']
+          if broken:
+              print('### Broken Sources')
+              for s in broken:
+                  print(f'- **{s[\"source_name\"]}** ({s[\"base_url\"]})')
+                  for r in s['results']:
+                      if r['status'] == 'fail':
+                          print(f'  - ❌ {r[\"name\"]}: {r[\"message\"]}')
+              print()
+          
+          # List degraded sources
+          degraded = [s for s in report['sources'] if s['overall_status'] == 'degraded']
+          if degraded:
+              print('### Degraded Sources')
+              for s in degraded:
+                  print(f'- **{s[\"source_name\"]}** ({s[\"base_url\"]})')
+                  for r in s['results']:
+                      if r['status'] in ['fail', 'warn']:
+                          status = '❌' if r['status'] == 'fail' else '⚠️'
+                          print(f'  - {status} {r[\"name\"]}: {r[\"message\"]}')
+          " >> $GITHUB_STEP_SUMMARY
+      
+      - name: Create issue for broken sources
+        if: ${{ steps.validate.outcome == 'success' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('health-report.json', 'utf8'));
+            
+            const broken = report.sources.filter(s => s.overall_status === 'broken');
+            
+            if (broken.length === 0) {
+              console.log('No broken sources found');
+              return;
+            }
+            
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'source-health',
+              state: 'open'
+            });
+            
+            const existingIssue = issues.data.find(i => 
+              i.title.includes('Source Health Alert')
+            );
+            
+            let body = `## Source Health Check Failed\n\n`;
+            body += `**Date:** ${report.generated_at}\n\n`;
+            body += `### Broken Sources (${broken.length})\n\n`;
+            
+            for (const source of broken) {
+              body += `#### ${source.source_name}\n`;
+              body += `- URL: ${source.base_url}\n`;
+              body += `- Failed selectors:\n`;
+              for (const r of source.results.filter(r => r.status === 'fail')) {
+                body += `  - \`${r.name}\`: ${r.message}\n`;
+              }
+              body += '\n';
+            }
+            
+            body += `\n---\n`;
+            body += `*This issue was automatically created by the source health check workflow.*\n`;
+            body += `*Run \`python scripts/source-health/repair.py --source <name>\` to get AI repair suggestions.*`;
+            
+            if (existingIssue) {
+              // Update existing issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: body
+              });
+              console.log(`Updated issue #${existingIssue.number}`);
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🚨 Source Health Alert: ${broken.length} broken source(s)`,
+                body: body,
+                labels: ['source-health', 'bug']
+              });
+              console.log('Created new issue');
+            }
+
+  repair-suggestions:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: ${{ github.event.inputs.source != '' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r scripts/source-health/requirements.txt
+      
+      - name: Get repair suggestions
+        if: ${{ env.GEMINI_API_KEY != '' }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python scripts/source-health/repair.py \
+            --source "${{ github.event.inputs.source }}" \
+            --verbose
