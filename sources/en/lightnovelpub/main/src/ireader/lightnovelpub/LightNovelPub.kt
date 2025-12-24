@@ -29,7 +29,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "en"
     override val baseUrl: String
-        get() = "https://www.lightnovelpub.com"
+        get() = "https://www.webnovelpub.me"
     override val id: Long
         get() = 24
     override val name: String

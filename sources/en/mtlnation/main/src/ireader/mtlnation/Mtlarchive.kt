@@ -14,7 +14,7 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
-
+// Just Moving to new domain - still in progress
 @Extension
 abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
     deps = deps,
@@ -23,7 +23,7 @@ abstract class MtlNation(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "en"
     override val baseUrl: String
-        get() = "https://mtlarchive.com"
+        get() = "https://reader-hub.com"
     override val id: Long
         get() = 7
     override val name: String
