@@ -77,7 +77,7 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
                 maxPage = 100,
                 addBaseUrlToLink = true,
                 addBaseurlToCoverLink = true,
-                onPage = { page -> (page - 1).toString() }
+                onPage = { page -> ((page.toIntOrNull() ?: 0) - 1).toString() }
             ),
             BaseExploreFetcher(
                 "Popular",
@@ -92,7 +92,7 @@ abstract class Fanmtl(private val deps: Dependencies) : SourceFactory(
                 maxPage = 100,
                 addBaseUrlToLink = true,
                 addBaseurlToCoverLink = true,
-                onPage = { page -> (page - 1).toString() }
+                onPage = { page -> ((page.toIntOrNull() ?: 0) - 1).toString() }
             ),
             BaseExploreFetcher(
                 "Search",
