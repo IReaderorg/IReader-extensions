@@ -1,6 +1,67 @@
 # IReader Extension Scripts
 
-This directory contains utility scripts for creating and converting extensions.
+This directory contains utility scripts for creating, converting, and maintaining extensions.
+
+## Quick Links
+
+- [Source Health Check](#source-health-check-system) - Validate and repair broken selectors
+- [add-source.py](#1-add-sourcepy-recommended) - Create new sources
+- [js-to-kotlin-v5-ai.py](#2-js-to-kotlin-v5-aipy-converter-v5-ai) - Convert lnreader plugins
+
+---
+
+## Source Health Check System
+
+**Automated system for validating and repairing IReader extension selectors.**
+
+Located in `scripts/source-health/`. See [source-health/README.md](source-health/README.md) for full documentation.
+
+### Quick Start
+
+```bash
+# Install dependencies
+pip install -r scripts/source-health/requirements.txt
+
+# Validate a single source
+python scripts/source-health/validate.py --source fanmtl --verbose
+
+# Validate all sources
+python scripts/source-health/validate.py --all --output report.json
+
+# Generate snapshot for a source
+python scripts/source-health/snapshot.py --source fanmtl --verify
+
+# Repair broken selectors with AI
+python scripts/source-health/repair.py --source fanmtl --auto-fix
+```
+
+### Features
+
+- **Snapshot-based validation**: Compare selectors against known-good results
+- **AI-powered repair**: Get selector fix suggestions using Gemini/OpenAI/Anthropic
+- **URL validation**: Verify URLs match expected patterns
+- **CI/CD integration**: GitHub Actions workflow for weekly health checks
+- **Minimal token usage**: AI repair optimized for cost efficiency
+
+### KSP Annotations
+
+Add test fixtures to your sources for automated validation:
+
+```kotlin
+@Extension
+@TestFixture(
+    novelUrl = "https://example.com/novel/123",
+    chapterUrl = "https://example.com/novel/123/chapter-1",
+    expectedTitle = "My Novel Title"
+)
+@TestExpectations(
+    minLatestNovels = 10,
+    minChapters = 50
+)
+abstract class MySource(deps: Dependencies) : SourceFactory(deps)
+```
+
+---
 
 ## Scripts
 
