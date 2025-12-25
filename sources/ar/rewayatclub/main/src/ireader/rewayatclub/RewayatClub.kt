@@ -33,16 +33,7 @@ class RewayatClub(deps: Dependencies) : SourceFactory(
         get() = "RewayatClub"
 
     override fun getFilters(): FilterList = listOf(
-        Filter.Title(),
-        Filter.Sort(
-            "التصنيف",
-            arrayOf(
-                "الجميع",
-                "خيال علمي",
-                "رومانسي",
-                "فانتازيا"
-            )
-        )
+        Filter.Title()
     )
 
     override fun getCommands(): CommandList = listOf(
@@ -61,7 +52,7 @@ class RewayatClub(deps: Dependencies) : SourceFactory(
                 linkSelector = "h2.entry-title a",
                 linkAtt = "href",
                 coverSelector = "img",
-                coverAtt = "data-src",
+                coverAtt = "src",
                 nextPageSelector = "a.next.page-numbers"
             ),
             BaseExploreFetcher(
@@ -72,21 +63,9 @@ class RewayatClub(deps: Dependencies) : SourceFactory(
                 linkSelector = "h2.entry-title a",
                 linkAtt = "href",
                 coverSelector = "img",
-                coverAtt = "data-src",
+                coverAtt = "src",
                 nextPageSelector = "a.next.page-numbers",
                 type = SourceFactory.Type.Search
-            ),
-            BaseExploreFetcher(
-                "category",
-                endpoint = "/category/{genre}/page/{page}/",
-                selector = "article",
-                nameSelector = "h2.entry-title a",
-                linkSelector = "h2.entry-title a",
-                linkAtt = "href",
-                coverSelector = "img",
-                coverAtt = "data-src",
-                nextPageSelector = "a.next.page-numbers",
-                type = SourceFactory.Type.Filter
             )
         )
 
@@ -94,19 +73,10 @@ class RewayatClub(deps: Dependencies) : SourceFactory(
         get() = SourceFactory.Detail(
             nameSelector = "h1.entry-title",
             coverSelector = "div.post-thumbnail img",
-            coverAtt = "data-src",
+            coverAtt = "src",
             descriptionSelector = "div.entry-content p",
             authorBookSelector = "span.author a",
-            categorySelector = "span.cat-links a",
-            statusSelector = "div.post-tags",
-            onStatus = { status ->
-                val lowerStatus = status?.lowercase() ?: ""
-                when {
-                    lowerStatus.contains("مكتمل") -> COMPLETED
-                    lowerStatus.contains("مستمر") -> ONGOING
-                    else -> ONGOING
-                }
-            }
+            categorySelector = "span.cat-links a"
         )
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
