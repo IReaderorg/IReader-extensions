@@ -1,7 +1,7 @@
 listOf("ar").map { lang ->
   Extension(
     name = "RewayatClub",
-    versionCode = 1,
+    versionCode = 2,
     libVersion = "2",
     lang = lang,
     description = "",
