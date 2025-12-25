@@ -14,54 +14,21 @@ import ireader.core.source.SourceFactory
 import tachiyomix.annotations.Extension
 
 @Extension
-abstract class RewayatClub(deps: Dependencies) : SourceFactory(
+class RewayatClub(deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
+
     override val lang: String
         get() = "ar"
     override val baseUrl: String
         get() = "https://rewayat.club"
     override val id: Long
-        get() = 43 // يجب أن يكون فريدًا لكل مصدر
+        get() = 6745632189101
     override val name: String
-        get() = "Rewayat Club"
+        get() = "RewayatClub"
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
-        Filter.Sort(
-            "ترتيب حسب",
-            arrayOf(
-                "الأحدث",
-                "الأكثر شيوعاً",
-                "عدد الفصول",
-                "الأقدم"
-            )
-        ),
-        Filter.Select(
-            "نوع الرواية",
-            arrayOf(
-                "جميع الروايات" to "0",
-                "مترجمة" to "1",
-                "مؤلفة" to "2",
-                "مكتملة" to "3"
-            )
-        ),
-        Filter.Group("الأنواع", listOf(
-            Filter.Checkbox("كوميديا", "1"),
-            Filter.Checkbox("أكشن", "2"),
-            Filter.Checkbox("دراما", "3"),
-            Filter.Checkbox("فانتازيا", "4"),
-            Filter.Checkbox("مهارات القتال", "5"),
-            Filter.Checkbox("مغامرة", "6"),
-            Filter.Checkbox("رومانسي", "7"),
-            Filter.Checkbox("خيال علمي", "8"),
-            Filter.Checkbox("الحياة المدرسية", "9"),
-            Filter.Checkbox("قوى خارقة", "10"),
-            Filter.Checkbox("سحر", "11"),
-            Filter.Checkbox("رياضة", "12"),
-            Filter.Checkbox("رعب", "13"),
-            Filter.Checkbox("حريم", "14")
-        ))
     )
 
     override fun getCommands(): CommandList = listOf(
@@ -73,108 +40,65 @@ abstract class RewayatClub(deps: Dependencies) : SourceFactory(
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
-                "الأحدث",
-                endpoint = "/api/chapters/weekly/list/?page={page}",
-                selector = ".recent-list li, ul li",
-                nameSelector = "a, .title",
-                nameAtt = "text",
-                linkSelector = "a",
+                "latest",
+                endpoint = "/page/{page}/",
+                selector = "article",
+                nameSelector = "h2.entry-title a",
+                linkSelector = "h2.entry-title a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                nextPageSelector = "a.next, .pagination a:contains(التالى)"
+                nextPageSelector = "a.next.page-numbers"
             ),
             BaseExploreFetcher(
-                "البحث",
-                endpoint = "/api/novels/?type=0&ordering=-num_chapters&page={page}&search={query}",
-                selector = ".search-results li, ul li",
-                nameSelector = "a, .title",
-                nameAtt = "text",
-                linkSelector = "a",
+                "search",
+                endpoint = "/?s={query}&page={page}",
+                selector = "article",
+                nameSelector = "h2.entry-title a",
+                linkSelector = "h2.entry-title a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                nextPageSelector = "a.next",
+                nextPageSelector = "a.next.page-numbers",
                 type = SourceFactory.Type.Search
-            ),
-            BaseExploreFetcher(
-                "الروايات",
-                endpoint = "/api/novels/?page={page}",
-                selector = ".novel-list li, ul li",
-                nameSelector = "a, .title",
-                nameAtt = "text",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "img",
-                coverAtt = "src",
-                nextPageSelector = "a.next, .pagination a"
-            ),
-            BaseExploreFetcher(
-                "المكتملة",
-                endpoint = "/api/novels/?type=3&page={page}",
-                selector = ".completed-list li, ul li",
-                nameSelector = "a, .title",
-                nameAtt = "text",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "img",
-                coverAtt = "src",
-                nextPageSelector = "a.next"
             )
         )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = "h1.primary--text span, h1.title",
-            coverSelector = "img.cover, img.poster",
+            nameSelector = "h1.entry-title",
+            coverSelector = "div.post-thumbnail img",
             coverAtt = "src",
-            descriptionSelector = "div.text-pre-line span, .summary, .description",
-            authorBookSelector = ".novel-author, .author",
-            categorySelector = ".v-slide-group__content a, .genres a, .tags a",
-            statusSelector = ".v-chip__content, .status",
-            onStatus = { status ->
-                when {
-                    status.contains("مكتملة") || status.contains("Completed") -> MangaInfo.COMPLETED
-                    status.contains("مستمرة") || status.contains("Ongoing") -> MangaInfo.ONGOING
-                    status.contains("متوقفة") || status.contains("Hiatus") -> MangaInfo.ON_HIATUS
-                    else -> MangaInfo.UNKNOWN
-                }
-            }
+            descriptionSelector = "div.entry-content p",
+            authorBookSelector = "span.author a",
+            categorySelector = "span.cat-links a"
         )
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
         headers {
-            append(
-                HttpHeaders.UserAgent,
-                "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
-            )
+            append(HttpHeaders.UserAgent, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             append(HttpHeaders.Referrer, baseUrl)
-            append(HttpHeaders.AcceptLanguage, "ar-SA,ar;q=0.9,en-US;q=0.8,en;q=0.7")
-            append(HttpHeaders.Accept, "application/json, text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            append(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+            append(HttpHeaders.AcceptLanguage, "ar,en;q=0.9")
+            block()
         }
     }
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = ".chapter-list li, ul li",
-            nameSelector = "a, .chapter-title",
+            selector = "div.entry-content h3, div.entry-content h4",
+            nameSelector = ":self",
             linkSelector = "a",
-            linkAtt = "href",
-            chapterNumberSelector = ".chapter-number, .number",
-            chapterNumberAtt = "text",
-            reverseChapterList = false
+            linkAtt = "href"
         )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = ".chapter-title, h1",
-            pageContentSelector = ".chapter-content p, .content p",
+            pageContentSelector = "div.entry-content p",
             onContent = { contents: List<String> ->
-                contents.map { text ->
-                    text.replace(Regex("\\s+"), " ")
-                        .trim()
-                        .takeIf { it.isNotEmpty() } ?: ""
-                }.filter { it.isNotEmpty() }
+                contents.map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .filterNot { it.contains("اعلان") || it.contains("إعلان") }
             }
         )
 }
