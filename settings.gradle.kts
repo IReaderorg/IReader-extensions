@@ -122,4 +122,7 @@ if (System.getenv("ENABLE_TEST_MODULE") == "true" || System.getProperty("enableT
     include(":test-extensions")
 }
 
+// Source Test Server - always included for development
+include(":source-test-server")
+
 include(":multisrc")
