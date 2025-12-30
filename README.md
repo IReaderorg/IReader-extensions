@@ -59,14 +59,56 @@ A built-in test server for testing IReader sources with real data. Features:
 ### Running the Test Server
 
 ```bash
-# 1. Compile all sources (or specific ones)
-./gradlew assembleDebug
+# Option 1: Quick start (uses cached APKs)
+./gradlew testServer
 
-# 2. Start the test server
-./gradlew :source-test-server:run
+# Option 2: Build all sources first, then start server
+./gradlew buildAndTest
+
+# Option 3: Manual steps
+./gradlew assembleDebug          # Build sources
+./gradlew :source-test-server:run  # Start server
 ```
 
 Server runs at **http://localhost:8080**
+
+### Android Studio Run Configurations
+
+The project includes pre-configured run configurations (in the toolbar dropdown):
+
+| Configuration | Description |
+|--------------|-------------|
+| 🧪 Test Server | Start the test server |
+| 🔨 Build All Sources | Compile all source APKs |
+| 🚀 Build + Test Server | Build sources then start server |
+| 🆔 Generate Source ID | Generate a unique source ID |
+
+### Quick Commands
+
+| Command | Description |
+|---------|-------------|
+| `./gradlew testServer` | Start test server (port 8080) |
+| `./gradlew buildAndTest` | Build all sources + start server |
+| `./gradlew listSources` | List all sources with build commands |
+| `./gradlew buildSourceHelp` | Show build command format |
+
+### Building a Single Source
+
+To build just one source (faster than building all):
+
+```bash
+# Format: ./gradlew :extensions:individual:{lang}:{name}:assembleDebug
+
+# Examples:
+./gradlew :extensions:individual:en:freewebnovel:assembleDebug
+./gradlew :extensions:individual:en:royalroad:assembleDebug
+./gradlew :extensions:individual:en:novelfull:assembleDebug
+
+# Then start the test server
+./gradlew testServer
+```
+
+Run `./gradlew listSources` to see all available sources with their build commands.
 
 ### Available Endpoints
 

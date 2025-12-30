@@ -77,3 +77,25 @@ java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
+
+// Print server info when running
+tasks.named<JavaExec>("run") {
+    doFirst {
+        println("""
+            |
+            |╔══════════════════════════════════════════════════════════════════╗
+            |║              🧪 IReader Source Test Server                       ║
+            |╠══════════════════════════════════════════════════════════════════╣
+            |║                                                                  ║
+            |║  Starting server...                                              ║
+            |║                                                                  ║
+            |║  📍 API Tester:      http://localhost:8080                       ║
+            |║  📖 Visual Browser:  http://localhost:8080/browse                ║
+            |║                                                                  ║
+            |║  Press Ctrl+C to stop the server                                 ║
+            |║                                                                  ║
+            |╚══════════════════════════════════════════════════════════════════╝
+            |
+        """.trimMargin())
+    }
+}
