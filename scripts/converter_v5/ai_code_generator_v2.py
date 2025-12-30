@@ -372,7 +372,7 @@ OUTPUT ONLY THE KOTLIN CODE, NO EXPLANATIONS."""
         
         for attempt in range(max_retries):
             try:
-                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
                 
                 payload = {
                     "contents": [{"parts": [{"text": prompt}]}],
