@@ -1,4 +1,4 @@
-package ireader.novelhall
+package ireader.novelsonline
 
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -11,12 +11,12 @@ import ireader.core.source.model.*
 import tachiyomix.annotations.Extension
 
 @Extension
-abstract class NovelHall(private val deps: Dependencies) : SourceFactory(deps = deps) {
+abstract class NovelsOnline(private val deps: Dependencies) : SourceFactory(deps = deps) {
 
     override val lang: String get() = "en"
-    override val baseUrl: String get() = "https://novelhall.com"
-    override val id: Long get() = 87L
-    override val name: String get() = "Novel Hall"
+    override val baseUrl: String get() = "https://novelsonline.org"
+    override val id: Long get() = 86L
+    override val name: String get() = "NovelsOnline"
 
     override fun getFilters(): FilterList = listOf(Filter.Title())
 
@@ -27,7 +27,7 @@ abstract class NovelHall(private val deps: Dependencies) : SourceFactory(deps = 
     )
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
-        val url = "$baseUrl/all2022-$page.html"
+        val url = "$baseUrl/top-novel/$page"
         val document = client.get(requestBuilder(url)).asJsoup()
         return parseNovelList(document)
     }
@@ -36,45 +36,31 @@ abstract class NovelHall(private val deps: Dependencies) : SourceFactory(deps = 
         val query = filters.findInstance<Filter.Title>()?.value?.trim()
 
         if (!query.isNullOrBlank()) {
-            val url = "$baseUrl/index.php?s=so&module=book&keyword=${query.encodeURLParameter()}"
-            val document = client.get(requestBuilder(url)).asJsoup()
-            return parseSearchResults(document)
+            val formData = "keyword=${query.encodeURLParameter()}&search=1"
+            val response = client.post("$baseUrl/detailed-search") {
+                contentType(ContentType.Application.FormUrlEncoded)
+                setBody(formData)
+            }.asJsoup()
+            return parseNovelList(response)
         }
 
         return getMangaList(null, page)
     }
 
     private fun parseNovelList(document: com.fleeksoft.ksoup.nodes.Document): MangasPageInfo {
-        val novels = document.select("li.btm").mapNotNull { element ->
-            val name = element.text().trim().takeIf { it.isNotBlank() } ?: return@mapNotNull null
-            val href = element.selectFirst("a")?.attr("href") ?: return@mapNotNull null
+        val novels = document.select(".top-novel-block").mapNotNull { element ->
+            val name = element.selectFirst("h2")?.text()?.trim() ?: return@mapNotNull null
+            val cover = element.selectFirst(".top-novel-cover img")?.attr("src") ?: ""
+            val href = element.selectFirst("h2 a")?.attr("href") ?: return@mapNotNull null
 
             MangaInfo(
-                key = href,
+                key = href.removePrefix(baseUrl),
                 title = name,
-                cover = "",
+                cover = cover,
             )
         }
 
         return MangasPageInfo(novels, novels.isNotEmpty())
-    }
-
-    private fun parseSearchResults(document: com.fleeksoft.ksoup.nodes.Document): MangasPageInfo {
-        val novels = document.select("table tr").mapNotNull { element ->
-            val nameCell = element.selectFirst("td:nth-child(2)") ?: return@mapNotNull null
-            val name = nameCell.text().replace(Regex("""\t+"""), "").replace("\n", " ").trim()
-            val href = nameCell.selectFirst("a")?.attr("href") ?: return@mapNotNull null
-
-            if (name.isBlank()) return@mapNotNull null
-
-            MangaInfo(
-                key = href,
-                title = name,
-                cover = "",
-            )
-        }
-
-        return MangasPageInfo(novels, false)
     }
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
@@ -85,21 +71,36 @@ abstract class NovelHall(private val deps: Dependencies) : SourceFactory(deps = 
             client.get(requestBuilder("$baseUrl${manga.key}")).asJsoup()
         }
 
-        val title = document.selectFirst(".book-info > h1")?.text()?.trim() ?: manga.title
-        val cover = document.selectFirst("meta[property=og:image]")?.attr("content") ?: ""
-        val description = document.selectFirst(".intro")?.text()?.trim() ?: ""
+        val title = document.selectFirst("h1")?.text()?.trim() ?: manga.title
+        val cover = document.selectFirst(".novel-cover a > img")?.attr("src") ?: manga.cover
 
-        document.selectFirst(".total")?.select("p")?.remove()
-        val author = document.selectFirst(".total span:contains(Author)")?.text()
-            ?.replace("Author：", "")?.trim() ?: ""
-        val statusText = document.selectFirst(".total span:contains(Status)")?.text()
-            ?.replace("Status：", "")?.replace("Active", "Ongoing")?.trim() ?: ""
-        val genres = document.select(".total a").map { it.text().trim() }
+        var description = ""
+        var genres = listOf<String>()
+        var author = ""
+        var artist = ""
+        var status = MangaInfo.UNKNOWN
 
-        val status = when {
-            statusText.contains("Ongoing", ignoreCase = true) -> MangaInfo.ONGOING
-            statusText.contains("Completed", ignoreCase = true) -> MangaInfo.COMPLETED
-            else -> MangaInfo.UNKNOWN
+        document.select(".novel-detail-item").forEach { item ->
+            val detailName = item.selectFirst("h6")?.text()?.trim() ?: ""
+            val detail = item.selectFirst(".novel-detail-body")
+
+            when (detailName) {
+                "Description" -> description = detail?.text()?.trim() ?: ""
+                "Genre" -> genres = detail?.select("li")?.map { it.text().trim() } ?: emptyList()
+                "Author(s)" -> author = detail?.select("li")?.joinToString(", ") { it.text().trim() } ?: ""
+                "Artist(s)" -> {
+                    val artistText = detail?.select("li")?.joinToString(", ") { it.text().trim() } ?: ""
+                    if (artistText.isNotBlank() && artistText != "N/A") artist = artistText
+                }
+                "Status" -> {
+                    val statusText = detail?.text()?.trim() ?: ""
+                    status = when {
+                        statusText.contains("Ongoing", ignoreCase = true) -> MangaInfo.ONGOING
+                        statusText.contains("Completed", ignoreCase = true) -> MangaInfo.COMPLETED
+                        else -> MangaInfo.UNKNOWN
+                    }
+                }
+            }
         }
 
         return manga.copy(
@@ -120,14 +121,13 @@ abstract class NovelHall(private val deps: Dependencies) : SourceFactory(deps = 
             client.get(requestBuilder("$baseUrl${manga.key}")).asJsoup()
         }
 
-        return document.select("#morelist ul > li").mapNotNull { element ->
-            val linkElement = element.selectFirst("a") ?: return@mapNotNull null
-            val name = linkElement.text().trim().takeIf { it.isNotBlank() } ?: return@mapNotNull null
-            val href = linkElement.attr("href").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        return document.select("ul.chapter-chs > li > a").mapNotNull { element ->
+            val href = element.attr("href")?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val name = element.text().trim().takeIf { it.isNotBlank() } ?: "Chapter"
 
             ChapterInfo(
                 name = name,
-                key = href,
+                key = href.removePrefix(baseUrl),
             )
         }
     }
@@ -140,7 +140,7 @@ abstract class NovelHall(private val deps: Dependencies) : SourceFactory(deps = 
             client.get(requestBuilder("$baseUrl${chapter.key}")).asJsoup()
         }
 
-        val content = document.selectFirst("#htmlContent")?.html() ?: ""
+        val content = document.selectFirst("#contentall")?.html() ?: ""
 
         return content.split("<br>", "</p>", "\n")
             .map { it.replace(Regex("<[^>]+>"), "").trim() }
@@ -152,25 +152,27 @@ abstract class NovelHall(private val deps: Dependencies) : SourceFactory(deps = 
         get() = listOf(
             BaseExploreFetcher(
                 "Popular",
-                endpoint = "/all2022-{page}.html",
-                selector = "li.btm",
-                nameSelector = "li",
-                linkSelector = "a",
+                endpoint = "/top-novel/{page}",
+                selector = ".top-novel-block",
+                nameSelector = "h2",
+                coverSelector = ".top-novel-cover img",
+                coverAtt = "src",
+                linkSelector = "h2 a",
                 linkAtt = "href",
             )
         )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = ".book-info > h1",
-            coverSelector = "meta[property=og:image]",
-            coverAtt = "content",
-            descriptionSelector = ".intro",
+            nameSelector = "h1",
+            coverSelector = ".novel-cover a > img",
+            coverAtt = "src",
+            descriptionSelector = ".novel-detail-item:contains(Description) .novel-detail-body",
         )
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = "#morelist ul > li",
+            selector = "ul.chapter-chs > li > a",
             nameSelector = "a",
             linkSelector = "a",
             linkAtt = "href",
@@ -178,6 +180,6 @@ abstract class NovelHall(private val deps: Dependencies) : SourceFactory(deps = 
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageContentSelector = "#htmlContent",
+            pageContentSelector = "#contentall",
         )
 }

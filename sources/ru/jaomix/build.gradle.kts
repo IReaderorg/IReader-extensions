@@ -1,6 +1,6 @@
-listOf("en").map { lang ->
+listOf("ru").map { lang ->
     Extension(
-        name = "NovelHall",
+        name = "Jaomix",
         versionCode = 1,
         libVersion = "2",
         lang = lang,

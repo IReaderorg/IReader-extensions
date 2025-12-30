@@ -1275,7 +1275,39 @@ python scripts/create-empty-source.py SiteName https://example.com en
 
 ### Build Extension:
 ```bash
-./gradlew :sources:en:sitename:assembleDebug
+# Format: ./gradlew :extensions:individual:{lang}:{sourcename}:assemble{Lang}Debug
+# Note: The task name includes the capitalized language code (en → En, ru → Ru, etc.)
+
+# English sources
+./gradlew :extensions:individual:en:sitename:assembleEnDebug
+./gradlew :extensions:individual:en:freewebnovel:assembleEnDebug
+
+# Russian sources
+./gradlew :extensions:individual:ru:jaomix:assembleRuDebug
+
+# Chinese sources
+./gradlew :extensions:individual:zh:quanben:assembleZhDebug
+
+# Portuguese sources
+./gradlew :extensions:individual:pt:novelmania:assemblePtDebug
+
+# Ukrainian sources
+./gradlew :extensions:individual:uk:bakainua:assembleUkDebug
+```
+
+### Build All Sources:
+```bash
+./gradlew assembleDebug
+```
+
+### Test with Test Server:
+```bash
+# Build + start server
+./gradlew buildAndTest
+
+# Or manually:
+./gradlew assembleDebug
+./gradlew testServer
 ```
 
 ---
