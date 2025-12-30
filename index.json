@@ -838,6 +838,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.rewayatclub.ar",
+    "apk": "ireader-ar-rewayatclub-v2.2.apk",
+    "name": "RewayatClub",
+    "id": 4602960474598733624,
+    "lang": "ar",
+    "code": 2,
+    "version": "2.2",
+    "description": "Arabic novels from Rewayat Club",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.rewayatfans.ar",
     "apk": "ireader-ar-rewayatfans-v2.2.apk",
     "name": "Rewayatfans",
