@@ -100,10 +100,14 @@ tasks.register("buildSourceHelp") {
 tasks.register("listSources") {
   group = "help"
   description = "📋 List all available sources with build commands"
+  
+  val sourcesDir = rootProject.file("sources")
+  val multisrcDir = rootProject.file("sources/multisrc")
+  
   doLast {
     println("\n📋 Available Sources:\n")
     
-    file("sources").listFiles()?.filter { it.isDirectory && it.name != "multisrc" }?.sortedBy { it.name }?.forEach { langDir ->
+    sourcesDir.listFiles()?.filter { it.isDirectory && it.name != "multisrc" }?.sortedBy { it.name }?.forEach { langDir ->
       val sources = langDir.listFiles()?.filter { it.isDirectory && it.name != "main" && File(it, "build.gradle.kts").exists() }?.sortedBy { it.name }
       if (!sources.isNullOrEmpty()) {
         println("  ${langDir.name}/ (${sources.size} sources)")
@@ -115,7 +119,7 @@ tasks.register("listSources") {
       }
     }
     
-    val multisrc = file("sources/multisrc").listFiles()?.filter { it.isDirectory && File(it, "build.gradle.kts").exists() }?.sortedBy { it.name }
+    val multisrc = multisrcDir.listFiles()?.filter { it.isDirectory && File(it, "build.gradle.kts").exists() }?.sortedBy { it.name }
     if (!multisrc.isNullOrEmpty()) {
       println("  multisrc/ (${multisrc.size} themes)")
       multisrc.forEach { source ->
