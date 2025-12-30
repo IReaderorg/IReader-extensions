@@ -1,10 +1,10 @@
 listOf("en").map { lang ->
   Extension(
-    name = "FictionZone",
-    versionCode = 3,
+    name = "GenesisStudio",
+    versionCode = 1,
     libVersion = "2",
     lang = lang,
-    description = "",
+    description = "Novel source from genesistudio.com",
     nsfw = false,
     icon = DEFAULT_ICON,
   )

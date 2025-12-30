@@ -13,8 +13,27 @@
 2. **ALWAYS USE `@AutoSourceId`** → Never hardcode source IDs!
 3. **USE DECLARATIVE ANNOTATIONS** → `@ExploreFetcher`, `@DetailSelectors`, `@ChapterSelectors`, `@ContentSelectors`
 4. **ONLY WRITE MANUAL CODE** when KSP annotations absolutely cannot handle the use case!
+5. **NEVER USE `@Serializable` DATA CLASSES** → Use dynamic JSON parsing instead! (See JSON section below)
 
 **KSP annotations are located in:** `annotations/src/commonMain/kotlin/tachiyomix/annotations/`
+
+---
+
+## 🚨 JSON API Sources: Use Dynamic Parsing!
+
+**CRITICAL:** Do NOT use `@Serializable` data classes for JSON parsing - they cause `IncompatibleClassChangeError` at runtime due to kotlinx.serialization version mismatch.
+
+```kotlin
+// ❌ WRONG - causes runtime crash!
+@Serializable data class Novel(val title: String)
+val novel: Novel = json.decodeFromString(response)
+
+// ✅ CORRECT - use dynamic parsing
+val jsonObj = json.parseToJsonElement(response).jsonObject
+val title = jsonObj["title"]?.jsonPrimitive?.contentOrNull ?: ""
+```
+
+See the **"JSON Parsing"** section below for complete examples.
 
 ---
 
@@ -2312,14 +2331,104 @@ import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 
-// SAFE - Serialization (for JSON APIs)
-import kotlinx.serialization.Serializable
+// SAFE - JSON Parsing (USE DYNAMIC PARSING, NOT @Serializable!)
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.floatOrNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.addJsonArray
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.JsonObject
+
+// ⚠️ WARNING: Do NOT use @Serializable data classes - causes runtime errors!
+// import kotlinx.serialization.Serializable  // ❌ AVOID - causes IncompatibleClassChangeError
 
 // SAFE - Coroutines
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ireader.core.util.DefaultDispatcher
+```
+
+---
+
+## 🚨 CRITICAL: JSON Parsing - Use Dynamic Parsing, NOT @Serializable!
+
+**NEVER use `@Serializable` data classes for JSON parsing!** This causes `IncompatibleClassChangeError` in the test server due to kotlinx.serialization version mismatch between the extension and the test server.
+
+### ❌ WRONG - Will cause runtime errors:
+```kotlin
+// ❌ NEVER DO THIS - causes IncompatibleClassChangeError!
+@Serializable
+data class NovelResponse(
+    val id: String,
+    val title: String,
+    val chapters: List<Chapter>
+)
+
+// This will FAIL at runtime with:
+// "Method 'kotlinx.serialization.KSerializer[] kotlinx.serialization.internal.GeneratedSerializer.typeParametersSerializers()' must be InterfaceMethodref constant"
+val response: NovelResponse = json.decodeFromString(responseText)
+```
+
+### ✅ CORRECT - Use dynamic JSON parsing:
+```kotlin
+private val json = Json {
+    ignoreUnknownKeys = true
+    isLenient = true
+}
+
+// ✅ Parse JSON dynamically
+val jsonObj = json.parseToJsonElement(responseText).jsonObject
+val title = jsonObj["title"]?.jsonPrimitive?.contentOrNull ?: ""
+val id = jsonObj["id"]?.jsonPrimitive?.contentOrNull ?: ""
+val status = jsonObj["status"]?.jsonPrimitive?.intOrNull ?: 0
+val isLocked = jsonObj["locked"]?.jsonPrimitive?.booleanOrNull == true
+
+// ✅ Parse arrays
+val chapters = jsonObj["chapters"]?.jsonArray?.mapNotNull { element ->
+    val chapter = element.jsonObject
+    val chapterId = chapter["id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+    val chapterName = chapter["title"]?.jsonPrimitive?.contentOrNull ?: "Chapter"
+    
+    ChapterInfo(name = chapterName, key = chapterId)
+} ?: emptyList()
+
+// ✅ Parse nested objects
+val dataObj = jsonObj["data"]?.jsonObject
+val novels = dataObj?.get("novels")?.jsonArray ?: emptyList()
+```
+
+### Dynamic JSON Parsing Cheat Sheet:
+
+| JSON Type | Kotlin Access | Null-Safe Access |
+|-----------|---------------|------------------|
+| String | `jsonPrimitive.content` | `jsonPrimitive.contentOrNull ?: ""` |
+| Int | `jsonPrimitive.int` | `jsonPrimitive.intOrNull ?: 0` |
+| Float | `jsonPrimitive.float` | `jsonPrimitive.floatOrNull ?: 0f` |
+| Boolean | `jsonPrimitive.boolean` | `jsonPrimitive.booleanOrNull == true` |
+| Object | `jsonObject` | `?.jsonObject` (check for null first) |
+| Array | `jsonArray` | `?.jsonArray ?: emptyList()` |
+
+### Building JSON Request Bodies:
+```kotlin
+val requestBody = buildJsonObject {
+    put("path", "/api/endpoint")
+    put("method", "GET")
+    putJsonArray("headers") {
+        addJsonArray {
+            add("content-type")
+            add("application/json")
+        }
+    }
+}
+val bodyString = requestBody.toString()
 ```
 
 ---
@@ -2344,6 +2453,9 @@ import org.jsoup.nodes.Element
 import ireader.common.utils.DateParser
 import ireader.common.utils.ContentCleaner
 import ireader.core.source.helpers.*
+
+// ❌ FORBIDDEN - Causes runtime errors in test server
+import kotlinx.serialization.Serializable  // Do NOT use @Serializable data classes!
 ```
 
 ---
