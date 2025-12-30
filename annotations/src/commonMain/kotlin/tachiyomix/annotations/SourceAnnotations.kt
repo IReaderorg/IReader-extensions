@@ -7,7 +7,7 @@ package tachiyomix.annotations
 
 /**
  * 🆔 AUTO SOURCE ID - Never manually manage source IDs again!
- * 
+ *
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  SIMPLE USAGE (99% of cases):                                   │
  * │                                                                 │
@@ -16,22 +16,22 @@ package tachiyomix.annotations
  * │    abstract class MySource(deps: Dependencies) : ...            │
  * │                                                                 │
  * └─────────────────────────────────────────────────────────────────┘
- * 
+ *
  * HOW IT WORKS:
  * - KSP generates a stable ID from your source name + language
  * - Same name + lang = same ID (always!)
  * - Different name or lang = different ID
- * 
+ *
  * AFTER BUILDING, you can use the generated constant:
  *   override val id: Long get() = MySourceSourceId.ID
- * 
+ *
  * ─────────────────────────────────────────────────────────────────
  * ADVANCED: Migrating from manual IDs
  * ─────────────────────────────────────────────────────────────────
  * If you're renaming a source but need to keep the same ID:
- * 
+ *
  *   @AutoSourceId(seed = "OldSourceName")
- * 
+ *
  * This generates the ID using "OldSourceName" instead of the class name.
  */
 @Retention(AnnotationRetention.SOURCE)
@@ -39,15 +39,15 @@ package tachiyomix.annotations
 annotation class AutoSourceId(
     /**
      * Seed for ID generation. Leave empty to use the source name (default).
-     * 
+     *
      * Only set this if you're renaming a source and need backward compatibility.
      * Example: @AutoSourceId(seed = "OldName") keeps the old ID after rename.
      */
     val seed: String = "",
-    
+
     /**
      * Version for ID generation. Default is 1.
-     * 
+     *
      * Only increment this if you need a completely new ID for the same source
      * (rare - usually for major rewrites that break user data).
      */
@@ -56,10 +56,10 @@ annotation class AutoSourceId(
 
 /**
  * 📝 SOURCE CONFIG - Define source properties in one place (OPTIONAL)
- * 
+ *
  * This is an ADVANCED annotation. Most sources don't need it.
  * Just use @AutoSourceId for ID generation.
- * 
+ *
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  @SourceConfig(                                                 │
  * │      name = "My Source",                                        │
@@ -88,10 +88,10 @@ annotation class SourceConfig(
 
 /**
  * 📦 VALIDATE PACKAGE - Auto-check package name matches directory
- * 
+ *
  * Automatically enabled for all @Extension classes.
  * You don't need to add this manually.
- * 
+ *
  * If your package is wrong (e.g., "ireader.dao" in "daonovel" folder),
  * you'll see a warning during build with instructions to fix it.
  */
@@ -101,7 +101,7 @@ annotation class ValidatePackage
 
 /**
  * 🔍 GENERATE FILTERS - Auto-generate common filters (OPTIONAL)
- * 
+ *
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  @Extension                                                     │
  * │  @GenerateFilters(                                              │
@@ -113,10 +113,10 @@ annotation class ValidatePackage
  * │                                                                 │
  * │  // getFilters() is AUTOMATICALLY implemented - no override needed! │
  * └─────────────────────────────────────────────────────────────────┘
- * 
+ *
  * The KSP processor automatically generates the getFilters() override
  * in the Extension class. You don't need to write any code!
- * 
+ *
  * Skip this if you have custom/complex filters - just write them manually.
  */
 @Retention(AnnotationRetention.SOURCE)
@@ -140,7 +140,7 @@ annotation class GenerateFilters(
 
 /**
  * ⚡ GENERATE COMMANDS - Auto-generate standard commands (OPTIONAL)
- * 
+ *
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  @Extension                                                     │
  * │  @GenerateCommands(                                             │
@@ -152,10 +152,10 @@ annotation class GenerateFilters(
  * │                                                                 │
  * │  // getCommands() is AUTOMATICALLY implemented - no override needed! │
  * └─────────────────────────────────────────────────────────────────┘
- * 
+ *
  * The KSP processor automatically generates the getCommands() override
  * in the Extension class. You don't need to write any code!
- * 
+ *
  * Most sources use the same commands, so this saves repetitive code.
  */
 @Retention(AnnotationRetention.SOURCE)
@@ -172,42 +172,10 @@ annotation class GenerateCommands(
 )
 
 
-/**
- * 🧪 GENERATE TESTS - Auto-generate integration tests for the source
- * 
- * ┌─────────────────────────────────────────────────────────────────┐
- * │  @Extension                                                     │
- * │  @GenerateTests(                                                │
- * │      unitTests = true,                                          │
- * │      integrationTests = true,                                   │
- * │      searchQuery = "test",                                      │
- * │      minSearchResults = 1                                       │
- * │  )                                                              │
- * │  abstract class MySource(deps: Dependencies) : SourceFactory(deps) │
- * └─────────────────────────────────────────────────────────────────┘
- * 
- * Generates test classes that validate:
- * - Selectors return expected results
- * - URLs are valid and accessible
- * - Search returns results
- * - Chapter content is parseable
- */
-@Retention(AnnotationRetention.SOURCE)
-@Target(AnnotationTarget.CLASS)
-annotation class GenerateTests(
-    /** Generate unit tests for selectors */
-    val unitTests: Boolean = true,
-    /** Generate integration tests (requires network) */
-    val integrationTests: Boolean = true,
-    /** Search query to test */
-    val searchQuery: String = "",
-    /** Minimum expected search results */
-    val minSearchResults: Int = 1
-)
 
 /**
  * 📌 TEST FIXTURE - Define test URLs and expected values
- * 
+ *
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  @TestFixture(                                                  │
  * │      novelUrl = "https://example.com/novel/123",                │
@@ -216,7 +184,7 @@ annotation class GenerateTests(
  * │      expectedAuthor = "Author Name"                             │
  * │  )                                                              │
  * └─────────────────────────────────────────────────────────────────┘
- * 
+ *
  * Used by:
  * - Integration tests to validate selectors
  * - Source health check system to detect broken selectors
@@ -239,7 +207,7 @@ annotation class TestFixture(
 
 /**
  * 📊 TEST EXPECTATIONS - Define expected behavior for tests
- * 
+ *
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  @TestExpectations(                                             │
  * │      minLatestNovels = 10,                                      │
@@ -248,7 +216,7 @@ annotation class TestFixture(
  * │      requiresLogin = false                                      │
  * │  )                                                              │
  * └─────────────────────────────────────────────────────────────────┘
- * 
+ *
  * Defines expected behavior that tests will validate.
  */
 @Retention(AnnotationRetention.SOURCE)
@@ -268,7 +236,7 @@ annotation class TestExpectations(
 
 /**
  * 🔗 URL VALIDATION - Define URL patterns for validation
- * 
+ *
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  @UrlValidation(                                                │
  * │      novelPattern = "^https://example\\.com/novel/\\d+$",       │
@@ -276,7 +244,7 @@ annotation class TestExpectations(
  * │      coverPattern = "^https?://.*\\.(jpg|png|webp)$"            │
  * │  )                                                              │
  * └─────────────────────────────────────────────────────────────────┘
- * 
+ *
  * Used by integration tests to validate that URLs returned by
  * selectors match expected patterns.
  */
@@ -293,7 +261,7 @@ annotation class UrlValidation(
 
 /**
  * 📸 SELECTOR SNAPSHOT - Define expected selector results for health checks
- * 
+ *
  * ┌─────────────────────────────────────────────────────────────────┐
  * │  @SelectorSnapshot(                                             │
  * │      name = "titleSelector",                                    │
@@ -303,7 +271,7 @@ annotation class UrlValidation(
  * │      expectedMinCount = 1                                       │
  * │  )                                                              │
  * └─────────────────────────────────────────────────────────────────┘
- * 
+ *
  * Multiple @SelectorSnapshot annotations can be added to a source.
  * These are used by the source health check system to:
  * - Validate selectors still work

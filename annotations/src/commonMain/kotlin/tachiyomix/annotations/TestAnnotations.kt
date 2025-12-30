@@ -87,52 +87,8 @@ annotation class GenerateTests(
     val minSearchResults: Int = 1
 )
 
-/**
- * 📦 TEST FIXTURE - Provide known-good test data
- * 
- * ╔══════════════════════════════════════════════════════════════════════════╗
- * ║  Provide URLs and expected values for more reliable tests                ║
- * ╠══════════════════════════════════════════════════════════════════════════╣
- * ║                                                                          ║
- * ║  @Extension                                                              ║
- * ║  @GenerateTests(integrationTests = true)                                 ║
- * ║  @TestFixture(                                                           ║
- * ║      novelUrl = "https://example.com/novel/my-novel/",                   ║
- * ║      chapterUrl = "https://example.com/novel/my-novel/chapter-1/",       ║
- * ║      expectedTitle = "My Novel Title",                                   ║
- * ║      expectedAuthor = "Author Name"                                      ║
- * ║  )                                                                       ║
- * ║  abstract class MySource(deps: Dependencies) : SourceFactory(deps)       ║
- * ║                                                                          ║
- * ╚══════════════════════════════════════════════════════════════════════════╝
- * 
- * WHY USE THIS:
- * ─────────────
- * • Tests are more reliable with known-good URLs
- * • Can verify exact expected values
- * • Catches regressions when site structure changes
- * 
- * TIPS:
- * ─────
- * • Choose a popular/stable novel that's unlikely to be removed
- * • Use a novel with many chapters for better coverage
- * • Update fixtures if the site changes
- */
-@Retention(AnnotationRetention.SOURCE)
-@Target(AnnotationTarget.CLASS)
-annotation class TestFixture(
-    /** Known working novel URL for testing */
-    val novelUrl: String = "",
-    
-    /** Known working chapter URL for testing */
-    val chapterUrl: String = "",
-    
-    /** Expected novel title (test fails if different) */
-    val expectedTitle: String = "",
-    
-    /** Expected author name (test fails if different) */
-    val expectedAuthor: String = ""
-)
+// NOTE: TestFixture is defined in SourceAnnotations.kt to avoid duplication.
+// See SourceAnnotations.kt for the @TestFixture annotation.
 
 /**
  * ⏭️ SKIP TESTS - Skip specific tests for a source
@@ -165,35 +121,5 @@ annotation class SkipTests(
     val reason: String = ""
 )
 
-/**
- * ✅ TEST EXPECTATIONS - Define expected behavior
- * 
- * Set minimum thresholds for test validation:
- * 
- * ```kotlin
- * @Extension
- * @GenerateTests()
- * @TestExpectations(
- *     minLatestNovels = 10,    // Expect at least 10 novels in latest
- *     minChapters = 5,         // Expect at least 5 chapters per novel
- *     supportsPagination = true,
- *     requiresLogin = false
- * )
- * abstract class MySource(deps: Dependencies) : SourceFactory(deps)
- * ```
- */
-@Retention(AnnotationRetention.SOURCE)
-@Target(AnnotationTarget.CLASS)
-annotation class TestExpectations(
-    /** Minimum novels expected from latest listing */
-    val minLatestNovels: Int = 1,
-    
-    /** Minimum chapters expected per novel */
-    val minChapters: Int = 1,
-    
-    /** Whether source supports pagination */
-    val supportsPagination: Boolean = true,
-    
-    /** Whether source requires login for some features */
-    val requiresLogin: Boolean = false
-)
+// NOTE: TestFixture and TestExpectations are defined in SourceAnnotations.kt
+// to avoid duplication. Import them from there.
