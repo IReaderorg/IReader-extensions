@@ -45,7 +45,69 @@ python scripts/create-empty-source.py NovelExample https://novelexample.com en
 python scripts/js-to-kotlin-converter.py plugin.ts en
 ```
 
-### Common Utilities
+---
+
+## 🧪 Source Test Server
+
+A built-in test server for testing IReader sources with real data. Features:
+
+- **Visual Browser** - Browse novels like a real website at `/browse`
+- **API Tester** - Test source methods with JSON responses at `/`
+- **dex2jar Integration** - Automatically loads sources from compiled APKs
+- **85+ Sources** - All compiled sources available for testing
+
+### Running the Test Server
+
+```bash
+# 1. Compile all sources (or specific ones)
+./gradlew assembleDebug
+
+# 2. Start the test server
+./gradlew :source-test-server:run
+```
+
+Server runs at **http://localhost:8080**
+
+### Available Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/` | API Tester UI - Test source methods |
+| `/browse` | Visual Browser - Browse novels like a real website |
+| `/browse/{sourceId}` | Browse specific source |
+| `/browse/{sourceId}/novel?url=...` | View novel details |
+| `/browse/{sourceId}/read?url=...` | Read chapter content |
+| `/api/sources` | List all loaded sources (JSON) |
+| `/api/sources/{id}/search?q=...` | Search novels |
+| `/api/sources/{id}/details?url=...` | Get novel details |
+| `/api/sources/{id}/chapters?url=...` | Get chapter list |
+| `/api/sources/{id}/content?url=...` | Get chapter content |
+| `/api/sources/{id}/test` | Run automated test suite |
+
+### Updating Sources
+
+When you modify a source, you need to recompile and restart:
+
+```bash
+# Recompile specific source
+./gradlew :sources:en:freewebnovel:assembleDebug
+
+# Restart the server
+./gradlew :source-test-server:run
+```
+
+The server loads sources at startup from APKs using dex2jar. JAR cache is automatically invalidated when APK changes.
+
+### How It Works
+
+1. **APK Discovery** - Scans `sources/*/build/intermediates/apk/*/debug/*.apk`
+2. **dex2jar Conversion** - Converts DEX bytecode to JAR (cached in `source-test-server/jar-cache/`)
+3. **Dynamic Loading** - Loads `tachiyomix.extension.Extension` class from each JAR
+4. **Source Registration** - Registers sources with mock dependencies for testing
+
+---
+
+## Common Utilities
 
 The repository includes shared utilities to reduce code duplication:
 
@@ -65,6 +127,7 @@ See [Common Utilities README](./common/README.md) for details.
 - 🔧 Improved build configuration
 - 🎨 Added code quality tools (EditorConfig, Detekt)
 - 📋 Added GitHub issue templates
+- 🧪 Added source test server with visual browser
 
 See [IMPROVEMENTS.md](./IMPROVEMENTS.md) for full details.
 
