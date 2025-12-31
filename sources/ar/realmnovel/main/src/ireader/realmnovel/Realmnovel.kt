@@ -20,7 +20,7 @@ abstract class RealmNovel(deps: Dependencies) : SourceFactory(deps = deps) {
     override val lang: String = "ar"
     override val baseUrl: String = "https://www.realmnovel.com"
     override val id: Long = 44L
-    override val name: String = "Realm Novel"
+    override val name: String = "RealmNovel"
 
     private val apiUrl = "https://www.realmnovel.com/api"
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
