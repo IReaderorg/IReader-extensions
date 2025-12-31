@@ -1051,6 +1051,71 @@
     "assetsDir": "multisrc/madara/zinnovel/assets"
   },
   {
+    "pkg": "ireader.allnovel.allnovel.en",
+    "apk": "ireader-en-allnovel-v2.1.apk",
+    "name": "AllNovel",
+    "id": 4368737766418014452,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels online",
+    "nsfw": false,
+    "sourceDir": "allnovel",
+    "assetsDir": "multisrc/readnovelfull/allnovel/assets"
+  },
+  {
+    "pkg": "ireader.allnovelfull.allnovelfull.en",
+    "apk": "ireader-en-allnovelfull-v2.1.apk",
+    "name": "AllNovelFull",
+    "id": 3273374795580060030,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels online",
+    "nsfw": false,
+    "sourceDir": "allnovelfull",
+    "assetsDir": "multisrc/readnovelfull/allnovelfull/assets"
+  },
+  {
+    "pkg": "ireader.boxnovel.boxnovel.en",
+    "apk": "ireader-en-boxnovel-v2.1.apk",
+    "name": "BoxNovel",
+    "id": 7944537582591806060,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels online",
+    "nsfw": false,
+    "sourceDir": "boxnovel",
+    "assetsDir": "multisrc/readnovelfull/boxnovel/assets"
+  },
+  {
+    "pkg": "ireader.fanmtl.fanmtl.en",
+    "apk": "ireader-en-fanmtl-v2.1.apk",
+    "name": "FanMTL",
+    "id": 8296136693518469991,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "fanmtl",
+    "assetsDir": "multisrc/readwn/fanmtl/assets"
+  },
+  {
+    "pkg": "ireader.libread.libread.en",
+    "apk": "ireader-en-libread-v2.1.apk",
+    "name": "LibRead",
+    "id": 560439935624956734,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels online",
+    "nsfw": false,
+    "sourceDir": "libread",
+    "assetsDir": "multisrc/readnovelfull/libread/assets"
+  },
+  {
     "pkg": "ireader.ltnovel.ltnovel.en",
     "apk": "ireader-en-ltnovel-v2.2.apk",
     "name": "Ltnovel",
@@ -1061,7 +1126,33 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "ltnovel",
-    "assetsDir": "multisrc/madara/ltnovel/assets"
+    "assetsDir": "multisrc/readwn/ltnovel/assets"
+  },
+  {
+    "pkg": "ireader.novelbin.novelbin.en",
+    "apk": "ireader-en-novelbin-v2.1.apk",
+    "name": "NovelBin",
+    "id": 1876355330276701201,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels online",
+    "nsfw": false,
+    "sourceDir": "novelbin",
+    "assetsDir": "multisrc/readnovelfull/novelbin/assets"
+  },
+  {
+    "pkg": "ireader.novelfull.novelfull.en",
+    "apk": "ireader-en-novelfull-v2.1.apk",
+    "name": "NovelFull",
+    "id": 1811616907726599068,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels online",
+    "nsfw": false,
+    "sourceDir": "novelfull",
+    "assetsDir": "multisrc/readnovelfull/novelfull/assets"
   },
   {
     "pkg": "ireader.novelmt.novelmt.en",
@@ -1074,7 +1165,7 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "novelmt",
-    "assetsDir": "multisrc/madara/novelmt/assets"
+    "assetsDir": "multisrc/readwn/novelmt/assets"
   },
   {
     "pkg": "ireader.readmtl.en",
@@ -1089,6 +1180,19 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.readnovelfull.readnovelfull.en",
+    "apk": "ireader-en-readnovelfull-v2.1.apk",
+    "name": "ReadNovelFull",
+    "id": 2528364313208007455,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels online free",
+    "nsfw": false,
+    "sourceDir": "readnovelfull",
+    "assetsDir": "multisrc/readnovelfull/readnovelfull/assets"
+  },
+  {
     "pkg": "ireader.readwn.readwn.en",
     "apk": "ireader-en-readwn-v2.2.apk",
     "name": "Readwn",
@@ -1099,7 +1203,7 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "readwn",
-    "assetsDir": "multisrc/madara/readwn/assets"
+    "assetsDir": "multisrc/readwn/readwn/assets"
   },
   {
     "pkg": "ireader.realmnovel.ar",
@@ -1355,6 +1459,19 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.wuxiabox.wuxiabox.en",
+    "apk": "ireader-en-wuxiabox-v2.1.apk",
+    "name": "Wuxiabox",
+    "id": 476516676913011994,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "wuxiabox",
+    "assetsDir": "multisrc/readwn/wuxiabox/assets"
+  },
+  {
     "pkg": "ireader.wuxiaclick.en",
     "apk": "ireader-en-wuxiaclick-v2.1.apk",
     "name": "WuxiaClick",
@@ -1365,6 +1482,45 @@
     "description": "Read Wuxia, Light and Korean Novels at WuxiaClick",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.wuxiafox.wuxiafox.en",
+    "apk": "ireader-en-wuxiafox-v2.1.apk",
+    "name": "Wuxiafox",
+    "id": 9058184096799034760,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "wuxiafox",
+    "assetsDir": "multisrc/readwn/wuxiafox/assets"
+  },
+  {
+    "pkg": "ireader.wuxiaspot.wuxiaspot.en",
+    "apk": "ireader-en-wuxiaspot-v2.1.apk",
+    "name": "WuxiaSpot",
+    "id": 2105100932086724288,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "wuxiaspot",
+    "assetsDir": "multisrc/readwn/wuxiaspot/assets"
+  },
+  {
+    "pkg": "ireader.wuxiav.wuxiav.en",
+    "apk": "ireader-en-wuxiav-v2.1.apk",
+    "name": "WuxiaV",
+    "id": 496739870442277884,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "wuxiav",
+    "assetsDir": "multisrc/readwn/wuxiav/assets"
   },
   {
     "pkg": "ireader.wuxiaworld.en",
