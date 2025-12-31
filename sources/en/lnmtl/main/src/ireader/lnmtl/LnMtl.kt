@@ -4,17 +4,23 @@ import io.ktor.client.request.get
 import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
+import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.SourceFactory
 import ireader.lnmtl.chapters.LNMTLResponse
 import ireader.lnmtl.volume.LNMTLVolumeResponse
 import ireader.lnmtl.volume.LNMTLVolumnResponseItem
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
 
@@ -37,8 +43,24 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(deps = deps) {
     override val name: String get() = "LnMtl"
 
     override fun getFilters(): FilterList = listOf(
-
+        Filter.Title(),
+        Filter.Sort(
+            "Order by:",
+            arrayOf("Favourites", "Name", "Date")
+        ),
+        Filter.Select(
+            "Sort",
+            arrayOf("Descending", "Ascending")
+        ),
+        Filter.Select(
+            "Status",
+            arrayOf("All", "Ongoing", "Finished")
+        )
     )
+    
+    private val orderValues = arrayOf("favourites", "name", "date")
+    private val sortValues = arrayOf("desc", "asc")
+    private val statusValues = arrayOf("all", "ongoing", "finished")
 
     override fun getCommands(): CommandList = listOf(
         Command.Detail.Fetch(),
@@ -48,6 +70,17 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(deps = deps) {
 
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
+            BaseExploreFetcher(
+                "Favourites",
+                endpoint = "/novel?orderBy=favourites&order=desc&filter=all&page={page}",
+                selector = ".media",
+                nameSelector = ".media-title a",
+                linkSelector = ".media-title a",
+                linkAtt = "href",
+                coverSelector = "img",
+                coverAtt = "src",
+                maxPage = 80,
+            ),
             BaseExploreFetcher(
                 "Latest",
                 endpoint = "/novel?orderBy=date&order=desc&filter=all&page={page}",
@@ -60,8 +93,8 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(deps = deps) {
                 maxPage = 80,
             ),
             BaseExploreFetcher(
-                "Trending",
-                endpoint = "/novel?orderBy=favourites&order=desc&filter=all&page={page}",
+                "By Name",
+                endpoint = "/novel?orderBy=name&order=asc&filter=all&page={page}",
                 selector = ".media",
                 nameSelector = ".media-title a",
                 linkSelector = ".media-title a",
@@ -70,7 +103,6 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(deps = deps) {
                 coverAtt = "src",
                 maxPage = 80,
             ),
-
         )
 
     override val detailFetcher: Detail
@@ -99,6 +131,79 @@ abstract class LnMtl(deps: Dependencies) : SourceFactory(deps = deps) {
     val jsonDecoder = Json {
         ignoreUnknownKeys = true
     }
+    
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return searchNovels(query)
+        }
+        
+        // Handle filters
+        val sortIndex = filters.findInstance<Filter.Sort>()?.value?.index ?: 0
+        val selectFilters = filters.filterIsInstance<Filter.Select>()
+        val orderIndex = selectFilters.getOrNull(0)?.value ?: 0
+        val statusIndex = selectFilters.getOrNull(1)?.value ?: 0
+        
+        val orderBy = orderValues.getOrElse(sortIndex) { "favourites" }
+        val order = sortValues.getOrElse(orderIndex) { "desc" }
+        val status = statusValues.getOrElse(statusIndex) { "all" }
+        
+        val url = "${baseUrl}novel?orderBy=$orderBy&order=$order&filter=$status&page=$page"
+        val document = client.get(requestBuilder(url)).asJsoup()
+        
+        val novels = document.select(".media").mapNotNull { element ->
+            val linkElement = element.selectFirst(".media-title a") ?: return@mapNotNull null
+            val title = linkElement.text().trim()
+            val link = linkElement.attr("href")
+            val cover = element.selectFirst("img")?.attr("src") ?: ""
+            
+            MangaInfo(
+                key = link,
+                title = title,
+                cover = cover
+            )
+        }
+        
+        val hasNext = document.select(".pagination li:last-child:not(.disabled)").isNotEmpty()
+        return MangasPageInfo(novels, hasNext)
+    }
+    
+    private suspend fun searchNovels(query: String): MangasPageInfo {
+        // LNMTL uses a JSON file for search
+        val homeHtml = client.get(requestBuilder(baseUrl)).asJsoup()
+        val scripts = homeHtml.select("script").html()
+        
+        // Extract the JSON file path from script
+        val jsonPath = Regex("prefetch: '/(.*?\\.json)'").find(scripts)?.groupValues?.get(1)
+        if (jsonPath == null) {
+            return MangasPageInfo(emptyList(), false)
+        }
+        
+        val jsonUrl = "$baseUrl$jsonPath"
+        val jsonText = client.get(requestBuilder(jsonUrl)).asJsoup().body().text()
+        
+        // Parse JSON dynamically
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val jsonArray = json.parseToJsonElement(jsonText).jsonArray
+        
+        val novels = jsonArray.mapNotNull { element ->
+            val obj = element.jsonObject
+            val name = obj["name"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            if (!name.lowercase().contains(query.lowercase())) return@mapNotNull null
+            
+            val slug = obj["slug"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val image = obj["image"]?.jsonPrimitive?.contentOrNull ?: ""
+            
+            MangaInfo(
+                key = "${baseUrl}novel/$slug",
+                title = name,
+                cover = image
+            )
+        }
+        
+        return MangasPageInfo(novels, false)
+    }
+    
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>

@@ -1,7 +1,11 @@
 package ireader.dreambigtl
 
+import io.ktor.client.request.get
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
+import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
+import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
@@ -97,15 +101,80 @@ abstract class DreamBigTL(private val deps: Dependencies) : SourceFactory(
 
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
-            selector = ".chapter-panel ul li, h2:contains(\"List of Chapters\") + ul li",
-            nameSelector = "a",
-            linkSelector = "a",
+            selector = ".chapter-panel ul li a",
+            nameSelector = "",
+            linkSelector = "",
             linkAtt = "href",
             reverseChapterList = true
         )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
+            pageTitleSelector = "h1.entry-title",
             pageContentSelector = ".post-body"
         )
+    
+    /**
+     * Custom chapter parsing to handle Free Tier panel and List of Chapters
+     */
+    override suspend fun getChapterList(
+        manga: MangaInfo,
+        commands: List<Command<*>>
+    ): List<ChapterInfo> {
+        // Check for WebView HTML first
+        val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
+        if (chapterFetch != null && chapterFetch.html.isNotBlank()) {
+            return parseChaptersFromDocument(chapterFetch.html.asJsoup())
+        }
+        
+        val document = client.get(requestBuilder(manga.key)).asJsoup()
+        return parseChaptersFromDocument(document)
+    }
+    
+    private fun parseChaptersFromDocument(document: Document): List<ChapterInfo> {
+        val chapters = mutableListOf<ChapterInfo>()
+        
+        // Try to parse "Free Tier" chapters first
+        document.select(".chapter-panel").forEach { panel ->
+            val panelTitle = panel.selectFirst("summary")?.text()?.trim() ?: ""
+            if (panelTitle == "Free Tier") {
+                panel.select("ul li a").forEach { element ->
+                    val name = element.text().trim()
+                    val url = element.attr("href")
+                    if (name.isNotBlank() && url.isNotBlank()) {
+                        chapters.add(ChapterInfo(name = name, key = url))
+                    }
+                }
+            }
+        }
+        
+        // If no Free Tier chapters, try "List of Chapters"
+        if (chapters.isEmpty()) {
+            document.select("h2:contains(List of Chapters), span:contains(List of Chapters)").forEach { header ->
+                val chapterList = header.nextElementSibling()
+                if (chapterList?.tagName() == "ul") {
+                    chapterList.select("li a").forEach { element ->
+                        val name = element.text().trim()
+                        val url = element.attr("href")
+                        if (name.isNotBlank() && url.isNotBlank()) {
+                            chapters.add(ChapterInfo(name = name, key = url))
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Fallback: try any chapter-panel ul li a
+        if (chapters.isEmpty()) {
+            document.select(".chapter-panel ul li a").forEach { element ->
+                val name = element.text().trim()
+                val url = element.attr("href")
+                if (name.isNotBlank() && url.isNotBlank()) {
+                    chapters.add(ChapterInfo(name = name, key = url))
+                }
+            }
+        }
+        
+        return chapters.reversed()
+    }
 } 

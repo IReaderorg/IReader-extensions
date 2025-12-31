@@ -70,6 +70,35 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
     // ═══════════════════════════════════════════════════════════════
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
+        Filter.Select(
+            "الحالة (Status)",
+            arrayOf("جميع الروايات", "مكتمل", "جديد", "مستمر")
+        ),
+        Filter.Select(
+            "التصنيفات (Category)",
+            arrayOf(
+                "All", "Wuxia", "Xianxia", "XUANHUAN", "أصلية", "أكشن", "إثارة",
+                "إنتقال الى عالم أخر", "إيتشي", "الخيال العلمي", "بوليسي", "تاريخي",
+                "تقمص شخصيات", "جريمة", "جوسى", "حريم", "حياة مدرسية", "خارقة للطبيعة",
+                "خيالي", "دراما", "رعب", "رومانسي", "سحر", "سينن", "شريحة من الحياة",
+                "شونين", "غموض", "فنون القتال", "قوى خارقة", "كوميدى", "مأساوي",
+                "ما بعد الكارثة", "مغامرة", "ميكا", "ناضج", "نفسي", "فانتازيا",
+                "رياضة", "ابراج", "الالهة", "شياطين", "السفر عبر الزمن", "رواية صينية",
+                "رواية ويب", "لايت نوفل", "كوري", "+18", "إيسكاي", "ياباني", "مؤلفة"
+            )
+        )
+    )
+    
+    private val statusValues = arrayOf("", "Completed", "New", "Ongoing")
+    private val categoryValues = arrayOf(
+        "", "Wuxia", "Xianxia", "XUANHUAN", "أصلية", "أكشن", "إثارة",
+        "إنتقال+الى+عالم+أخر", "إيتشي", "الخيال+العلمي", "بوليسي", "تاريخي",
+        "تقمص+شخصيات", "جريمة", "جوسى", "حريم", "حياة+مدرسية", "خارقة+للطبيعة",
+        "خيالي", "دراما", "رعب", "رومانسي", "سحر", "سينن", "شريحة+من+الحياة",
+        "شونين", "غموض", "فنون+القتال", "قوى+خارقة", "كوميدى", "مأساوي",
+        "ما+بعد+الكارثة", "مغامرة", "ميكا", "ناضج", "نفسي", "فانتازيا",
+        "رياضة", "ابراج", "الالهة", "شياطين", "السفر+عبر+الزمن", "رواية+صينية",
+        "رواية+ويب", "لايت+نوفل", "كوري", "%2B18", "إيسكاي", "ياباني", "مؤلفة"
     )
 
     override fun getCommands(): CommandList = listOf(
@@ -77,6 +106,56 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
         Command.Content.Fetch(),
         Command.Chapter.Fetch(),
     )
+    
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return super.getMangaList(filters, page)
+        }
+        
+        // Handle filters
+        val selectFilters = filters.filterIsInstance<Filter.Select>()
+        val statusIndex = selectFilters.getOrNull(0)?.value ?: 0
+        val categoryIndex = selectFilters.getOrNull(1)?.value ?: 0
+        
+        val status = statusValues.getOrElse(statusIndex) { "" }
+        val category = categoryValues.getOrElse(categoryIndex) { "" }
+        
+        // Build URL with filters
+        val pageCorrected = page - 1
+        var url = "$baseUrl/library?"
+        if (category.isNotBlank()) {
+            url += "&category=$category"
+        }
+        if (status.isNotBlank()) {
+            url += "&status=$status"
+        }
+        url += "&page=$pageCorrected"
+        
+        val document = client.get(requestBuilder(url)).asJsoup()
+        return parseNovelList(document)
+    }
+    
+    private fun parseNovelList(document: Document): MangasPageInfo {
+        val novels = document.select(".list-item a, article ul li a").mapNotNull { element ->
+            val title = element.selectFirst("h4")?.text()?.trim() ?: return@mapNotNull null
+            val link = element.attr("href")
+            val imgElement = element.selectFirst("img")
+            var cover = imgElement?.attr("src") ?: ""
+            
+            // Filter out placeholder images
+            if (cover.contains("placeholder")) cover = ""
+            
+            MangaInfo(
+                key = if (link.startsWith("http")) link else "$baseUrl$link",
+                title = title,
+                cover = if (cover.startsWith("http")) cover else if (cover.isNotBlank()) "$baseUrl$cover" else ""
+            )
+        }
+        
+        // SuNovels uses client-side pagination, so we can't reliably detect next page
+        return MangasPageInfo(novels, novels.isNotEmpty())
+    }
 
     // ═══════════════════════════════════════════════════════════════
     // 📚 EXPLORE FETCHERS

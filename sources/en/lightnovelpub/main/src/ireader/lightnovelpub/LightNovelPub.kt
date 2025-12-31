@@ -36,7 +36,41 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
         get() = "LightNovelPub"
 
     override fun getFilters(): FilterList = listOf(
-        Filter.Title()
+        Filter.Title(),
+        Filter.Sort(
+            "Order by:",
+            arrayOf("Popular", "New", "Updates")
+        ),
+        Filter.Select(
+            "Status",
+            arrayOf("All", "Completed", "Ongoing")
+        ),
+        Filter.Select(
+            "Genre",
+            arrayOf(
+                "All", "Action", "Adventure", "Drama", "Fantasy", "Harem",
+                "Martial Arts", "Mature", "Romance", "Tragedy", "Xuanhuan",
+                "Ecchi", "Comedy", "Slice of Life", "Mystery", "Supernatural",
+                "Psychological", "Sci-fi", "Xianxia", "School Life", "Josei",
+                "Wuxia", "Shounen", "Horror", "Mecha", "Historical", "Shoujo",
+                "Adult", "Seinen", "Sports", "Gender Bender", "Shounen Ai",
+                "Yaoi", "Video Games", "Smut", "Eastern Fantasy",
+                "Contemporary Romance", "Fantasy Romance", "Shoujo Ai", "Yuri"
+            )
+        )
+    )
+    
+    private val orderValues = arrayOf("popular", "new", "updated")
+    private val statusValues = arrayOf("all", "completed", "ongoing")
+    private val genreValues = arrayOf(
+        "all", "action", "adventure", "drama", "fantasy", "harem",
+        "martial-arts", "mature", "romance", "tragedy", "xuanhuan",
+        "ecchi", "comedy", "slice-of-life", "mystery", "supernatural",
+        "psychological", "sci-fi", "xianxia", "school-life", "josei",
+        "wuxia", "shounen", "horror", "mecha", "historical", "shoujo",
+        "adult", "seinen", "sports", "gender-bender", "shounen-ai",
+        "yaoi", "video-games", "smut", "eastern-fantasy",
+        "contemporary-romance", "fantasy-romance", "shoujo-ai", "yuri"
     )
 
     override fun getCommands(): CommandList {
@@ -61,7 +95,30 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
                 coverAtt = "data-src",
                 nextPageSelector = ".pagination li",
             ),
-
+            BaseExploreFetcher(
+                "New",
+                endpoint = "/browse/all/new/all/{page}",
+                selector = ".novel-item",
+                nameSelector = ".novel-title",
+                linkSelector = ".novel-title > a",
+                linkAtt = "href",
+                addBaseUrlToLink = true,
+                coverSelector = "img",
+                coverAtt = "data-src",
+                nextPageSelector = ".pagination li",
+            ),
+            BaseExploreFetcher(
+                "Updates",
+                endpoint = "/browse/all/updated/all/{page}",
+                selector = ".novel-item",
+                nameSelector = ".novel-title",
+                linkSelector = ".novel-title > a",
+                linkAtt = "href",
+                addBaseUrlToLink = true,
+                coverSelector = "img",
+                coverAtt = "data-src",
+                nextPageSelector = ".pagination li",
+            ),
         )
 
     override val detailFetcher: Detail
@@ -142,7 +199,7 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
         val query = filters.findInstance<Filter.Title>()?.value
 
-        if (query != null) {
+        if (!query.isNullOrBlank()) {
             val response: SearchResponse =
                 client.submitForm(
                     "https://www.lightnovelpub.com/lnsearchlive",
@@ -166,7 +223,35 @@ abstract class LightNovelPub(private val deps: Dependencies) : SourceFactory(
                 hasNextPage = false
             )
         }
-        return super.getMangaList(filters, page)
+        
+        // Handle filters
+        val sortIndex = filters.findInstance<Filter.Sort>()?.value?.index ?: 0
+        val selectFilters = filters.filterIsInstance<Filter.Select>()
+        val statusIndex = selectFilters.getOrNull(0)?.value ?: 0
+        val genreIndex = selectFilters.getOrNull(1)?.value ?: 0
+        
+        val order = orderValues.getOrElse(sortIndex) { "popular" }
+        val status = statusValues.getOrElse(statusIndex) { "all" }
+        val genre = genreValues.getOrElse(genreIndex) { "all" }
+        
+        val url = "$baseUrl/browse/$genre/$order/$status/$page"
+        val document = client.get(requestBuilder(url)).asJsoup()
+        
+        val novels = document.select(".novel-item").map { element ->
+            val title = element.select(".novel-title").text().trim()
+            val link = element.select(".novel-title > a").attr("href")
+            val cover = element.select("img").attr("data-src").ifBlank {
+                element.select("img").attr("src")
+            }
+            MangaInfo(
+                key = if (link.startsWith("http")) link else "$baseUrl$link",
+                title = title,
+                cover = cover
+            )
+        }
+        
+        val hasNext = document.select(".pagination li.PagedList-skipToNext").isNotEmpty()
+        return MangasPageInfo(novels, hasNext)
     }
 
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
