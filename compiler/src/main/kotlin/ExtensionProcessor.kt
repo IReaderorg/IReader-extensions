@@ -149,6 +149,7 @@ class ExtensionProcessor(
     private fun getClassToGenerate(extensions: Sequence<KSAnnotated>): KSClassDeclaration? {
         val candidates = extensions.filterIsInstance<KSClassDeclaration>()
             .filter { it.validate() }
+            .filter { !isSkippedSource(it) }  // Filter out skipped sources
             .toList()
 
         val classToGenerate = when (candidates.size) {
@@ -167,6 +168,28 @@ class ExtensionProcessor(
             }
         }
         return classToGenerate
+    }
+
+    /**
+     * Check if a class is marked with @SkipSource or @BrokenSource
+     */
+    private fun isSkippedSource(classDeclaration: KSClassDeclaration): Boolean {
+        val hasSkipSource = classDeclaration.annotations.any {
+            it.shortName.asString() == "SkipSource"
+        }
+        val hasBrokenSource = classDeclaration.annotations.any {
+            it.shortName.asString() == "BrokenSource"
+        }
+        
+        if (hasSkipSource || hasBrokenSource) {
+            val annotation = classDeclaration.annotations.find {
+                it.shortName.asString() == "SkipSource" || it.shortName.asString() == "BrokenSource"
+            }
+            val reason = annotation?.arguments?.find { it.name?.asString() == "reason" }?.value as? String ?: "No reason"
+            logger.warn("⚠️ SKIPPING: ${classDeclaration.simpleName.asString()} - $reason")
+            return true
+        }
+        return false
     }
 
     private fun checkMatchesPkgName(source: KSClassDeclaration, buildDir: String) {

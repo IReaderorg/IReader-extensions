@@ -49,7 +49,10 @@ class ThemeSourceProcessor(
             val key = config.qualifiedName?.asString() ?: return@forEach
             if (key !in processedClasses) {
                 processedClasses.add(key)
-                generateMadaraSource(config)
+                // Check if source is marked as skipped
+                if (!isSkippedSource(config)) {
+                    generateMadaraSource(config)
+                }
             }
         }
 
@@ -61,11 +64,36 @@ class ThemeSourceProcessor(
             val key = config.qualifiedName?.asString() ?: return@forEach
             if (key !in processedClasses) {
                 processedClasses.add(key)
-                generateThemeSource(config)
+                // Check if source is marked as skipped
+                if (!isSkippedSource(config)) {
+                    generateThemeSource(config)
+                }
             }
         }
 
         return emptyList()
+    }
+
+    /**
+     * Check if a class is marked with @SkipSource or @BrokenSource
+     */
+    private fun isSkippedSource(classDeclaration: KSClassDeclaration): Boolean {
+        val hasSkipSource = classDeclaration.annotations.any {
+            it.shortName.asString() == "SkipSource"
+        }
+        val hasBrokenSource = classDeclaration.annotations.any {
+            it.shortName.asString() == "BrokenSource"
+        }
+        
+        if (hasSkipSource || hasBrokenSource) {
+            val annotation = classDeclaration.annotations.find {
+                it.shortName.asString() == "SkipSource" || it.shortName.asString() == "BrokenSource"
+            }
+            val reason = annotation?.arguments?.find { it.name?.asString() == "reason" }?.value as? String ?: "No reason"
+            logger.warn("⚠️ SKIPPING: ${classDeclaration.simpleName.asString()} - $reason")
+            return true
+        }
+        return false
     }
 
     private fun generateMadaraSource(config: KSClassDeclaration) {

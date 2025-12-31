@@ -32,6 +32,7 @@ class SourceIndexProcessor(
 ) : SymbolProcessor {
 
     private val sources = mutableListOf<SourceInfo>()
+    private val skippedSources = mutableListOf<SkippedSourceInfo>()
     private var processed = false
 
     @Serializable
@@ -45,6 +46,14 @@ class SourceIndexProcessor(
         val icon: String = "",
         val version: Int = 1,
         val tags: List<String> = emptyList()
+    )
+
+    @Serializable
+    data class SkippedSourceInfo(
+        val name: String,
+        val reason: String,
+        val since: String = "",
+        val className: String
     )
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -79,14 +88,65 @@ class SourceIndexProcessor(
             generateIndex()
         }
 
+        // Generate skipped sources report if any
+        if (skippedSources.isNotEmpty()) {
+            generateSkippedReport()
+        }
+
         processed = true
         return emptyList()
     }
+
+    /**
+     * Check if a class is marked with @SkipSource or @BrokenSource
+     */
+    private fun isSkippedSource(classDeclaration: KSClassDeclaration): SkipInfo? {
+        // Check for @SkipSource
+        val skipAnnotation = classDeclaration.annotations.find {
+            it.shortName.asString() == "SkipSource"
+        }
+        if (skipAnnotation != null) {
+            val args = skipAnnotation.arguments.associate { it.name?.asString() to it.value }
+            return SkipInfo(
+                reason = args["reason"] as? String ?: "No reason provided",
+                since = args["since"] as? String ?: ""
+            )
+        }
+
+        // Check for @BrokenSource
+        val brokenAnnotation = classDeclaration.annotations.find {
+            it.shortName.asString() == "BrokenSource"
+        }
+        if (brokenAnnotation != null) {
+            val args = brokenAnnotation.arguments.associate { it.name?.asString() to it.value }
+            return SkipInfo(
+                reason = args["reason"] as? String ?: "No reason provided",
+                since = args["since"] as? String ?: ""
+            )
+        }
+
+        return null
+    }
+
+    private data class SkipInfo(val reason: String, val since: String)
 
     private fun collectSourceInfo(extension: KSClassDeclaration, resolver: Resolver) {
         // Try to extract info from the class properties
         val className = extension.simpleName.asString()
         val packageName = extension.packageName.asString()
+
+        // Check if source is marked as skipped
+        val skipInfo = isSkippedSource(extension)
+        if (skipInfo != null) {
+            logger.warn("⚠️ SKIPPING SOURCE: $className - ${skipInfo.reason}")
+            skippedSources.add(SkippedSourceInfo(
+                name = className,
+                reason = skipInfo.reason,
+                since = skipInfo.since,
+                className = "$packageName.$className"
+            ))
+            return  // Don't add to sources list
+        }
 
         // Check for @SourceMeta annotation
         val metaAnnotation = extension.annotations.find {
@@ -128,6 +188,22 @@ class SourceIndexProcessor(
     }
 
     private fun collectMadaraSourceInfo(config: KSClassDeclaration) {
+        val className = config.simpleName.asString()
+        val packageName = config.packageName.asString()
+
+        // Check if source is marked as skipped
+        val skipInfo = isSkippedSource(config)
+        if (skipInfo != null) {
+            logger.warn("⚠️ SKIPPING MADARA SOURCE: $className - ${skipInfo.reason}")
+            skippedSources.add(SkippedSourceInfo(
+                name = className,
+                reason = skipInfo.reason,
+                since = skipInfo.since,
+                className = "$packageName.$className"
+            ))
+            return  // Don't add to sources list
+        }
+
         val annotation = config.annotations.first {
             it.shortName.asString() == "MadaraSource"
         }
@@ -160,6 +236,22 @@ class SourceIndexProcessor(
     }
 
     private fun collectThemeSourceInfo(config: KSClassDeclaration) {
+        val className = config.simpleName.asString()
+        val packageName = config.packageName.asString()
+
+        // Check if source is marked as skipped
+        val skipInfo = isSkippedSource(config)
+        if (skipInfo != null) {
+            logger.warn("⚠️ SKIPPING THEME SOURCE: $className - ${skipInfo.reason}")
+            skippedSources.add(SkippedSourceInfo(
+                name = className,
+                reason = skipInfo.reason,
+                since = skipInfo.since,
+                className = "$packageName.$className"
+            ))
+            return  // Don't add to sources list
+        }
+
         val annotation = config.annotations.first {
             it.shortName.asString() == "ThemeSource"
         }
@@ -211,6 +303,32 @@ class SourceIndexProcessor(
             logger.info("Generated source-index.json with ${sources.size} sources")
         } catch (e: Exception) {
             logger.warn("Could not generate source-index.json: ${e.message}")
+        }
+    }
+
+    private fun generateSkippedReport() {
+        val json = Json {
+            prettyPrint = true
+            encodeDefaults = true
+        }
+
+        val reportContent = json.encodeToString(skippedSources.sortedBy { it.name })
+
+        // Generate skipped sources report
+        try {
+            codeGenerator.createNewFileByPath(
+                Dependencies(false),
+                "skipped-sources",
+                "json"
+            ).use { output ->
+                output.write(reportContent.toByteArray())
+            }
+            logger.warn("⚠️ ${skippedSources.size} source(s) marked as skipped - see skipped-sources.json")
+            skippedSources.forEach { source ->
+                logger.warn("  - ${source.name}: ${source.reason}")
+            }
+        } catch (e: Exception) {
+            logger.warn("Could not generate skipped-sources.json: ${e.message}")
         }
     }
 

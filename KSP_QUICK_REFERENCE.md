@@ -112,6 +112,9 @@ The KSP processor generates the method overrides directly in the Extension class
 | `@AutoSourceId` | Auto-generate source ID |
 | `@MadaraSource` | Zero-code Madara source |
 | `@ThemeSource` | Zero-code theme source |
+| `@SkipSource` | **Exclude broken source from repo** |
+| `@BrokenSource` | Alias for @SkipSource |
+| `@DeprecatedSource` | Mark source as deprecated |
 | `@ExploreFetcher` | Define listing endpoints |
 | `@DetailSelectors` | Novel page selectors |
 | `@ChapterSelectors` | Chapter list selectors |
@@ -125,6 +128,38 @@ The KSP processor generates the method overrides directly in the Extension class
 | `@SourceDeepLink` | Handle browser URLs |
 | `@GenerateTests` | Auto-generate tests |
 | `@SourceMeta` | Add metadata |
+
+---
+
+## 🚫 Skip Broken Sources
+
+Exclude non-working sources from the repository output:
+
+```kotlin
+@Extension
+@SkipSource(
+    reason = "Site is down",
+    since = "2024-12-01"
+)
+abstract class BrokenSite(deps: Dependencies) : SourceFactory(deps) {
+    // Source code kept for future reference
+    // But NOT included in repo output
+}
+```
+
+Or use the alias:
+
+```kotlin
+@Extension
+@BrokenSource(reason = "Selectors outdated after site redesign")
+abstract class OldSite(deps: Dependencies) : SourceFactory(deps)
+```
+
+**What happens:**
+- ⚠️ Warning logged during build
+- ❌ Source excluded from `index.json`
+- ❌ APK not included in repo
+- ✅ Code still compiles (for future fixes)
 
 ---
 
