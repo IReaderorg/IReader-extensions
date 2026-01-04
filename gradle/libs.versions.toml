@@ -32,8 +32,10 @@ kotlinpoet = "com.squareup:kotlinpoet-ksp:2.2.0"
 ireader-core = { module = "io.github.ireaderorg:source-api", version.ref = "ireader" }
 
 # Ksoup (KMP HTML parser - replaces Jsoup)
-ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
-ksoup-network = { module = "com.fleeksoft.ksoup:ksoup-network", version.ref = "ksoup" }
+# IMPORTANT: Must use ireaderorg fork to match the main IReader app
+# The original com.fleeksoft.ksoup has API incompatibilities (e.g., parent() return type)
+ksoup = { module = "io.github.ireaderorg:ksoup", version.ref = "ksoup" }
+ksoup-network = { module = "io.github.ireaderorg:ksoup-network", version.ref = "ksoup" }
 
 # KotlinX DateTime (KMP date/time)
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
