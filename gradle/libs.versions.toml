@@ -1,5 +1,5 @@
 [versions]
-ireader = "1.5.0"
+ireader = "1.5.1"
 ktor = "3.3.2"
 ktlint = "0.45.1"
 kotlin = "2.2.21"
@@ -8,7 +8,7 @@ ksp = "2.3.2"
 serializationkotlinVersion = "1.7.10"
 junitAndroidExtVersion = "1.1.4-alpha03"
 dex2jar = "2.4.33"
-ksoup = "0.2.5"
+ksoup = "0.2.6"
 kotlinx-datetime = "0.7.1"
 
 [libraries]
