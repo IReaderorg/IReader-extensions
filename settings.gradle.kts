@@ -101,18 +101,29 @@ inline fun File.eachDir(block: (File) -> Unit) {
     listFiles()?.filter { it.isDirectory }?.forEach { block(it) }
 }
 
-fun File.getChunk(chunk: Int, chunkSize: Int,block: (File) -> Unit) {
-    return listFiles()
+fun File.getChunk(chunk: Int, chunkSize: Int, block: (File) -> Unit) {
+    val allDirs = listFiles()
         // Lang folder
-
         ?.filter { it.isDirectory }
         // Extension subfolders
         ?.mapNotNull { dir -> dir.listFiles()?.filter { it.isDirectory } }
         ?.flatten()
         ?.sortedBy { it.name }
-        ?.filterNotNull()!!
-        .chunked(chunkSize)[chunk]
-        .forEach { block(it) }
+        ?.filterNotNull()
+        ?: emptyList()
+    
+    if (allDirs.isEmpty()) {
+        println("Warning: No source directories found in ${this.path}")
+        return
+    }
+    
+    val chunks = allDirs.chunked(chunkSize)
+    if (chunk >= chunks.size) {
+        println("Warning: Chunk $chunk is out of bounds (total chunks: ${chunks.size})")
+        return
+    }
+    
+    chunks[chunk].forEach { block(it) }
 }
 
 // Test module - only include when explicitly testing
