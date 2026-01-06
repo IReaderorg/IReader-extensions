@@ -228,10 +228,68 @@ class Dex2JarLoader(private val deps: Dependencies) {
     }
     
     fun clearCache() {
+        println("   Clearing all caches...")
         loadedClassLoaders.values.forEach { try { it.close() } catch (e: Exception) {} }
         loadedClassLoaders.clear()
         loadedSources.clear()
+        apkIndex.clear()
+        // Delete cached JAR files to force re-conversion
         cacheDir.listFiles()?.forEach { it.delete() }
+        println("   Cache cleared!")
+    }
+    
+    /**
+     * Reload a specific source by name.
+     * Clears the cache for that source and reloads it.
+     */
+    fun reloadSource(sourceName: String, sourcesDir: File = SourceScanner.findSourcesDir()): CatalogSource? {
+        println("   Reloading source: $sourceName")
+        
+        // Find the APK for this source
+        val apkFiles = findApkFiles(sourcesDir)
+        val apk = apkFiles.find { extractSourceName(it).equals(sourceName, ignoreCase = true) }
+        
+        if (apk == null) {
+            println("   ✗ APK not found for: $sourceName")
+            return null
+        }
+        
+        val cacheKey = computeCacheKey(apk)
+        val jarFile = File(cacheDir, "$cacheKey.jar")
+        
+        // Close and remove old classloader
+        loadedClassLoaders[cacheKey]?.let { oldLoader ->
+            try { oldLoader.close() } catch (e: Exception) {}
+            loadedClassLoaders.remove(cacheKey)
+        }
+        
+        // Also check for old cache keys (different file size/modified time)
+        loadedClassLoaders.keys.filter { it.startsWith(apk.nameWithoutExtension) }.forEach { oldKey ->
+            loadedClassLoaders[oldKey]?.let { oldLoader ->
+                try { oldLoader.close() } catch (e: Exception) {}
+                loadedClassLoaders.remove(oldKey)
+            }
+            // Delete old JAR
+            File(cacheDir, "$oldKey.jar").delete()
+        }
+        
+        // Delete cached JAR to force re-conversion
+        jarFile.delete()
+        
+        // Remove old source from loaded sources
+        loadedSources.entries.removeIf { it.value.name.equals(sourceName, ignoreCase = true) }
+        
+        // Reload
+        return loadSource(apk)
+    }
+    
+    /**
+     * Reload all sources - clears everything and reloads from scratch.
+     */
+    fun reloadAllSources(sourcesDir: File = SourceScanner.findSourcesDir()): List<CatalogSource> {
+        println("   Reloading all sources...")
+        clearCache()
+        return loadAllSourcesParallel(sourcesDir)
     }
 }
 

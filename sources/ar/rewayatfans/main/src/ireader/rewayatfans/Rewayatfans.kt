@@ -6,6 +6,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.asJsoup
 import ireader.core.source.findInstance
@@ -15,6 +16,10 @@ import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.SourceFactory
+import ireader.core.source.dsl.filters
+import ireader.core.source.model.ChapterInfo
+import ireader.core.source.model.Listing
+import ireader.core.source.model.MangasPageInfo
 import tachiyomix.annotations.Extension
 
 @Extension
@@ -49,8 +54,8 @@ abstract class RewayatFans(deps: Dependencies) : SourceFactory(
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
-                "latest",
-                endpoint = "قائمة-الروايات/",
+                "Latest",
+                endpoint = "/%d9%82%d8%a7%d8%a6%d9%85%d8%a9-%d8%a7%d9%84%d8%b1%d9%88%d8%a7%d9%8a%d8%a7%d8%aa/",
                 selector = "figure.wp-block-image",
                 nameSelector = ".wp-element-caption a",
                 linkSelector = ".wp-element-caption a",
@@ -61,7 +66,6 @@ abstract class RewayatFans(deps: Dependencies) : SourceFactory(
                 type = SourceFactory.Type.Others
             ),
         )
-
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
             nameSelector = ".has-tertiary-background-color font",
@@ -113,13 +117,25 @@ abstract class RewayatFans(deps: Dependencies) : SourceFactory(
     override val chapterFetcher: Chapters
         get() = SourceFactory.Chapters(
             selector = ".has-huge-font-size a",
-            nameSelector = "font",
+            nameSelector = "a",
             linkSelector = "a",
-            linkAtt = "href"
+            linkAtt = "href",
+            reverseChapterList = true
         )
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageContentSelector = ".entry-content .wp-block-spacer ~ p",
         )
+
+    override fun chaptersParse(document: Document): List<ChapterInfo> {
+        Log.error { document.html() }
+        val selector = chapterFetcher.selector ?: return emptyList()
+
+        return document.select(selector).mapNotNull { element ->
+            runCatching { chapterFromElement(element) }
+                .getOrNull()
+                ?.takeIf { it.isValid() }
+        }
+    }
 }

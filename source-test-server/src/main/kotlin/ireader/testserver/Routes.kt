@@ -65,7 +65,7 @@ fun Application.configureRouting() {
                 call.respond(mapOf("success" to true, "message" to "Logs cleared"))
             }
             
-            // Reload sources
+            // Reload sources (adds new sources only)
             post("/reload") {
                 val deps = sourceManager.getDependencies()
                 var loaded = 0
@@ -87,6 +87,55 @@ fun Application.configureRouting() {
                     "loaded" to loaded,
                     "total" to sourceManager.getAllSources().size
                 ))
+            }
+            
+            // Force reload all sources (clears cache and reloads everything)
+            post("/reload-all") {
+                val deps = sourceManager.getDependencies()
+                
+                // Clear the source manager
+                sourceManager.clearAll()
+                
+                // Clear dex2jar cache and reload
+                val dex2jarLoader = Dex2JarLoader(deps)
+                dex2jarLoader.clearCache()
+                
+                val sources = dex2jarLoader.loadAllSourcesParallel()
+                sources.forEach { source ->
+                    sourceManager.registerSource(source)
+                }
+                
+                call.respond(mapOf(
+                    "success" to true,
+                    "message" to "All sources reloaded from scratch",
+                    "total" to sourceManager.getAllSources().size
+                ))
+            }
+            
+            // Reload a specific source by name
+            post("/reload/{name}") {
+                val name = call.parameters["name"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ApiError("Invalid", "Source name required"))
+                
+                val deps = sourceManager.getDependencies()
+                val dex2jarLoader = Dex2JarLoader(deps)
+                
+                // Remove old source from manager
+                sourceManager.removeByName(name)
+                
+                // Reload from APK
+                val source = dex2jarLoader.reloadSource(name)
+                
+                if (source != null) {
+                    sourceManager.registerSource(source)
+                    call.respond(mapOf(
+                        "success" to true,
+                        "message" to "Source '$name' reloaded successfully",
+                        "source" to sourceManager.getSourceInfo(source)
+                    ))
+                } else {
+                    call.respond(HttpStatusCode.NotFound, ApiError("NotFound", "Could not reload source: $name"))
+                }
             }
             
             // Get source info

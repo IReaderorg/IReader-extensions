@@ -487,6 +487,9 @@ fun getIndexHtml(): String {
                     <button class="reload-btn" onclick="reloadSources()">
                         <span>🔄</span> Reload Sources
                     </button>
+                    <button class="reload-btn" onclick="forceReloadAll()" style="margin-top: 8px; background: rgba(239, 68, 68, 0.2); border-color: var(--error);">
+                        <span>🔥</span> Force Reload All
+                    </button>
                     <div class="status-text" id="dex2jarStatus"></div>
                 </div>
             </aside>
@@ -531,6 +534,7 @@ fun getIndexHtml(): String {
                         <div class="actions">
                             <button class="btn-secondary" onclick="runTestSuite()">🧪 Run Tests</button>
                             <button class="btn-secondary" onclick="showSourceInfo()">ℹ️ Source Info</button>
+                            <button class="btn-secondary" onclick="reloadCurrentSource()" style="background: rgba(239, 68, 68, 0.2); border-color: var(--error);">🔄 Reload Source</button>
                         </div>
                     </div>
                     <div id="resultsArea"></div>
@@ -586,6 +590,76 @@ fun getIndexHtml(): String {
             } catch (e) {
                 statusEl.innerHTML = '❌ Reload failed';
                 statusEl.style.color = 'var(--error)';
+            }
+        }
+        
+        async function forceReloadAll() {
+            const statusEl = document.getElementById('dex2jarStatus');
+            statusEl.innerHTML = '🔥 Force reloading all...';
+            statusEl.style.color = 'var(--warning)';
+            try {
+                const response = await fetch('/api/reload-all', { method: 'POST' });
+                const data = await response.json();
+                statusEl.innerHTML = '✅ Reloaded ' + data.total + ' source(s)';
+                statusEl.style.color = 'var(--success)';
+                await loadSources();
+                await loadAvailableSources();
+                // Reset current source selection since it may have changed
+                currentSourceId = null;
+                document.getElementById('welcomeView').style.display = 'block';
+                document.getElementById('sourceView').style.display = 'none';
+            } catch (e) {
+                statusEl.innerHTML = '❌ Force reload failed';
+                statusEl.style.color = 'var(--error)';
+                console.error('Force reload failed:', e);
+            }
+        }
+        
+        async function reloadCurrentSource() {
+            if (!currentSourceId) return;
+            
+            // Find the current source name
+            const currentSource = sources.find(s => s.id === currentSourceId);
+            if (!currentSource) {
+                alert('Source not found');
+                return;
+            }
+            
+            const statusEl = document.getElementById('dex2jarStatus');
+            const resultsArea = document.getElementById('resultsArea');
+            
+            statusEl.innerHTML = '🔄 Reloading ' + currentSource.name + '...';
+            statusEl.style.color = 'var(--warning)';
+            resultsArea.innerHTML = '<div class="loading"><div class="spinner"></div> Reloading source...</div>';
+            
+            try {
+                const response = await fetch('/api/reload/' + encodeURIComponent(currentSource.name), { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusEl.innerHTML = '✅ Reloaded ' + currentSource.name;
+                    statusEl.style.color = 'var(--success)';
+                    
+                    // Refresh sources list
+                    await loadSources();
+                    
+                    // Update currentSourceId if it changed
+                    if (data.source && data.source.id) {
+                        currentSourceId = data.source.id;
+                    }
+                    
+                    resultsArea.innerHTML = '<div class="card glass"><h3 class="card-title">✅ Source Reloaded</h3>' +
+                        '<p style="color: var(--text-secondary);">Source <strong>' + currentSource.name + '</strong> has been reloaded from the latest APK.</p>' +
+                        '<pre class="json-view">' + JSON.stringify(data.source, null, 2) + '</pre></div>';
+                } else {
+                    throw new Error(data.message || 'Reload failed');
+                }
+            } catch (e) {
+                statusEl.innerHTML = '❌ Reload failed';
+                statusEl.style.color = 'var(--error)';
+                resultsArea.innerHTML = '<div class="card glass"><h3 class="card-title">❌ Reload Failed</h3>' +
+                    '<p style="color: var(--error);">' + (e.message || 'Unknown error') + '</p></div>';
+                console.error('Reload source failed:', e);
             }
         }
         

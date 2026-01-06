@@ -65,6 +65,26 @@ class SourceManager {
     
     fun getDependencies(): Dependencies = dependencies
     
+    /**
+     * Remove a source by name.
+     */
+    fun removeByName(name: String) {
+        val source = sourcesByName.remove(name.lowercase())
+        if (source != null) {
+            sources.remove(source.id)
+            println("Removed source: ${source.name} (${source.id})")
+        }
+    }
+    
+    /**
+     * Clear all sources.
+     */
+    fun clearAll() {
+        println("Clearing all ${sources.size} sources...")
+        sources.clear()
+        sourcesByName.clear()
+    }
+    
     fun getSourceInfo(source: CatalogSource): SourceInfo {
         val filters = source.getFilters().map { filter ->
             FilterInfo(
