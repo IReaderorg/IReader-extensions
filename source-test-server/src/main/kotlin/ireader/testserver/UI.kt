@@ -464,6 +464,7 @@ fun getIndexHtml(): String {
             <nav class="header-nav">
                 <a href="/" class="nav-btn active">🔧 API Tester</a>
                 <a href="/browse" class="nav-btn">📖 Visual Browser</a>
+                <button class="nav-btn" onclick="showLogs()">📋 Logs</button>
             </nav>
         </div>
     </header>
@@ -683,13 +684,43 @@ fun getIndexHtml(): String {
             
             document.getElementById('welcomeView').style.display = 'none';
             document.getElementById('sourceView').style.display = 'block';
+            
+            var assembleCmd = source.assembleCommand || './gradlew :extensions:individual:' + source.lang + ':' + source.name.toLowerCase().replace(/\\s+/g, '') + ':assemble' + source.lang.charAt(0).toUpperCase() + source.lang.slice(1) + 'Debug';
+            
             document.getElementById('resultsArea').innerHTML = 
                 '<div class="card glass"><h3 class="card-title">📦 ' + source.name + '</h3>' +
                 '<p style="margin-bottom: 20px; color: var(--text-secondary);">This source is compiled but not loaded. To test it, add it as a dependency:</p>' +
-                '<pre class="json-view">// In source-test-server/build.gradle.kts\nimplementation(project(":sources:' + source.path.replace(/\\/g, ':') + ':main"))</pre>' +
+                '<pre class="json-view">// In source-test-server/build.gradle.kts\nimplementation(project(":sources:' + source.path.replace(/\\\\/g, ':') + ':main"))</pre>' +
                 '<p style="margin-top: 20px; color: var(--text-muted);">Then restart the test server.</p>' +
+                '<h4 style="margin-top: 30px; margin-bottom: 15px;">🔨 Build Command</h4>' +
+                '<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">' +
+                '<pre class="json-view" style="flex: 1; margin: 0; padding: 14px 16px; font-size: 0.9rem;" id="assembleCmd">' + assembleCmd + '</pre>' +
+                '<button class="btn-secondary" onclick="copyAssembleCommand()" style="padding: 12px 20px; white-space: nowrap;">📋 Copy</button>' +
+                '</div>' +
                 '<h4 style="margin-top: 30px; margin-bottom: 15px;">Source Info</h4>' +
                 '<pre class="json-view">' + JSON.stringify(source, null, 2) + '</pre></div>';
+        }
+        
+        function copyAssembleCommand() {
+            var cmdEl = document.getElementById('assembleCmd');
+            if (cmdEl) {
+                var text = cmdEl.textContent || cmdEl.innerText;
+                navigator.clipboard.writeText(text).then(function() {
+                    var btn = event.target;
+                    var originalText = btn.textContent;
+                    btn.textContent = '✅ Copied!';
+                    btn.style.background = 'var(--success)';
+                    btn.style.borderColor = 'var(--success)';
+                    setTimeout(function() {
+                        btn.textContent = originalText;
+                        btn.style.background = '';
+                        btn.style.borderColor = '';
+                    }, 2000);
+                }).catch(function(err) {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy. Please select and copy manually.');
+                });
+            }
         }
         
         function selectSource(id) {
@@ -830,7 +861,124 @@ fun getIndexHtml(): String {
             if (!currentSourceId) return;
             const source = sources.find(function(s) { return s.id === currentSourceId; });
             const resultsArea = document.getElementById('resultsArea');
-            resultsArea.innerHTML = '<div class="card glass"><h3 class="card-title">Source Information</h3><pre class="json-view">' + JSON.stringify(source, null, 2) + '</pre></div>';
+            
+            // Try to find matching available source for assemble command
+            var availableSource = availableSources.find(function(as) { return as.id == source.id; });
+            var assembleCmd = '';
+            if (availableSource && availableSource.assembleCommand) {
+                assembleCmd = availableSource.assembleCommand;
+            } else {
+                // Generate command from source info
+                var langCode = source.lang || 'en';
+                var sourceName = source.name.toLowerCase().replace(/\\s+/g, '').replace(/[^a-z0-9]/g, '');
+                var langCapitalized = langCode.charAt(0).toUpperCase() + langCode.slice(1);
+                assembleCmd = './gradlew :extensions:individual:' + langCode + ':' + sourceName + ':assemble' + langCapitalized + 'Debug';
+            }
+            
+            var html = '<div class="card glass"><h3 class="card-title">Source Information</h3>';
+            html += '<h4 style="margin-bottom: 15px;">🔨 Build Command</h4>';
+            html += '<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">';
+            html += '<pre class="json-view" style="flex: 1; margin: 0; padding: 14px 16px; font-size: 0.9rem;" id="assembleCmd">' + assembleCmd + '</pre>';
+            html += '<button class="btn-secondary" onclick="copyAssembleCommand()" style="padding: 12px 20px; white-space: nowrap;">📋 Copy</button>';
+            html += '</div>';
+            html += '<h4 style="margin-top: 20px; margin-bottom: 15px;">📋 Source Details</h4>';
+            html += '<pre class="json-view">' + JSON.stringify(source, null, 2) + '</pre></div>';
+            resultsArea.innerHTML = html;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════
+        // 📋 LOGS VIEWER
+        // ═══════════════════════════════════════════════════════════════
+        let logsAutoRefresh = null;
+        
+        async function showLogs() {
+            document.getElementById('welcomeView').style.display = 'none';
+            document.getElementById('sourceView').style.display = 'block';
+            
+            const resultsArea = document.getElementById('resultsArea');
+            resultsArea.innerHTML = '<div class="loading"><div class="spinner"></div> Loading logs...</div>';
+            
+            await refreshLogs();
+        }
+        
+        async function refreshLogs() {
+            try {
+                const response = await fetch('/api/logs?limit=200');
+                const logs = await response.json();
+                
+                const resultsArea = document.getElementById('resultsArea');
+                let html = '<div class="card glass">';
+                html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">';
+                html += '<h3 class="card-title" style="margin: 0;">📋 Source Logs</h3>';
+                html += '<div style="display: flex; gap: 10px;">';
+                html += '<button class="btn-secondary" onclick="refreshLogs()" style="padding: 8px 16px;">🔄 Refresh</button>';
+                html += '<button class="btn-secondary" onclick="toggleAutoRefresh()" id="autoRefreshBtn" style="padding: 8px 16px;">' + (logsAutoRefresh ? '⏸️ Stop Auto' : '▶️ Auto Refresh') + '</button>';
+                html += '<button class="btn-secondary" onclick="clearLogs()" style="padding: 8px 16px;">🗑️ Clear</button>';
+                html += '</div></div>';
+                
+                if (logs.length === 0) {
+                    html += '<div class="empty-state"><p>No logs captured yet</p><p style="font-size: 0.8rem;">Logs will appear here when you test sources</p></div>';
+                } else {
+                    html += '<div style="max-height: 600px; overflow-y: auto;">';
+                    logs.forEach(function(log) {
+                        var levelColor = {
+                            'Error': 'var(--error)',
+                            'Warn': 'var(--warning)',
+                            'Info': 'var(--accent)',
+                            'Debug': 'var(--success)',
+                            'Verbose': 'var(--text-muted)'
+                        }[log.level] || 'var(--text-secondary)';
+                        
+                        html += '<div style="padding: 8px 12px; border-bottom: 1px solid var(--glass-border); font-family: monospace; font-size: 0.85rem;">';
+                        html += '<span style="color: var(--text-muted);">' + log.timestamp + '</span> ';
+                        html += '<span style="color: ' + levelColor + '; font-weight: 600;">[' + log.level.padEnd(5, ' ') + ']</span> ';
+                        html += '<span style="color: var(--accent-light);">[' + log.tag + ']</span> ';
+                        html += '<span style="color: var(--text-primary);">' + escapeHtml(log.message) + '</span>';
+                        if (log.throwable) {
+                            html += '<pre style="margin: 8px 0 0 0; padding: 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px; color: var(--error); font-size: 0.75rem; white-space: pre-wrap;">' + escapeHtml(log.throwable) + '</pre>';
+                        }
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+                
+                // Add tip about using Log in sources
+                html += '<div class="card glass" style="margin-top: 20px;">';
+                html += '<h4 style="margin-bottom: 12px;">💡 How to add logs in your source</h4>';
+                html += '<pre class="json-view" style="font-size: 0.85rem;">import ireader.core.log.Log\n\n// In your source methods:\nLog.debug("Fetching URL: " + url)\nLog.info("Found {} novels", novels.size)\nLog.warn("No chapters found for: {}", manga.title)\nLog.error("API error: {}", error.message)\n\n// Or use println for simple debugging:\nprintln("[MySource] Debug: " + someValue)</pre>';
+                html += '</div>';
+                
+                resultsArea.innerHTML = html;
+            } catch (error) {
+                document.getElementById('resultsArea').innerHTML = '<div class="card glass"><h3 class="card-title">Error</h3><p style="color: var(--error);">' + error.message + '</p></div>';
+            }
+        }
+        
+        function toggleAutoRefresh() {
+            if (logsAutoRefresh) {
+                clearInterval(logsAutoRefresh);
+                logsAutoRefresh = null;
+            } else {
+                logsAutoRefresh = setInterval(refreshLogs, 2000);
+            }
+            var btn = document.getElementById('autoRefreshBtn');
+            if (btn) btn.textContent = logsAutoRefresh ? '⏸️ Stop Auto' : '▶️ Auto Refresh';
+        }
+        
+        async function clearLogs() {
+            try {
+                await fetch('/api/logs/clear', { method: 'POST' });
+                await refreshLogs();
+            } catch (error) {
+                console.error('Failed to clear logs:', error);
+            }
+        }
+        
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     </script>
 </body>

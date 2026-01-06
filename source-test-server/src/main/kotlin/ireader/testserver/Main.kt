@@ -11,14 +11,23 @@ import io.ktor.http.*
 import io.ktor.server.response.*
 import ireader.core.source.CatalogSource
 import ireader.core.source.Dependencies
+import ireader.core.log.Log
 import kotlinx.serialization.json.Json
 
 fun main(args: Array<String>) {
+    // Initialize log capture to see source logs
+    LogCapture.initialize()
+    
+    // Enable verbose logging to see all source logs
+    Log.enableVerboseLogging()
+    
     println("""
         ╔═══════════════════════════════════════════════════════════╗
         ║         IReader Source Test Server                        ║
         ║                                                           ║
         ║  Starting server on http://localhost:8080                 ║
+        ║  📋 Verbose logging ENABLED - source logs will appear     ║
+        ║  📋 View logs at http://localhost:8080/api/logs           ║
         ╚═══════════════════════════════════════════════════════════╝
     """.trimIndent())
     

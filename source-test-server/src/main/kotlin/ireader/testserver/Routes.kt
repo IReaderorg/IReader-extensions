@@ -52,6 +52,19 @@ fun Application.configureRouting() {
                 ))
             }
             
+            // Get captured logs
+            get("/logs") {
+                val level = call.request.queryParameters["level"]
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 100
+                call.respond(LogCapture.getLogs(level, limit))
+            }
+            
+            // Clear logs
+            post("/logs/clear") {
+                LogCapture.clearLogs()
+                call.respond(mapOf("success" to true, "message" to "Logs cleared"))
+            }
+            
             // Reload sources
             post("/reload") {
                 val deps = sourceManager.getDependencies()

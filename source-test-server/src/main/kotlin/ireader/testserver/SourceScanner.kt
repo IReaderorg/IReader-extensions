@@ -74,6 +74,14 @@ class SourceScanner {
                         val buildDir = file.parentFile.parentFile.parentFile.parentFile.parentFile
                         val sourcePath = buildDir.parentFile.relativeTo(sourcesDir).path
                         
+                        // Generate the assemble command
+                        // Path format: "ar/realmnovel" -> ":extensions:individual:ar:realmnovel:assembleArDebug"
+                        val pathParts = sourcePath.replace("\\", "/").split("/")
+                        val langCode = pathParts.getOrNull(0) ?: lang
+                        val sourceName = pathParts.getOrNull(1) ?: name.lowercase().replace(" ", "")
+                        val langCapitalized = langCode.replaceFirstChar { it.uppercase() }
+                        val assembleCmd = "./gradlew :extensions:individual:${langCode}:${sourceName}:assemble${langCapitalized}Debug"
+                        
                         sources.add(AvailableSource(
                             name = name,
                             lang = lang,
@@ -81,7 +89,8 @@ class SourceScanner {
                             baseUrl = baseUrl,
                             nsfw = nsfw,
                             path = sourcePath,
-                            hasCompiledClasses = hasCompiledClasses(buildDir)
+                            hasCompiledClasses = hasCompiledClasses(buildDir),
+                            assembleCommand = assembleCmd
                         ))
                     }
                 } catch (e: Exception) {
@@ -190,7 +199,8 @@ data class AvailableSource(
     val baseUrl: String,
     val nsfw: Boolean,
     val path: String,
-    val hasCompiledClasses: Boolean
+    val hasCompiledClasses: Boolean,
+    val assembleCommand: String = ""
 )
 
 @Serializable

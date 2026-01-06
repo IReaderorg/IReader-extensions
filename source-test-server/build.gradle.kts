@@ -40,6 +40,7 @@ dependencies {
     
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.18")
+    implementation("co.touchlab:kermit:2.0.8")  // For source log capture
     
     // Reflection for source discovery
     implementation("org.reflections:reflections:0.10.2")
@@ -91,6 +92,7 @@ tasks.named<JavaExec>("run") {
             |║                                                                  ║
             |║  📍 API Tester:      http://localhost:8080                       ║
             |║  📖 Visual Browser:  http://localhost:8080/browse                ║
+            |║  📋 Source Logs:     http://localhost:8080/api/logs              ║
             |║                                                                  ║
             |║  Press Ctrl+C to stop the server                                 ║
             |║                                                                  ║
