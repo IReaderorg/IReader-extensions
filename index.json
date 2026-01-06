@@ -973,6 +973,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.readmtl.en",
+    "apk": "ireader-en-readmtl-v2.3.apk",
+    "name": "ReadMtl",
+    "id": 46506295113007807,
+    "lang": "en",
+    "code": 3,
+    "version": "2.3",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.readwebnovels.readwebnovels.en",
     "apk": "ireader-en-readwebnovels-v1.2.apk",
     "name": "ReadWebNovels",
@@ -1168,18 +1180,6 @@
     "assetsDir": "multisrc/readwn/novelmt/assets"
   },
   {
-    "pkg": "ireader.readmtl.en",
-    "apk": "ireader-en-readmtl-v2.3.apk",
-    "name": "ReadMtl",
-    "id": 46506295113007807,
-    "lang": "en",
-    "code": 3,
-    "version": "2.3",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.readnovelfull.readnovelfull.en",
     "apk": "ireader-en-readnovelfull-v2.1.apk",
     "name": "ReadNovelFull",
@@ -1207,12 +1207,12 @@
   },
   {
     "pkg": "ireader.realmnovel.ar",
-    "apk": "ireader-ar-realmnovel-v2.2.apk",
+    "apk": "ireader-ar-realmnovel-v2.3.apk",
     "name": "Realmnovel",
     "id": 9155405429017944360,
     "lang": "ar",
-    "code": 2,
-    "version": "2.2",
+    "code": 3,
+    "version": "2.3",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -1255,12 +1255,24 @@
   },
   {
     "pkg": "ireader.rewayatfans.ar",
-    "apk": "ireader-ar-rewayatfans-v2.2.apk",
+    "apk": "ireader-ar-rewayatfans-v2.3.apk",
     "name": "Rewayatfans",
     "id": 3083109954792853783,
     "lang": "ar",
-    "code": 2,
-    "version": "2.2",
+    "code": 3,
+    "version": "2.3",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.rewayatfansnet.ar",
+    "apk": "ireader-ar-rewayatfansnet-v2.3.apk",
+    "name": "RewayatfansNet",
+    "id": 1833824466309528818,
+    "lang": "ar",
+    "code": 3,
+    "version": "2.3",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
