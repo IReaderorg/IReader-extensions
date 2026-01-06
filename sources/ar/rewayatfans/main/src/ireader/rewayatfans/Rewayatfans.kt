@@ -50,14 +50,15 @@ abstract class RewayatFans(deps: Dependencies) : SourceFactory(
         get() = listOf(
             BaseExploreFetcher(
                 "latest",
-                endpoint = "/قائمة-الروايات/{page}/",
-                selector = "wp-block-image a",
-                nameSelector = "strong",
-                linkSelector = "a",
+                endpoint = "قائمة-الروايات/",
+                selector = "figure.wp-block-image",
+                nameSelector = ".wp-element-caption a",
+                linkSelector = ".wp-element-caption a",
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                maxPage = 5
+                maxPage = 5,
+                type = SourceFactory.Type.Others
             ),
         )
 
