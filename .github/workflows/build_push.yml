@@ -37,10 +37,20 @@ jobs:
           java-version: 21
           distribution: adopt
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Get number of modules
         run: |
           set -x
-          ./gradlew -q projects | grep '.*extensions\:\(individual\|multisrc\)\:.*\:.*' > projects.txt
+          # Retry logic for transient Maven Central 403 errors
+          for i in 1 2 3; do
+            if ./gradlew -q projects | grep '.*extensions\:\(individual\|multisrc\)\:.*\:.*' > projects.txt; then
+              break
+            fi
+            echo "Attempt $i failed, retrying in 30 seconds..."
+            sleep 30
+          done
 
           echo "NUM_INDIVIDUAL_MODULES=$(cat projects.txt | grep '.*\:individual\:.*' | wc -l)" >> $GITHUB_ENV
       - id: generate-matrices
@@ -73,6 +83,9 @@ jobs:
           java-version: 21
           distribution: adopt
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Prepare signing key
         run: |
           echo ${{ secrets.SIGNING_KEY }} | base64 -d > signingkey.jks
@@ -84,22 +97,14 @@ jobs:
           cp .github/runner-files/ci-gradle.properties ~/.gradle/gradle.properties
 
       - name: Build extensions and create repo artifacts
-        uses: gradle/gradle-command-action@v2
+        working-directory: master
         env:
           CI_MULTISRC: "false"
           CI_CHUNK_NUM: ${{ matrix.chunk }}
           ALIAS: ${{ secrets.ALIAS }}
           KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        with:
-          #          gradle-version: 7.5
-          build-root-directory: master
-          #          wrapper-directory: master
-          arguments: assembleRelease repo
-      #          wrapper-cache-enabled: true
-      #          dependencies-cache-enabled: true
-      #          configuration-cache-enabled: true
-
+        run: ./gradlew assembleRelease repo
 
       - name: Upload APKs (chunk ${{ matrix.chunk }})
         uses: actions/upload-artifact@v4
