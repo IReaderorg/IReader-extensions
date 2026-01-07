@@ -148,12 +148,52 @@ abstract class RealmNovel(private val deps: Dependencies) : SourceFactory(deps =
     }
 
     private suspend fun searchNovels(query: String, page: Int): MangasPageInfo {
-        // Use search API endpoint
+        // Use dedicated search API endpoint: /api/novels/search?q={query}
         val encodedQuery = query.trim().replace(" ", "%20")
-        val url = "$baseUrl/api/novels?page=$page&limit=20&search=$encodedQuery"
+        val url = "$baseUrl/api/novels/search?q=$encodedQuery"
         val responseText = client.get(requestBuilder(url)).bodyAsText()
 
-        return parseNovelListResponse(responseText)
+        return parseSearchResponse(responseText)
+    }
+
+    /**
+     * Parse search response - different structure from novel list.
+     * Search API returns: {"novels": [...]} without pagination info.
+     */
+    private fun parseSearchResponse(responseText: String): MangasPageInfo {
+        val jsonObj = json.parseToJsonElement(responseText).jsonObject
+
+        val novelsArray = jsonObj["novels"]?.jsonArray ?: return MangasPageInfo(emptyList(), false)
+
+        val novels = novelsArray.mapNotNull { element ->
+            val novel = element.jsonObject
+
+            val title = novel["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val slug = novel["slug"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val cover = novel["cover"]?.jsonPrimitive?.contentOrNull ?: ""
+            val description = novel["description"]?.jsonPrimitive?.contentOrNull ?: ""
+
+            // Get categories
+            val categories = novel["categories"]?.jsonArray?.mapNotNull {
+                it.jsonPrimitive.contentOrNull
+            } ?: emptyList()
+
+            // Get status
+            val completionStatus = novel["completionStatus"]?.jsonPrimitive?.contentOrNull ?: ""
+            val status = parseStatus(completionStatus)
+
+            MangaInfo(
+                key = "$baseUrl/novel/$slug",
+                title = title,
+                cover = if (cover.startsWith("/")) "$baseUrl$cover" else cover,
+                description = description,
+                genres = categories,
+                status = status
+            )
+        }
+
+        // Search API doesn't have pagination, so hasMore is always false
+        return MangasPageInfo(novels, false)
     }
 
     /**
