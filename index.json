@@ -1206,18 +1206,6 @@
     "assetsDir": "multisrc/readwn/readwn/assets"
   },
   {
-    "pkg": "ireader.realmnovel.ar",
-    "apk": "ireader-ar-realmnovel-v2.3.apk",
-    "name": "Realmnovel",
-    "id": 9155405429017944360,
-    "lang": "ar",
-    "code": 3,
-    "version": "2.3",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.reaperscans.en",
     "apk": "ireader-en-reaperscans-v2.1.apk",
     "name": "ReaperScans",
