@@ -27,7 +27,7 @@ abstract class Azora(val deps: Dependencies) : Madara(
     deps,
     key = "https://azorago.com",
     sourceName = "Azora",
-    sourceId = 65,
+    sourceId = 66,  // Changed from 65 to avoid collision with ArNovel
     language = "ar",
 ) {
     /**

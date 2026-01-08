@@ -22,6 +22,17 @@ listOf(
         sourceDir = "armtl",
     ),
     Extension(
+        name = "Markazriwayat",
+        versionCode = 1,
+        libVersion = "2",
+        lang = "ar",
+        description = "",
+        nsfw = false,
+        icon = DEFAULT_ICON,
+        assetsDir = "multisrc/madara/markazriwayat/assets",
+        sourceDir = "markazriwayat",
+    ),
+    Extension(
         name = "HizoManga",
         versionCode = 3,
         libVersion = "2",

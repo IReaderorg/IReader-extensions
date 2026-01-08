@@ -75,12 +75,26 @@ class SourceScanner {
                         val sourcePath = buildDir.parentFile.relativeTo(sourcesDir).path
                         
                         // Generate the assemble command
-                        // Path format: "ar/realmnovel" -> ":extensions:individual:ar:realmnovel:assembleArDebug"
+                        // Check if this is a multisrc or individual source
                         val pathParts = sourcePath.replace("\\", "/").split("/")
-                        val langCode = pathParts.getOrNull(0) ?: lang
-                        val sourceName = pathParts.getOrNull(1) ?: name.lowercase().replace(" ", "")
-                        val langCapitalized = langCode.replaceFirstChar { it.uppercase() }
-                        val assembleCmd = "./gradlew :extensions:individual:${langCode}:${sourceName}:assemble${langCapitalized}Debug"
+                        val isMultisrc = pathParts.getOrNull(0) == "multisrc"
+                        
+                        val assembleCmd = if (isMultisrc) {
+                            // Multisrc format: "multisrc/madara" -> ":extensions:multisrc:madara:assembleSourcename-langDebug"
+                            val themeType = pathParts.getOrNull(1) ?: "madara"
+                            val sourceName = pathParts.getOrNull(2) ?: name.lowercase().replace(" ", "")
+                            val langCapitalized = lang.replaceFirstChar { it.uppercase() }
+                            // Flavor format: sourcename-lang (e.g., armtl-ar, sonicmtl-en)
+                            val flavorName = "${sourceName}-${lang}"
+                            val flavorCapitalized = sourceName.replaceFirstChar { it.uppercase() } + lang.replaceFirstChar { it.uppercase() }
+                            "./gradlew :extensions:multisrc:${themeType}:assemble${flavorCapitalized}Debug"
+                        } else {
+                            // Individual format: "ar/realmnovel" -> ":extensions:individual:ar:realmnovel:assembleArDebug"
+                            val langCode = pathParts.getOrNull(0) ?: lang
+                            val sourceName = pathParts.getOrNull(1) ?: name.lowercase().replace(" ", "")
+                            val langCapitalized = langCode.replaceFirstChar { it.uppercase() }
+                            "./gradlew :extensions:individual:${langCode}:${sourceName}:assemble${langCapitalized}Debug"
+                        }
                         
                         sources.add(AvailableSource(
                             name = name,

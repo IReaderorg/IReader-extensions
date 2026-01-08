@@ -759,7 +759,28 @@ fun getIndexHtml(): String {
             document.getElementById('welcomeView').style.display = 'none';
             document.getElementById('sourceView').style.display = 'block';
             
-            var assembleCmd = source.assembleCommand || './gradlew :extensions:individual:' + source.lang + ':' + source.name.toLowerCase().replace(/\\s+/g, '') + ':assemble' + source.lang.charAt(0).toUpperCase() + source.lang.slice(1) + 'Debug';
+            // Use the assembleCommand from the source if available, otherwise generate it
+            var assembleCmd = source.assembleCommand;
+            if (!assembleCmd) {
+                // Check if this is a multisrc source
+                var pathParts = source.path.replace(/\\\\/g, '/').split('/');
+                var isMultisrc = pathParts[0] === 'multisrc';
+                
+                if (isMultisrc) {
+                    // Multisrc format: :extensions:multisrc:madara:assembleArmtl-arDebug
+                    var themeType = pathParts[1] || 'madara';
+                    var sourceName = pathParts[2] || source.name.toLowerCase().replace(/\\s+/g, '');
+                    var sourceNameCapitalized = sourceName.charAt(0).toUpperCase() + sourceName.slice(1);
+                    var langCapitalized = source.lang.charAt(0).toUpperCase() + source.lang.slice(1);
+                    var flavorCapitalized = sourceNameCapitalized + langCapitalized;
+                    assembleCmd = './gradlew :extensions:multisrc:' + themeType + ':assemble' + flavorCapitalized + 'Debug';
+                } else {
+                    // Individual format: :extensions:individual:ar:realmnovel:assembleArDebug
+                    var langCapitalized = source.lang.charAt(0).toUpperCase() + source.lang.slice(1);
+                    var sourceName = source.name.toLowerCase().replace(/\\s+/g, '');
+                    assembleCmd = './gradlew :extensions:individual:' + source.lang + ':' + sourceName + ':assemble' + langCapitalized + 'Debug';
+                }
+            }
             
             document.getElementById('resultsArea').innerHTML = 
                 '<div class="card glass"><h3 class="card-title">📦 ' + source.name + '</h3>' +
@@ -943,10 +964,21 @@ fun getIndexHtml(): String {
                 assembleCmd = availableSource.assembleCommand;
             } else {
                 // Generate command from source info
+                // Check if this is a multisrc source by looking at the source path/package
+                var isMultisrc = source.packageName && source.packageName.includes('.multisrc.');
                 var langCode = source.lang || 'en';
                 var sourceName = source.name.toLowerCase().replace(/\\s+/g, '').replace(/[^a-z0-9]/g, '');
                 var langCapitalized = langCode.charAt(0).toUpperCase() + langCode.slice(1);
-                assembleCmd = './gradlew :extensions:individual:' + langCode + ':' + sourceName + ':assemble' + langCapitalized + 'Debug';
+                
+                if (isMultisrc) {
+                    // Multisrc format: :extensions:multisrc:madara:assembleArmtl-arDebug
+                    var sourceNameCapitalized = sourceName.charAt(0).toUpperCase() + sourceName.slice(1);
+                    var flavorCapitalized = sourceNameCapitalized + langCapitalized;
+                    assembleCmd = './gradlew :extensions:multisrc:madara:assemble' + flavorCapitalized + 'Debug';
+                } else {
+                    // Individual format: :extensions:individual:ar:realmnovel:assembleArDebug
+                    assembleCmd = './gradlew :extensions:individual:' + langCode + ':' + sourceName + ':assemble' + langCapitalized + 'Debug';
+                }
             }
             
             var html = '<div class="card glass"><h3 class="card-title">Source Information</h3>';

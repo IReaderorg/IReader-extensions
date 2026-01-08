@@ -10,6 +10,6 @@ abstract class HizoManga(val deps: Dependencies) : Madara(
     deps,
     key = "https://hizomanga.net",
     sourceName = "HizoManga",
-    sourceId = 46,
+    sourceId = 48,  // Changed from 46 to avoid collision
     language = "ar"
 )

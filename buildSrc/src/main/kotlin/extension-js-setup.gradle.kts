@@ -1,4 +1,3 @@
-import gradle.kotlin.dsl.accessors._94b0bf080c12013c97710991d04ed1cb.testImplementation
 
 /**
  * Gradle plugin for building IReader extensions as JS bundles for iOS.
