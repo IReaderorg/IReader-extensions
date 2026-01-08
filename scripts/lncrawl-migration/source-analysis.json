@@ -1,0 +1,4110 @@
+{
+  "total_sources": 189,
+  "by_type": {
+    "madara": 39,
+    "source_factory": 40,
+    "parsed_http_source": 100,
+    "skipped": 10,
+    "unknown": 0
+  },
+  "by_language": {
+    "ar": 1,
+    "en": 140,
+    "es": 2,
+    "fr": 6,
+    "in": 3,
+    "multi": 7,
+    "pt": 3,
+    "ru": 9,
+    "tu": 1,
+    "vi": 2,
+    "zh": 15
+  },
+  "sources": [
+    {
+      "name": "Kolnovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ar\\kolnovel.py",
+      "language": "ar",
+      "base_urls": [
+        "https://kolnovel.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "OneKissNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\1\\1stkissnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://1stkissnovel.org/",
+        "https://1stkissnovel.love/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.text-left",
+        "author": "#manga-chapters-holder",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Eight88Novel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\8\\888novel.py",
+      "language": "en",
+      "base_urls": [
+        "https://888novel.com/"
+      ],
+      "source_type": "skipped",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "AllNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\a\\allnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://allnovel.org/",
+        "https://www.allnovel.org/",
+        "https://allnovelxo.com/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "AllNovelFull",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\a\\allnovelfull.py",
+      "language": "en",
+      "base_urls": [
+        "https://allnovelfull.com/",
+        "https://allnovelfull.net/",
+        "https://novgo.net/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "AncientHeartloss",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\a\\ancientheartloss.py",
+      "language": "en",
+      "base_urls": [
+        "https://ancientheartloss.com/",
+        "https://ancientheartloss.wordpress.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "meta[property=",
+        "author": ".entry-content",
+        "chapter": ".entry-content",
+        "chapter_list": ".entry-content p a[href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "AquaManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\a\\aquamanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://aquamanga.com/",
+        "https://aquamanga.org/",
+        "https://aquareader.net/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Arcanetranslations",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\a\\arcanetranslations.py",
+      "language": "en",
+      "base_urls": [
+        "https://arcanetranslations.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "AsiaNovelNet",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\a\\asianovel_net.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.asianovel.net/",
+        "https://www.wuxiasky.net/"
+      ],
+      "source_type": "source_factory",
+      "template": "SearchableSoupTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.story__identity h1.story__identity-title",
+        "cover": ".story__thumbnail a",
+        "chapter": "section#chapter-content",
+        "genres": "div.novel-container div#edit-genre a[href*=",
+        "chapter_list": "section.story__chapters li > a"
+      },
+      "notes": []
+    },
+    {
+      "name": "BabelNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\b\\babelnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://babelnovel.com/",
+        "https://api.babelnovel.com"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": true,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": [
+        "Requires authentication"
+      ]
+    },
+    {
+      "name": "Bato",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\b\\bato.py",
+      "language": "en",
+      "base_urls": [
+        "https://bato.to/",
+        "https://battwo.com/",
+        "https://mto.to/",
+        "https://mangatoto.net/",
+        "https://dto.to/",
+        "https://batocc.com/",
+        "https://batotoo.com/",
+        "https://wto.to/",
+        "https://mangatoto.com/",
+        "https://comiko.net/",
+        "https://batotwo.com/",
+        "https://mangatoto.org/",
+        "https://hto.to/",
+        "https://mangatoto.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".attr-cover img"
+      },
+      "notes": []
+    },
+    {
+      "name": "Beautymanga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\b\\beautymanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://beautymanga.com/",
+        "https://myreadingmanga.fit/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".summary_image img",
+        "chapter": "#arraydata",
+        "cover": ".reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "BonNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\b\\bonnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://bonnovel.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.text-left",
+        "author": "#manga-chapters-holder"
+      },
+      "notes": []
+    },
+    {
+      "name": "Litnet",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\b\\booknet.py",
+      "language": "en",
+      "base_urls": [
+        "https://booknet.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".book-view-cover img",
+        "author": ".book-head-content a.book-author",
+        "content": "meta[name=",
+        "cover": ".book-view-info a.author",
+        "chapter_list": ".collapsible-body a.collection-item"
+      },
+      "notes": []
+    },
+    {
+      "name": "BoxNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\b\\boxnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://boxnovel.com/"
+      ],
+      "source_type": "madara",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "BoxNovelOrg",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\b\\boxnovelorg.py",
+      "language": "en",
+      "base_urls": [
+        "http://boxnovel.org/",
+        "https://boxnovel.org/"
+      ],
+      "source_type": "skipped",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".novel-title a",
+        "chapter": "div.chr-c, #chr-content"
+      },
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "Cheldra",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\c\\cheldra.py",
+      "language": "en",
+      "base_urls": [
+        "https://cheldra.wordpress.com"
+      ],
+      "source_type": "source_factory",
+      "template": "SearchableSoupTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".entry-title",
+        "chapter": "div#content #primary #main article div.entry-content",
+        "genres": "div.info div#series-meta"
+      },
+      "notes": []
+    },
+    {
+      "name": "Chereads",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\c\\chereads.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.chereads.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "ChickenGege",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\c\\chickengege.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.chickengege.org/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "img.novelist-cover-image",
+        "chapter": "article div.entry-content",
+        "genres": "ul#novelList a, ul#extraList a, table#novelList a"
+      },
+      "notes": []
+    },
+    {
+      "name": "CkandawritesOnline",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\c\\ckandawrites.online.py",
+      "language": "en",
+      "base_urls": [
+        "https://ckandawrites.online/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "CoffeeManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\c\\coffeemanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://coffeemanga.io/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": "div.post-title h3 a",
+        "title": "div.reading-content",
+        "chapter": "h1",
+        "chapter_list": "li.wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "DaoTranslate",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\d\\daotranslate.py",
+      "language": "en",
+      "base_urls": [
+        "https://daotranslate.com/",
+        "https://daotranslate.us/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".epl-title",
+        "cover": ".info-content .spe span:nth-child(3) a",
+        "chapter_list": ".epcontent.entry-content p"
+      },
+      "notes": []
+    },
+    {
+      "name": "DMTranslations",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\d\\dmtrans.py",
+      "language": "en",
+      "base_urls": [
+        "https://dmtranslationscn.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.entry-content p img",
+        "chapter": "div.entry-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "Dobytranslations",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\d\\dobytranslations.py",
+      "language": "en",
+      "base_urls": [
+        "https://dobytranslations.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Ebotnovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\e\\ebotnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://ebotnovel.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "FantasyWorldOnline",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\fantasyworldonline.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.f-w-o.com/",
+        "https://f-w-o.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.text-left",
+        "chapter_list": "ul.main li.wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "FaqWiki",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\faqwiki.py",
+      "language": "en",
+      "base_urls": [
+        "https://faqwiki.us/",
+        "https://www.faqwiki.us/",
+        "https://faqwiki.xyz"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".entry-content",
+        "title": "h1.entry-title",
+        "cover": "#lcp_instance_0",
+        "chapter": "div.entry-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "FenriRealm",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\fenrirealm.py",
+      "language": "en",
+      "base_urls": [
+        "https://fenrirealm.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": "div#reader-area"
+      },
+      "notes": []
+    },
+    {
+      "name": "FenrirTranslations",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\fenrirtranslations.py",
+      "language": "en",
+      "base_urls": [
+        "https://fenrirtranslations.com/"
+      ],
+      "source_type": "madara",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter_list": ".free ul.main .wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "FreeFullNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\freefullnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://freefullnovel.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "FreeManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\freemanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://freemanga.me/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "FreeWebNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\freewebnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://freewebnovel.com/",
+        "https://bednovel.com/",
+        "https://innread.com/",
+        "https://innnovel.com/",
+        "https://libread.com/",
+        "https://libread.org/"
+      ],
+      "source_type": "source_factory",
+      "template": "SearchableSoupTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".m-desc h1.tit",
+        "cover": ".m-imgtxt img",
+        "chapter": ".m-read",
+        "chapter_list": "li > a"
+      },
+      "notes": []
+    },
+    {
+      "name": "BestofLightNovels",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\fsapk.py",
+      "language": "en",
+      "base_urls": [
+        "https://fsapk.com/",
+        "https://bestoflightnovels.com/"
+      ],
+      "source_type": "skipped",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".summary_image a img",
+        "chapter": "div.text-left",
+        "chapter_list": "ul.main li.wp-manga-chapter a"
+      },
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "FujiTranslation",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\f\\fujitrans.py",
+      "language": "en",
+      "base_urls": [
+        "https://fujitranslation.com/",
+        "http://www.fujitranslation.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.entry-content p strong img",
+        "chapter": ".entry-content",
+        "chapter_list": "div.entry-content p [href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "HariManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\h\\harimanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://harimanga.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "HotNovelFull",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\h\\hotnovelfull.py",
+      "language": "en",
+      "base_urls": [
+        "https://hotnovelfull.com/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "ImperfectComic",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\i\\imperfectcomic.py",
+      "language": "en",
+      "base_urls": [
+        "https://imperfectcomic.org/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Inkitt",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\i\\inkitt.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.inkitt.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": ".story-page-text"
+      },
+      "notes": []
+    },
+    {
+      "name": "IsekaiScan",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\i\\isekaiscan.py",
+      "language": "en",
+      "base_urls": [
+        "https://isekaiscan.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "IsekaiScanEU",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\i\\isekaiscaneu.py",
+      "language": "en",
+      "base_urls": [
+        "https://isekaiscan.eu/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "Isotls",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\i\\isotls.py",
+      "language": "en",
+      "base_urls": [
+        "https://isotls.com/",
+        "https://www.isotls.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "cover": "meta[property=",
+        "title": "meta[name=",
+        "chapter": "div.content"
+      },
+      "notes": []
+    },
+    {
+      "name": "KingManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\k\\kingmanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://king-manga.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "KissManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\k\\kissmanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://kissmanga.in/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Literotica",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\leafstudio.py",
+      "language": "en",
+      "base_urls": [
+        "https://leafstudio.site/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".desc_div > p:nth-child(2)",
+        "cover": "#novel_cover",
+        "genres": "a.novel_genre",
+        "chapter_list": "p.chapter_content"
+      },
+      "notes": []
+    },
+    {
+      "name": "LightNovelsLive",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\lightnovelme.py",
+      "language": "en",
+      "base_urls": [
+        "http://lightnovels.me/",
+        "https://lightnovels.me/",
+        "http://lightnovels.live/",
+        "https://lightnovels.live/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": ".chapter-content div"
+      },
+      "notes": []
+    },
+    {
+      "name": "Lightnovelpub",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\lightnovelpub.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.lightnovelpub.com/"
+      ],
+      "source_type": "skipped",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "LightNovelPub",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\lightnovelpuborg.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.lightnovelpub.org/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.chapter-content",
+        "cover": "p.novel-author",
+        "chapter": "div.novel-stats-grid span.stat-value",
+        "genres": "div.genre-tags span"
+      },
+      "notes": []
+    },
+    {
+      "name": "LightnovelReader",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\lightnovelreader.py",
+      "language": "en",
+      "base_urls": [
+        "https://lightnovelreader.me/",
+        "https://www.lightnovelreader.me/",
+        "https://lnreader.org/",
+        "https://www.lnreader.org/",
+        "http://readlightnovel.online/",
+        "https://readlitenovel.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".novels-detail-left img",
+        "author": ".js-load-chapters",
+        "content": "#chapterText",
+        "genres": ".container .novels-detail-right-in-right a[href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "LightnovelworldCom",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\lightnovelworld.com.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.lightnovelworld.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "LNT",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\lightnovetrans.py",
+      "language": "en",
+      "base_urls": [
+        "https://lightnovelstranslations.com/"
+      ],
+      "source_type": "source_factory",
+      "template": "GeneralSoupTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".novel_title",
+        "cover": ".novel-image img",
+        "chapter": ".text_story",
+        "chapter_list": ".novel_list_chapter_content li.unlock a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Literotica",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\literotica.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.literotica.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "cover": "a.y_eR > img",
+        "title": "a.y_eU",
+        "author": "div.bn_B",
+        "chapter": "div.aa_ht",
+        "genres": "a.av_as"
+      },
+      "notes": []
+    },
+    {
+      "name": "Luminarynovels",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\l\\luminarynovels.py",
+      "language": "en",
+      "base_urls": [
+        "https://luminarynovels.com/"
+      ],
+      "source_type": "skipped",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": "#manga-chapters-holder[data-id]",
+        "chapter_list": "ul.main .wp-manga-chapter a"
+      },
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "MangaTX",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\manga-tx.py",
+      "language": "en",
+      "base_urls": [
+        "https://manga-tx.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "MangaBuddy",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mangabuddy.py",
+      "language": "en",
+      "base_urls": [
+        "https://mangabuddy.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".chapter-title",
+        "chapter_list": "#chapter-list > li > a"
+      },
+      "notes": []
+    },
+    {
+      "name": "ManhwachillLove",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mangachilllove.py",
+      "language": "en",
+      "base_urls": [
+        "https://mangachill.love/",
+        "https://mangachill.io/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": "div.post-title h3 a",
+        "title": "div.reading-content",
+        "chapter": "h1"
+      },
+      "notes": []
+    },
+    {
+      "name": "MangaRead",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mangaread.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.mangaread.org/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "MangaRockTeam",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mangarockteam.py",
+      "language": "en",
+      "base_urls": [
+        "https://mangarockteam.com/"
+      ],
+      "source_type": "madara",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "MangaRosie",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mangarosie.py",
+      "language": "en",
+      "base_urls": [
+        "https://mangarosie.me/",
+        "https://mangarosie.love/",
+        "https://toon69.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "MangatoonMobi",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mangatoon.py",
+      "language": "en",
+      "base_urls": [
+        "https://mangatoon.mobi/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".episode-title, .episode-title-new",
+        "chapter": ".pictures"
+      },
+      "notes": []
+    },
+    {
+      "name": "MangaTx",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mangatx.py",
+      "language": "en",
+      "base_urls": [
+        "https://mangatx.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "MangaWeebs",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mangaweebs.py",
+      "language": "en",
+      "base_urls": [
+        "https://mangaweebs.in/",
+        "https://www.mangaweebs.in/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Miraslation",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\miraslation.py",
+      "language": "en",
+      "base_urls": [
+        "https://miraslation.net/",
+        "https://www.miraslation.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "h1.entry-title",
+        "cover": "div.entry-content p strong img",
+        "chapter": ".entry-content",
+        "chapter_list": "p"
+      },
+      "notes": []
+    },
+    {
+      "name": "MixedNovelNet",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mixednovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://mixednovel.net/",
+        "https://earlynovel.net/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title a",
+        "title": ".post-title h1",
+        "author": ".summary_image img",
+        "chapter": ".reading-content .text-left",
+        "chapter_list": ".main .wp-manga-chapter"
+      },
+      "notes": []
+    },
+    {
+      "name": "MltNovels",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mltnovels.py",
+      "language": "en",
+      "base_urls": [
+        "https://mltnovels.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "MTLNation",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mtlnation.py",
+      "language": "en",
+      "base_urls": [
+        "https://mtlnation.com/",
+        "https://www.mtlnation.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": true,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": [
+        "Requires authentication"
+      ]
+    },
+    {
+      "name": "MtlReader",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mtlreader.py",
+      "language": "en",
+      "base_urls": [
+        "https://mtlreader.com/",
+        "https://www.mtlreader.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "meta[property=",
+        "cover": ".agent-p-contact .fa.fa-user"
+      },
+      "notes": []
+    },
+    {
+      "name": "MyBoxNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\myboxnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://myboxnovel.com/"
+      ],
+      "source_type": "madara",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "MyDramaNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\m\\mydramanovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://mydramanovel.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "h3.entry-title a",
+        "chapter_list": "div.tdb_module_loop.td_module_wrap.td-animation-stack.td-cpt-post"
+      },
+      "notes": []
+    },
+    {
+      "name": "NewNovelOrg",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\newnovelorg.py",
+      "language": "en",
+      "base_urls": [
+        "https://newnovel.org/"
+      ],
+      "source_type": "madara",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "NobleMtl",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\noblemtl.py",
+      "language": "en",
+      "base_urls": [
+        "https://noblemtl.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "NoobChan",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\noobchan.py",
+      "language": "en",
+      "base_urls": [
+        "https://noobchan.xyz/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.text-left",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Novel_Bin_Net",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novel-bin.net.py",
+      "language": "en",
+      "base_urls": [
+        "https://novel-bin.net/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Novel_Bin",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novel-bin.py",
+      "language": "en",
+      "base_urls": [
+        "https://novel-bin.com/",
+        "https://novelbin.me"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Novel35",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novel35.py",
+      "language": "en",
+      "base_urls": [
+        "https://novel35.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".info-holder .book img",
+        "chapter": "div#chapter-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "Novelbin_Net",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelbin.net.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelbin.net/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Novelbin",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelbin.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelbin.com/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "MyName",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelbuddy.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelbuddy.io/"
+      ],
+      "source_type": "source_factory",
+      "template": "SearchableSoupTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "a",
+        "cover": "div.img-cover img",
+        "chapter": "div.chapter__content div.content-inner",
+        "genres": "a",
+        "chapter_list": "ul li"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelFire",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelfire.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelfire.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "span[itemprop=",
+        "cover": ".cover img",
+        "chapter": "div#content",
+        "chapter_list": "ul.chapter-list li a"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelFull",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelfull.py",
+      "language": "en",
+      "base_urls": [
+        "http://novelfull.com/",
+        "https://novelfull.com/",
+        "https://novelfull.net/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "NovelFullPlus",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelfullplus.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelfullplus.com/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "NovelGate",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelgate.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelgate.net/",
+        "https://home.novel-gate.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".title a",
+        "cover": ".book-cover",
+        "chapter": "#chapter-body"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelHall",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelhall.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.novelhall.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.book-img img[src]",
+        "chapter": "div#htmlContent.entry-content",
+        "genres": ".booktag a.red"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelHi",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelhi.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelhi.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter_list": "#showReading sent"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelHulk",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelhulk.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelhulk.com/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "NovelMao",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelmao.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelmao.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "article .kn-img amp-img",
+        "chapter_list": "main article p.indo"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelNext",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelnext.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelnext.com/",
+        "https://novelnext.dramanovels.io/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": "#chr-content, #chapter-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "Novelnextz",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelnextz.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelnextz.com/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "NovelOnlineFree",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelonlinefree.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelonlinefree.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "h1",
+        "chapter": "#vung_doc"
+      },
+      "notes": []
+    },
+    {
+      "name": "Novelpub",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelpub.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.novelpub.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "NovelSala",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelsala.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelsala.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".body span"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelsEmperor",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelsemperor.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelsemperor.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div div span",
+        "cover": "div.relative > img",
+        "chapter": "div.mx-auto.max-w-3xl",
+        "chapter_list": "div#chapters-list a"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelsOnline",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelsonline.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelsonline.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": true,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".block-title h1",
+        "chapter": "#contentall",
+        "chapter_list": ".chapters .chapter-chs li a"
+      },
+      "notes": [
+        "Requires browser/JavaScript"
+      ]
+    },
+    {
+      "name": "NovelsPl",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelspl.py",
+      "language": "en",
+      "base_urls": [
+        "https://novels.pl/",
+        "https://www.novels.pl/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "a",
+        "cover": ".panel-body .coll a[href^=",
+        "chapter_list": ".panel-body.article p"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelUpdatesCC",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelupdatescc.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.novelupdates.cc/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".person-info .author .name",
+        "author": ".book-img img[src]",
+        "chapter": "#chapter-entity"
+      },
+      "notes": []
+    },
+    {
+      "name": "Eight88Novel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novelww.py",
+      "language": "en",
+      "base_urls": [
+        "https://novelww.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Novlove",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\novlove.py",
+      "language": "en",
+      "base_urls": [
+        "https://novlove.com/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "NYXTranslation",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\n\\nyxtranslation.py",
+      "language": "en",
+      "base_urls": [
+        "https://nyx-translation.com/",
+        "https://nyxtranslation.home.blog/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": "main#main > article",
+        "title": "h1.entry-title",
+        "cover": "img",
+        "chapter": "div.entry-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "OppaTranslations",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\o\\oppatranslations.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.oppatranslations.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "header.entry-header h1.entry-title",
+        "author": "div.entry-content img",
+        "chapter": "div.entry-content",
+        "content": "div center",
+        "chapter_list": "div.entry-content p a"
+      },
+      "notes": []
+    },
+    {
+      "name": "PandaMangaxyz",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\p\\pandamanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.pandamanga.xyz/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "PandaMtl",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\p\\pandamtl.py",
+      "language": "en",
+      "base_urls": [
+        "https://pandamtl.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".epcontent.entry-content h2",
+        "chapter_list": ".epcontent.entry-content p"
+      },
+      "notes": []
+    },
+    {
+      "name": "PandaNovelCo",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\p\\pandanovelco.py",
+      "language": "en",
+      "base_urls": [
+        "https://pandanovel.co/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": null,
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": true,
+      "custom_paths": {},
+      "selectors": {
+        "content": "#content",
+        "chapter_list": "li a"
+      },
+      "notes": [
+        "Requires browser/JavaScript"
+      ]
+    },
+    {
+      "name": "Pandanovelorg",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\p\\pandanovelorg.py",
+      "language": "en",
+      "base_urls": [
+        "https://pandanovel.org/"
+      ],
+      "source_type": "source_factory",
+      "template": "NovelFullTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "PianManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\p\\pianmanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://pianmanga.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "PureTL",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\p\\puretl.py",
+      "language": "en",
+      "base_urls": [
+        "https://puretl.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".blog-item-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "QidianCom",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\q\\qidianunderground.py",
+      "language": "en",
+      "base_urls": [
+        "https://toc.qidianunderground.org/",
+        "https://tocqidianunderground.blogspot.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": "#toc a[href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "RaeiTranslations",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\raeitranslations.py",
+      "language": "en",
+      "base_urls": [
+        "https://raeitranslations.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "RandomNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\randomnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://randomnovel.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "RanobeLib",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\ranobes.py",
+      "language": "en",
+      "base_urls": [
+        "https://ranobes.top/",
+        "https://ranobes.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "SearchableBrowserTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": true,
+      "custom_paths": {},
+      "selectors": {
+        "title": "h1.title",
+        "cover": ".r-fullstory-poster .poster a img",
+        "chapter": "div#arrticle"
+      },
+      "notes": [
+        "Requires browser/JavaScript"
+      ]
+    },
+    {
+      "name": "ReadlightnovelCc",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\readlightnovelcc.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.readlightnovel.cc/",
+        "https://m.readlightnovel.cc/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "author": "div.book-img img",
+        "title": "h1.chapter-title",
+        "chapter": "div.chapter-entity",
+        "chapter_list": "ul.chapter-list a"
+      },
+      "notes": []
+    },
+    {
+      "name": "ReadLightNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\readlightnovelorg.py",
+      "language": "en",
+      "base_urls": [
+        "https://readlightnovel.me/",
+        "https://www.readlightnovel.me/",
+        "https://readlightnovel.today/",
+        "https://www.readlightnovel.today/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "h3",
+        "cover": ".novel-right .novel-detail-item .novel-detail-body",
+        "author": "a[href*=author]",
+        "chapter": ".chapter-content3 .desc",
+        "genres": ".novel-left .novel-detail-item .novel-detail-body a[href*=genre]"
+      },
+      "notes": []
+    },
+    {
+      "name": "ReadLightNovelsNet",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\readlightnovelsnet.py",
+      "language": "en",
+      "base_urls": [
+        "https://readlightnovels.net/"
+      ],
+      "source_type": "source_factory",
+      "template": "SearchableSoupTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".title",
+        "cover": ".book img[src]",
+        "chapter": ".chapter-content",
+        "genres": ".info a"
+      },
+      "notes": []
+    },
+    {
+      "name": "ReadMangaNato",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\readmanganato.py",
+      "language": "en",
+      "base_urls": [
+        "https://readmanganato.com/",
+        "https://chapmanganato.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.container-chapter-reader",
+        "chapter": "h1"
+      },
+      "notes": []
+    },
+    {
+      "name": "Readmtl",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\readmtl.py",
+      "language": "en",
+      "base_urls": [
+        "https://readmtl.com/"
+      ],
+      "source_type": "madara",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "ReadOnlineNovels",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\readonlinenovels.py",
+      "language": "en",
+      "base_urls": [
+        "http://readonlinenovels.com/",
+        "https://readonlinenovels.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".book-info div.title span",
+        "author": "div.book-img img",
+        "chapter": ".read-context"
+      },
+      "notes": []
+    },
+    {
+      "name": "ReadWN",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\readwn.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.readwn.com/",
+        "https://www.wuxiap.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "ReLibrary",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\relibrary.py",
+      "language": "en",
+      "base_urls": [
+        "https://re-library.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "ChapterOnlyBrowserTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": true,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".entry-title",
+        "cover": ".entry-content table img",
+        "author": ".entry-content",
+        "chapter": ".entry-content > p[style*=",
+        "chapter_list": ".page_item > a"
+      },
+      "notes": [
+        "Requires browser/JavaScript"
+      ]
+    },
+    {
+      "name": "RequieMtls",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\requiemtls.py",
+      "language": "en",
+      "base_urls": [
+        "https://requiemtls.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".epl-title",
+        "chapter": ".epcontent.entry-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "RPGNovels",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\r\\rpgnovels.py",
+      "language": "en",
+      "base_urls": [
+        "https://rpgnovels.com/",
+        "https://rpgnoob.wordpress.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "meta[property=",
+        "author": "div.post-entry",
+        "chapter": "div.post-entry",
+        "chapter_list": "div.post-entry li a[href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "Shanghaifantasy",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\s\\shanghaifantasy.py",
+      "language": "en",
+      "base_urls": [
+        "https://shanghaifantasy.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "author": "div[x-show*=",
+        "cover": "img[class*=",
+        "chapter": "a.comment-reply-link",
+        "chapter_list": "div.grid p.text-sm"
+      },
+      "notes": []
+    },
+    {
+      "name": "SonicMTL",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\s\\sonicmtl.py",
+      "language": "en",
+      "base_urls": [
+        "https://sonicmtl.com",
+        "https://www.sonicmtl.com/"
+      ],
+      "source_type": "madara",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": ".reading-content .text-left"
+      },
+      "notes": []
+    },
+    {
+      "name": "SystemTranslation",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\s\\systemtranslation.py",
+      "language": "en",
+      "base_urls": [
+        "https://systemtranslation.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "TamagoTl",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\t\\tamagotl.py",
+      "language": "en",
+      "base_urls": [
+        "https://tamagotl.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Toonily",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\t\\toonily.py",
+      "language": "en",
+      "base_urls": [
+        "https://toonily.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "UsefulNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\u\\usefulnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://usefulnovel.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "WanderingInn",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wanderinginn.py",
+      "language": "en",
+      "base_urls": [
+        "https://wanderinginn.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "meta[property=",
+        "chapter": "div.entry-content",
+        "chapter_list": "div#table-of-contents .chapter-entry a[href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "Webnovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\webnovel.py",
+      "language": "en",
+      "base_urls": [
+        "https://m.webnovel.com/",
+        "https://www.webnovel.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": null,
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": true,
+      "custom_paths": {},
+      "selectors": {
+        "chapter_list": ".j_catalog_list .volume-item"
+      },
+      "notes": [
+        "Requires browser/JavaScript"
+      ]
+    },
+    {
+      "name": "Webnovelpub",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\webnovelpub.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.webnovelpub.com/",
+        "https://www.webnovelpub.pro/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "WebToons",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\webtoon.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.webtoons.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "span.subj",
+        "author": "div.paginate a:nth-last-child(1)",
+        "chapter": "#_imageList"
+      },
+      "notes": []
+    },
+    {
+      "name": "WhatsAWhizzer",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\whatsawhizzerwebnovels.py",
+      "language": "en",
+      "base_urls": [
+        "https://whatsawhizzerwebnovels.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "meta[property=",
+        "chapter": "article > div",
+        "genres": ".entry > p > a"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelsEmperor",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\whitemoonlightnovels.py",
+      "language": "en",
+      "base_urls": [
+        "https://whitemoonlightnovels.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.epl-title",
+        "cover": "img.size-post-thumbnail",
+        "chapter": "div.epcontent"
+      },
+      "notes": []
+    },
+    {
+      "name": "WNMTL",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wnmtl.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.wnmtl.org/",
+        "https://wnmtl.org/",
+        "http://www.wnmtl.org/",
+        "http://wnmtl.org/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "WordExcerpt",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wordexcerpt.py",
+      "language": "en",
+      "base_urls": [
+        "https://wordexcerpt.com/",
+        "https://wordexcerpt.org/"
+      ],
+      "source_type": "skipped",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image img",
+        "chapter": ".rating .total_votes",
+        "cover": ".author-content a, .profile-manga a[href*=",
+        "chapter_list": "div.text-left p"
+      },
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "WuxiaBlog",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wuxiablog.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.wuxia.blog/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".imageCover img",
+        "author": "#more",
+        "chapter": ".panel-body.article",
+        "genres": ".panel-body a[href*=",
+        "chapter_list": "a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Wuxiabox",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wuxiabox.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.wuxiabox.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "WuxiaCity",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wuxiacity.py",
+      "language": "en",
+      "base_urls": [
+        "https://wuxia.city"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "WuxiaClick",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wuxiaclick.py",
+      "language": "en",
+      "base_urls": [
+        "https://wuxia.click/"
+      ],
+      "source_type": "skipped",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "WuxiaCo",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wuxiaco.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.wuxiaworld.co/",
+        "https://m.wuxiaworld.co/"
+      ],
+      "source_type": "skipped",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "author": "div.book-img img",
+        "title": "div.chapter-entity",
+        "chapter": ".chapter-name"
+      },
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "WuxiaCom",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wuxiacom.py",
+      "language": "en",
+      "base_urls": [
+        "https://www.wuxiaworld.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": null,
+      "has_search": false,
+      "has_login": true,
+      "uses_api": false,
+      "uses_browser": true,
+      "custom_paths": {},
+      "selectors": {
+        "title": "section span.font-set-sb18",
+        "genres": "a[href]"
+      },
+      "notes": [
+        "Requires authentication",
+        "Requires browser/JavaScript"
+      ]
+    },
+    {
+      "name": "WuxiaWorldIo",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\w\\wuxiaworldio.py",
+      "language": "en",
+      "base_urls": [
+        "https://wuxiaworld.io/",
+        "https://wuxiaworld.name/"
+      ],
+      "source_type": "skipped",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "span.info_image img",
+        "chapter": "div.content-area"
+      },
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "ZetroTranslation",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\z\\zetrotranslation.py",
+      "language": "en",
+      "base_urls": [
+        "https://zetrotranslation.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "author": "#manga-chapters-holder"
+      },
+      "notes": []
+    },
+    {
+      "name": "ZinManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\en\\z\\zinmanga.py",
+      "language": "en",
+      "base_urls": [
+        "https://zinmanga.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": "div.reading-content",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "CclawTranslations",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\es\\domentranslations.py",
+      "language": "es",
+      "base_urls": [
+        "https://cclawtranslations.home.blog/",
+        "https://domentranslations.wordpress.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "meta[property=",
+        "cover": "meta[property=",
+        "author": "div.entry-content",
+        "chapter": "div.entry-content",
+        "chapter_list": "div.entry-content a"
+      },
+      "notes": []
+    },
+    {
+      "name": "NovelasLigeras",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\es\\novelasligeras.py",
+      "language": "es",
+      "base_urls": [
+        "https://novelasligeras.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": true,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "tr.woocommerce-product-attributes-item--attribute_pa_escritor a[rel=",
+        "cover": ".woocommerce-product-details__short-description",
+        "chapter": ".wpb_text_column > div:nth-child(1)",
+        "chapter_list": ".wpb_wrapper a:not([id],[title],[href$="
+      },
+      "notes": [
+        "Requires authentication"
+      ]
+    },
+    {
+      "name": "animesama",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\fr\\animesama.py",
+      "language": "fr",
+      "base_urls": [
+        "https://anime-sama.fr/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "#coverOeuvre"
+      },
+      "notes": []
+    },
+    {
+      "name": "Chireads",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\fr\\chireads.py",
+      "language": "fr",
+      "base_urls": [
+        "https://chireads.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "genres": "div.lable-list a"
+      },
+      "notes": []
+    },
+    {
+      "name": "LightnovelFr",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\fr\\lightnovelfr.py",
+      "language": "fr",
+      "base_urls": [
+        "https://lightnovelfr.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Lnmtlfr",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\fr\\lnmtlfr.py",
+      "language": "fr",
+      "base_urls": [
+        "https://lnmtlfr.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "MassNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\fr\\massnovel.py",
+      "language": "fr",
+      "base_urls": [
+        "https://massnovel.fr/"
+      ],
+      "source_type": "madara",
+      "template": "SearchableSoupTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "a",
+        "author": "div.tab-summary div.summary_content div.manga-data div.manga-author span a",
+        "chapter": "div.text-left",
+        "genres": "div.tab-content div div.manga-extra-info__content div div.excerpt-content p",
+        "chapter_list": "div.page-content-listing ul.main li"
+      },
+      "notes": []
+    },
+    {
+      "name": "Xiaowaz",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\fr\\xiaowaz.py",
+      "language": "fr",
+      "base_urls": [
+        "https://xiaowaz.fr/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".entry-content img",
+        "chapter": ".entry-content",
+        "genres": ".entry-content a[href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "Meionovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\id\\meionovel.py",
+      "language": "in",
+      "base_urls": [
+        "https://meionovel.id/",
+        "https://meionovels.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".summary_image img",
+        "author": "#manga-chapters-holder",
+        "chapter": "div.text-left",
+        "genres": ".genres-content a",
+        "chapter_list": ".wp-manga-chapter a"
+      },
+      "notes": []
+    },
+    {
+      "name": "YukiNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\id\\yukinovel.py",
+      "language": "in",
+      "base_urls": [
+        "https://yukinovel.me/",
+        "https://yukinovel.id/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "h1.entry-title",
+        "author": "div.lightnovel-thumb img",
+        "chapter": "div.entry-content.cl",
+        "chapter_list": "div.lightnovel-episode ul li a"
+      },
+      "notes": []
+    },
+    {
+      "name": "ZhiEnd",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\id\\zhiend.py",
+      "language": "in",
+      "base_urls": [
+        "http://zhi-end.blogspot.com/",
+        "http://zhi-end.blogspot.co.id/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.entry-content div a img",
+        "chapter": "div.post-body",
+        "chapter_list": "div.entry-content div [href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "Foxaholic",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\multi\\foxaholic.py",
+      "language": "multi",
+      "base_urls": [
+        "https://foxaholic.com/",
+        "https://www.foxaholic.com/",
+        "https://18.foxaholic.com/",
+        "https://global.foxaholic.com/"
+      ],
+      "source_type": "madara",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".post-title h3 a",
+        "title": ".summary_image a img",
+        "chapter": ".entry-content_wrap"
+      },
+      "notes": []
+    },
+    {
+      "name": "Mtlnovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\multi\\mtlnovel.py",
+      "language": "multi",
+      "base_urls": [
+        "https://www.mtlnovel.com/",
+        "https://id.mtlnovel.com/",
+        "https://fr.mtlnovel.com/",
+        "https://es.mtlnovel.com/",
+        "http://www.mtlnovel.com/",
+        "http://id.mtlnovel.com/",
+        "http://fr.mtlnovel.com/",
+        "http://es.mtlnovel.com/",
+        "https://www.mtlnovels.com/",
+        "https://id.mtlnovels.com/",
+        "https://fr.mtlnovels.com/",
+        "https://es.mtlnovels.com/",
+        "http://www.mtlnovels.com/",
+        "http://id.mtlnovels.com/",
+        "http://fr.mtlnovels.com/",
+        "http://es.mtlnovels.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".post-content amp-img[fallback]",
+        "cover": "table.info a[href*=",
+        "chapter": ".post .post-content .par",
+        "chapter_list": ".post-content .ch-list a.ch-link"
+      },
+      "notes": []
+    },
+    {
+      "name": "Novelupdates",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\multi\\novelupdates.py",
+      "language": "multi",
+      "base_urls": [
+        "https://www.novelupdates.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "SearchableBrowserTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": true,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".seriestitlenu",
+        "chapter": ".entry-content > p[style*=",
+        "cover": ".seriesimg img[src]",
+        "genres": "li.sp_li_chp a[data-id]",
+        "chapter_list": ".page_item > a"
+      },
+      "notes": [
+        "Requires browser/JavaScript"
+      ]
+    },
+    {
+      "name": "Quotev",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\multi\\quotev.py",
+      "language": "multi",
+      "base_urls": [
+        "https://www.quotev.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "meta[property=",
+        "chapter": "#rescontent",
+        "genres": "#rselectList a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Wattpad",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\multi\\wattpad.py",
+      "language": "multi",
+      "base_urls": [
+        "https://www.wattpad.com/",
+        "https://my.w.tt/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": true,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": [
+        "Requires authentication"
+      ]
+    },
+    {
+      "name": "Webfic",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\multi\\webfic.py",
+      "language": "multi",
+      "base_urls": [
+        "https://www.webfic.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": "script#__NEXT_DATA__"
+      },
+      "notes": []
+    },
+    {
+      "name": "WtrLab",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\multi\\wtrlab.py",
+      "language": "multi",
+      "base_urls": [
+        "https://wtr-lab.com"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "CentralNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\pt\\centralnovel.py",
+      "language": "pt",
+      "base_urls": [
+        "https://centralnovel.com/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "CeuNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\pt\\ceunovel.py",
+      "language": "pt",
+      "base_urls": [
+        "https://www.ceunovel.com/"
+      ],
+      "source_type": "skipped",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".crumbs > span:nth-of-type(2)",
+        "chapter": "#contentatt"
+      },
+      "notes": [
+        "Site is rejected/broken"
+      ]
+    },
+    {
+      "name": "NovelmaniaComBr",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\pt\\novelmania_com_br.py",
+      "language": "pt",
+      "base_urls": [
+        "https://novelmania.com.br/"
+      ],
+      "source_type": "source_factory",
+      "template": null,
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "strong",
+        "cover": ".novel-img img[src]",
+        "chapter": "#chapter-content",
+        "genres": "#accordion .card-header button"
+      },
+      "notes": []
+    },
+    {
+      "name": "AuthorToday",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\authortoday.py",
+      "language": "ru",
+      "base_urls": [
+        "https://author.today/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "BestManga",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\bestmanga.py",
+      "language": "ru",
+      "base_urls": [
+        "https://bestmanga.club/"
+      ],
+      "source_type": "madara",
+      "template": "MadaraTemplate",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Ifreedom",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\ifreedom.py",
+      "language": "ru",
+      "base_urls": [
+        "https://ifreedom.su/",
+        "https://bookhamster.ru/",
+        "https://funbook.su/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "span.dashicons-admin-users",
+        "author": "span.open-desc",
+        "cover": "div.img-ranobe img",
+        "chapter": "div.entry-content"
+      },
+      "notes": []
+    },
+    {
+      "name": "Jaomix",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\jaomix.py",
+      "language": "ru",
+      "base_urls": [
+        "https://jaomix.ru/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".desc-book h1",
+        "author": "div#desc-tab",
+        "cover": "div.img-book img",
+        "chapter": ".entry-content .entry"
+      },
+      "notes": []
+    },
+    {
+      "name": "Labnovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\labnovel.py",
+      "language": "ru",
+      "base_urls": [
+        "https://labnovel.ru/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div[class*=",
+        "cover": ".main-block-book__img img",
+        "chapter": "div.editblock",
+        "chapter_list": "div.chapter-list a"
+      },
+      "notes": []
+    },
+    {
+      "name": "Litnet",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\litnet.py",
+      "language": "ru",
+      "base_urls": [
+        "https://litnet.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".book-view-cover img",
+        "author": ".book-head-content a.book-author",
+        "content": "meta[name=",
+        "cover": ".book-view-info a.author",
+        "chapter_list": ".collapsible-body a.collection-item"
+      },
+      "notes": []
+    },
+    {
+      "name": "RanobeLibMe",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\ranobelib.py",
+      "language": "ru",
+      "base_urls": [
+        "https://ranobelib.me/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {},
+      "notes": []
+    },
+    {
+      "name": "Renovels",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\renovels.py",
+      "language": "ru",
+      "base_urls": [
+        "https://renovels.org/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div[itemprop=",
+        "chapter": "script#__NEXT_DATA__"
+      },
+      "notes": []
+    },
+    {
+      "name": "Rulate",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\ru\\rulate.py",
+      "language": "ru",
+      "base_urls": [
+        "https://tl.rulate.ru/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": true,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": ".content-text",
+        "author": "#Info > div:nth-child(3)"
+      },
+      "notes": [
+        "Requires authentication"
+      ]
+    },
+    {
+      "name": "FenrirScans",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\tr\\fenrirscan.py",
+      "language": "tu",
+      "base_urls": [
+        "https://fenrirscans.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "genres": "a[rel="
+      },
+      "notes": []
+    },
+    {
+      "name": "ListNovel",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\vi\\lnhakone.py",
+      "language": "vi",
+      "base_urls": [
+        "https://ln.hako.vn/",
+        "https://docln.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "content": ".series-title a",
+        "title": ".sect-title",
+        "author": ".series-cover .img-in-ratio",
+        "chapter_list": "#chapter-content p"
+      },
+      "notes": []
+    },
+    {
+      "name": "TruenFull",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\vi\\truenfull.py",
+      "language": "vi",
+      "base_urls": [
+        "https://truyenfull.vn/",
+        "https://truyentr.info/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "h3.title, h1.title",
+        "chapter": "#chapter-c, .chapter-c",
+        "chapter_list": ".pagination li a"
+      },
+      "notes": []
+    },
+    {
+      "name": "LeYueDu",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\27k.py",
+      "language": "zh",
+      "base_urls": [
+        "https://so.27k.net",
+        "https://www.27k.net",
+        "https://m.27k.net",
+        "https://tw.27k.net",
+        "https://www.lreads.com"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.bookimg2 img",
+        "cover": ".booknav2 p a[href*=",
+        "author": ".booknav2 p a[href*=",
+        "chapter": "h1",
+        "content": "div#txtright",
+        "chapter_list": "div#catalog ul li"
+      },
+      "notes": []
+    },
+    {
+      "name": "sixnineshu",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\69shuba.cx.py",
+      "language": "zh",
+      "base_urls": [
+        "https://69shuba.cx",
+        "https://69shu.me"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.bookimg2 img",
+        "cover": ".booknav2 p a",
+        "author": "div.booknav2 > p:nth-child(4) > a",
+        "chapter": "h1",
+        "content": "div#txtright",
+        "chapter_list": "div#catalog li"
+      },
+      "notes": []
+    },
+    {
+      "name": "sixnineshu",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\69shuba.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.69shuba.com/",
+        "https://www.69shu.com/",
+        "https://www.69xinshu.com/",
+        "https://www.69shu.pro/",
+        "https://www.69shuba.pro/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.bookimg2 img",
+        "cover": ".booknav2 p a[href*=",
+        "chapter": "h1",
+        "content": "div#txtright",
+        "genres": ".booknav2 p a[href*="
+      },
+      "notes": []
+    },
+    {
+      "name": "Daocaorenshuwu",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\daocaorenshuwu.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.daocaorenshuwu.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".container .book-info h1.book-name",
+        "author": ".container .media-left a img",
+        "chapter_list": ".cont-text > p"
+      },
+      "notes": []
+    },
+    {
+      "name": "DdxSss",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\ddxsss.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.ddxss.cc/",
+        "https://www.ddtxt8.cc/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": true,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".cover > img",
+        "author": ".intro",
+        "chapter": "div#chaptercontent"
+      },
+      "notes": []
+    },
+    {
+      "name": "Ixdzs",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\ixdzs.py",
+      "language": "zh",
+      "base_urls": [
+        "https://ixdzs8.tw/",
+        "https://ixdzs8.com/",
+        "https://tw.m.ixdzs.com/",
+        "https://www.aixdzs.com"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "article.page-content > h3",
+        "content": "div.n-text",
+        "cover": "p#intro",
+        "chapter": "ul.u-chapter > li:nth-child(1) > a",
+        "chapter_list": "article.page-content section p"
+      },
+      "notes": []
+    },
+    {
+      "name": "Novel543",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\novel543.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.novel543.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "#detail .media-left .cover img",
+        "cover": "#detail .media-content p.meta span.author",
+        "author": "#detail .mod .intro",
+        "chapter": "div.chapter-content div.content",
+        "chapter_list": "div.chaplist ul.all li a[href]"
+      },
+      "notes": []
+    },
+    {
+      "name": "NoveljoyNet",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\noveljoy_net.py",
+      "language": "zh",
+      "base_urls": [
+        "https://noveljoy.net/"
+      ],
+      "source_type": "source_factory",
+      "template": "SearchableSoupTemplate",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".post-title",
+        "cover": "img[src]",
+        "chapter": ".chapter-content",
+        "genres": "a[href*=",
+        "chapter_list": "table > li > a"
+      },
+      "notes": []
+    },
+    {
+      "name": "PiaoTian",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\piaotian.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.piaotian.com",
+        "https://www.ptwxz.com",
+        "https://www.piaotia.com"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "a",
+        "author": "td a",
+        "chapter": "div#content"
+      },
+      "notes": []
+    },
+    {
+      "name": "Shw5",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\shw5.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.shw5.cc/",
+        "https://www.bq99.cc/",
+        "https://www.p2wt.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".book img",
+        "cover": ".intro dd",
+        "author": ".listmain",
+        "chapter": "#chaptercontent"
+      },
+      "notes": []
+    },
+    {
+      "name": "Soxc",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\soxs.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.soxs.cc/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".read_title h1",
+        "cover": ".book_cover img",
+        "chapter_list": ".content"
+      },
+      "notes": []
+    },
+    {
+      "name": "UukanshuOnline",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\uukanshu.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.uukanshu.net/",
+        "https://tw.uukanshu.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "cover": "dt.jieshao-img img",
+        "title": "h2 > a",
+        "author": "h3",
+        "chapter": "div#contentbox"
+      },
+      "notes": []
+    },
+    {
+      "name": "UukanshuOnlineSJ",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\uukanshu_sj.py",
+      "language": "zh",
+      "base_urls": [
+        "https://sj.uukanshu.net/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": ".book-info img",
+        "cover": ".book-info dd",
+        "chapter": "#bookContent"
+      },
+      "notes": []
+    },
+    {
+      "name": "Xbanxia",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\xbanxia.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.xbanxia.com/",
+        "https://www.banxia.cc/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": true,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "title": "div.book-describe h1",
+        "cover": "div.book-img img",
+        "chapter": "div#nr1",
+        "chapter_list": "a",
+        "genres": "div.book-describe p"
+      },
+      "notes": []
+    },
+    {
+      "name": "Xnunu",
+      "file_path": "c:\\Users\\PC\\Downloads\\Compressed\\lightnovel-crawler-dev\\lightnovel-crawler-dev\\sources\\zh\\xnunu.py",
+      "language": "zh",
+      "base_urls": [
+        "https://www.xnunu.com/"
+      ],
+      "source_type": "parsed_http_source",
+      "template": "Crawler",
+      "has_search": false,
+      "has_login": false,
+      "uses_api": false,
+      "uses_browser": false,
+      "custom_paths": {},
+      "selectors": {
+        "chapter": "div#content>.page-header",
+        "title": "img.thumbnail",
+        "content": "#next_url",
+        "cover": "p>a.btn-info",
+        "author": "ol.breadcrumb > li:nth-child(2) > a",
+        "chapter_list": "dl.panel-chapterlist>dd>a"
+      },
+      "notes": []
+    }
+  ],
+  "rejected_urls": {
+    "http://4scanlation.xyz/": "This domain has expired",
+    "http://boxnovel.cloud/": "No longer provides lightnovels",
+    "http://boxnovel.org/": "No longer operational",
+    "http://fastnovel.net/": "Access denied",
+    "http://fullnovel.live/": "This site can not be reached",
+    "http://gravitytales.com/": "Domain is expired",
+    "http://hs2ppe.co.uk/": "No longer provides lightnovels",
+    "http://liberspark.com/": "Site moved to https://travistranslations.com/ ",
+    "http://moonbunnycafe.com/": "Does not follow uniform format",
+    "http://novels.cloud/": "This domain has expired",
+    "http://readlightnovel.club/": "Domain not available",
+    "http://tiknovel.com/": "No longer provides lightnovels",
+    "http://writerupdates.com/": "Site is down",
+    "http://wspadancewichita.com/": "Site closed and moved to https://readnovelfull.com/",
+    "http://wuxiaworld.cloud/": "The domain has expired",
+    "http://ww1.activetranslations.xyz/": "Blank webpage",
+    "http://www.hanyunovels.site/": "Site is down",
+    "http://www.indonovels.net/": "The domain has expired",
+    "http://www.machinenoveltranslation.com/": "No longer provides lightnovels",
+    "http://www.tiknovel.com/": "No longer provides lightnovels",
+    "https://4scanlation.com/": "Domain expired",
+    "https://888novel.com/": "Gets IP banned for using crawler",
+    "https://9kqw.com/": "This domain has expired",
+    "https://activetranslations.xyz/": "Blank webpage",
+    "https://anonanemone.wordpress.com/": "No longer available",
+    "https://anythingnovel.com/": "The domain is for sale",
+    "https://arangscans.com/": "This site can not be reached",
+    "https://bestoflightnovels.com/": "This site can not be reached",
+    "https://book.qidian.com/": "Requires javascript",
+    "https://boxnovel.online/": "This site can not be reached",
+    "https://boxnovel.org/": "No longer operational",
+    "https://clicknovel.net/": "The domain has expired",
+    "https://dsrealmtranslations.com/": "Domain expired",
+    "https://fsapk.com/": "No longer provides lightnovels",
+    "https://indomtl.com/": "Not crawler friendly",
+    "https://indonovels.blogspot.co.id/": "The domain has expired",
+    "https://instadoses.com/": "This site can not be reached",
+    "https://jstranslations1.com/": "The domain has expired",
+    "https://juicynovels.com/": "Site is down",
+    "https://kiss-novel.com/": "Site is down",
+    "https://kisslightnovels.info/": "can not reach the server",
+    "https://light-novel.online/": "The domain has expired",
+    "https://lightnovel.tv/": "This site can not be reached",
+    "https://lightnovelkiss.com/": "This site can not be reached",
+    "https://lightnovelshub.com/": "No longer provides lightnovels",
+    "https://ln.hako.re": "Moved to https://ln.hako.vn",
+    "https://lnindo.org/": "Not crawler friendly",
+    "https://luminarynovels.com/": "Site is down",
+    "https://m.1ksy.com/": "Web server is down",
+    "https://m.chinesefantasynovels.com/": "Connection timed out",
+    "https://m.mywuxiaworld.com/": "Web server is returning an unknown error",
+    "https://m.romanticlovebooks.com/": "Web server is down",
+    "https://moonstonetranslation.com": "Site is down",
+    "https://moonstonetranslation.com/": "This site can not be reached",
+    "https://mtled-novels.com/": "Domain is expired",
+    "https://myoniyonitranslations.com/": "This site can not be reached",
+    "https://newsite.kolnovel.com/": "Site is down",
+    "https://novelcrush.com/": "Site is down",
+    "https://novelextra.com/": "Invalid SSL certificate",
+    "https://novelplanet.com/": "Site is closed",
+    "https://novelraw.blogspot.com/": "Site closed down",
+    "https://novelsrock.com/": "Web server is down",
+    "https://noveltrench.com/": "Move to novelhard.com",
+    "https://omgnovels.com/": "Site is down",
+    "https://overabook.com/": "Site is down",
+    "https://pery.info/": "Site is down",
+    "https://radishfiction.com/": "Not a novel source",
+    "https://read.asianovel.com/": "Connection timed out",
+    "https://readnovelz.net/": "Redirects to webnovelonline.net",
+    "https://readscafe.com/": "Bad gateway",
+    "https://reaperscans.com/": "Permanently shut down",
+    "https://tiknovel.com/": "No longer provides lightnovels",
+    "https://tunovelaligera.com/": "Broken. Chapters does not load",
+    "https://viewnovel.net/": "Site is down",
+    "https://webnovel.online/": "The site has no content",
+    "https://wordexcerpt.org/": "This site can not be reached",
+    "https://writerupdates.com/": "Site is down",
+    "https://wuxia.click/": "Access denied",
+    "https://wuxiaworld.io/": "Cloudflare Error 522, can not connect to host",
+    "https://wuxiaworld.live/": "The domain has expired",
+    "https://wuxiaworld.site/": "Access denied",
+    "https://wuxiaworldsite.com/": "Access denied",
+    "https://www.1ksy.com/": "Web server is down",
+    "https://www.anonanemone.wordpress.com/": "No longer available",
+    "https://www.centinni.com/": "Site is down",
+    "https://www.ceunovel.com/": "site is down",
+    "https://www.jieruihao.cn/": "Unavailable",
+    "https://www.lightnovelpub.com/": "Platform has been terminated",
+    "https://www.mywuxiaworld.com/": "Web server is returning an unknown error",
+    "https://www.novelspread.com/": "Site is down",
+    "https://www.noveltom.com/": "This site can not be reached",
+    "https://www.noveluniverse.com/": "Site is down",
+    "https://www.novelv.com/": "Site is down",
+    "https://www.readlightnovel.org/": "Redirects to www.readlightnovel.me",
+    "https://www.rebirth.online/": "Redrects to https://foxteller.com/",
+    "https://www.romanticlovebooks.com/": "Web server is down",
+    "https://www.shinsori.com/": "This site can not be reached",
+    "https://www.tiknovel.com/": "No longer provides lightnovels",
+    "https://www.translateindo.com/": "Site is down",
+    "https://www.wuxiaworld.co/": "This site can not be reached",
+    "https://www.x81zw.com/": "This site can not be reached",
+    "https://www.xsbiquge.com/": "Site is down",
+    "https://www.zhuishubang.com/": "Site is down",
+    "https://yarhou.net/": "Blank webpage"
+  }
+}
