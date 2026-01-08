@@ -491,6 +491,19 @@
     "assetsDir": "multisrc/madara/lunarletters/assets"
   },
   {
+    "pkg": "ireader.markazriwayat.markazriwayat.ar",
+    "apk": "ireader-ar-markazriwayat-v2.1.apk",
+    "name": "Markazriwayat",
+    "id": 1441955874798897327,
+    "lang": "ar",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "markazriwayat",
+    "assetsDir": "multisrc/madara/markazriwayat/assets"
+  },
+  {
     "pkg": "ireader.meionovel.meionovel.in",
     "apk": "ireader-in-meionovel-v1.2.apk",
     "name": "MeioNovel",
@@ -1204,6 +1217,18 @@
     "nsfw": false,
     "sourceDir": "readwn",
     "assetsDir": "multisrc/readwn/readwn/assets"
+  },
+  {
+    "pkg": "ireader.realmnovel.ar",
+    "apk": "ireader-ar-realmnovel-v2.4.apk",
+    "name": "Realmnovel",
+    "id": 9155405429017944360,
+    "lang": "ar",
+    "code": 4,
+    "version": "2.4",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.reaperscans.en",
