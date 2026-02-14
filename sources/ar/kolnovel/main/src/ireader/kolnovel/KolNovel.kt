@@ -171,10 +171,18 @@ abstract class KolNovel(deps: Dependencies) : SourceFactory(
             pageContentSelector = "div.entry-content p:not([style~=opacity]), div.entry-content ol li",
             onContent = { contents: List<String> ->
                 contents.map { text ->
-                    text.replace(
-                        Regex("(?i)\\*?إقرأ\\s*رواياتنا\\s*فقط\\s*على\\s*موقع\\s*ملك\\s*الروايات\\s*koll?novel\\.?\\s*koll?novel\\.com?"),
-                        ""
-                    ).trim()
+                    text
+                        // Remove JavaScript ad code
+                        .replace(Regex("\\d+\\s*window\\.pubfuturetag.*?\\}\\)"), "")
+                        // Remove publication metadata (e.g., "نشر من قبل Don pub, ? Views, نشر في تاريخ...")
+                        .replace(Regex("(?i)نشر\\s+من\\s+قبل\\s+[^،,]+[،,]\\s*\\?\\s*Views[،,]\\s*نشر\\s+في\\s+تاريخ\\s+[^\\n]+"), "")
+                        // Remove translation credit and religious reminder footer
+                        .replace(Regex("(?i)-+\\s*ترجمة\\s+موقع\\s+ملوك\\s+الروايات.*?القرآن"), "")
+                        // Remove watermark with asterisks between characters
+                        .replace(Regex("(?i)\\*?إ\\*?ق\\*?ر\\*?أ\\*?\\s*ر\\*?و\\*?ا\\*?ي\\*?ا\\*?ت\\*?ن\\*?ا\\*?\\s*ف\\*?ق\\*?ط\\*?\\s*ع\\*?ل\\*?ى\\*?\\s*م\\*?و\\*?ق\\*?ع\\*?\\s*م\\*?ل\\*?و\\*?ك\\*?\\s*ا\\*?ل\\*?ر\\*?و\\*?ا\\*?ي\\*?ا\\*?ت\\*?\\s*k\\*?o\\*?l\\*?l?\\*?n\\*?o\\*?v\\*?e\\*?l\\*?\\.?\\*?\\s*k\\*?o\\*?l\\*?l?\\*?n\\*?o\\*?v\\*?e\\*?l\\*?\\.?\\*?\\s*c\\*?o\\*?m\\*?"), "")
+                        // Remove watermark without asterisks (original pattern)
+                        .replace(Regex("(?i)\\*?إقرأ\\s*رواياتنا\\s*فقط\\s*على\\s*موقع\\s*ملك\\s*الروايات\\s*koll?novel\\.?\\s*koll?novel\\.com?"), "")
+                        .trim()
                 }.filter { it.isNotBlank() }
             }
         )
