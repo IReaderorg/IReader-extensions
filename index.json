@@ -278,12 +278,12 @@
   },
   {
     "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v2.16.apk",
+    "apk": "ireader-ar-kolnovel-v2.17.apk",
     "name": "KolNovel",
     "id": 1070515268391361388,
     "lang": "ar",
-    "code": 16,
-    "version": "2.16",
+    "code": 17,
+    "version": "2.17",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -361,6 +361,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.aquamanga.aquamanga.en",
+    "apk": "ireader-en-aquamanga-v2.1.apk",
+    "name": "AquaManga",
+    "id": 7096257385081747430,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "aquamanga"
+  },
+  {
     "pkg": "ireader.armtl.armtl.ar",
     "apk": "ireader-ar-armtl-v2.2.apk",
     "name": "Armtl",
@@ -400,6 +412,54 @@
     "assetsDir": "multisrc/madara/azora/assets"
   },
   {
+    "pkg": "ireader.beautymanga.beautymanga.en",
+    "apk": "ireader-en-beautymanga-v2.1.apk",
+    "name": "Beautymanga",
+    "id": 4579929140463516569,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "beautymanga"
+  },
+  {
+    "pkg": "ireader.bestmanga.bestmanga.ru",
+    "apk": "ireader-ru-bestmanga-v2.1.apk",
+    "name": "BestManga",
+    "id": 6233473423796565229,
+    "lang": "ru",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "bestmanga"
+  },
+  {
+    "pkg": "ireader.bonnovel.bonnovel.en",
+    "apk": "ireader-en-bonnovel-v2.1.apk",
+    "name": "BonNovel",
+    "id": 2333798197559718091,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "bonnovel"
+  },
+  {
+    "pkg": "ireader.boxnovel.boxnovel.en",
+    "apk": "ireader-en-boxnovel-v2.1.apk",
+    "name": "BoxNovel",
+    "id": 7944537582591806060,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "boxnovel"
+  },
+  {
     "pkg": "ireader.clicknovel.clicknovel.en",
     "apk": "ireader-en-clicknovel-v1.2.apk",
     "name": "ClickNovel",
@@ -411,6 +471,18 @@
     "nsfw": false,
     "sourceDir": "clicknovel",
     "assetsDir": "multisrc/madara/clicknovel/assets"
+  },
+  {
+    "pkg": "ireader.coffeemanga.coffeemanga.en",
+    "apk": "ireader-en-coffeemanga-v2.1.apk",
+    "name": "CoffeeManga",
+    "id": 2150231233849325841,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "coffeemanga"
   },
   {
     "pkg": "ireader.cratenovel.cratenovel.en",
@@ -426,6 +498,30 @@
     "assetsDir": "multisrc/madara/cratenovel/assets"
   },
   {
+    "pkg": "ireader.fantasyworldonline.fantasyworldonline.en",
+    "apk": "ireader-en-fantasyworldonline-v2.1.apk",
+    "name": "FantasyWorldOnline",
+    "id": 8647163629065721427,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "fantasyworldonline"
+  },
+  {
+    "pkg": "ireader.fenrirtranslations.fenrirtranslations.en",
+    "apk": "ireader-en-fenrirtranslations-v2.1.apk",
+    "name": "FenrirTranslations",
+    "id": 1327181612556208781,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "fenrirtranslations"
+  },
+  {
     "pkg": "ireader.firstkissnovel.firstkissnovel.en",
     "apk": "ireader-en-firstkissnovel-v2.2.apk",
     "name": "FirstKissNovel",
@@ -437,6 +533,42 @@
     "nsfw": false,
     "sourceDir": "firstkissnovel",
     "assetsDir": "multisrc/madara/firstkissnovel/assets"
+  },
+  {
+    "pkg": "ireader.foxaholic.foxaholic.multi",
+    "apk": "ireader-multi-foxaholic-v2.1.apk",
+    "name": "Foxaholic",
+    "id": 6724672701508730673,
+    "lang": "multi",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "foxaholic"
+  },
+  {
+    "pkg": "ireader.freefullnovel.freefullnovel.en",
+    "apk": "ireader-en-freefullnovel-v2.1.apk",
+    "name": "FreeFullNovel",
+    "id": 527839248443933967,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "freefullnovel"
+  },
+  {
+    "pkg": "ireader.freemanga.freemanga.en",
+    "apk": "ireader-en-freemanga-v2.1.apk",
+    "name": "FreeManga",
+    "id": 3301001850560585422,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "freemanga"
   },
   {
     "pkg": "ireader.freenovel.freenovel.en",
@@ -452,6 +584,18 @@
     "assetsDir": "multisrc/madara/freenovel/assets"
   },
   {
+    "pkg": "ireader.harimanga.harimanga.en",
+    "apk": "ireader-en-harimanga-v2.1.apk",
+    "name": "HariManga",
+    "id": 4088566215115473619,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "harimanga"
+  },
+  {
     "pkg": "ireader.hizomanga.hizomanga.ar",
     "apk": "ireader-ar-hizomanga-v2.3.apk",
     "name": "HizoManga",
@@ -463,6 +607,54 @@
     "nsfw": false,
     "sourceDir": "hizomanga",
     "assetsDir": "multisrc/madara/armtl/assets"
+  },
+  {
+    "pkg": "ireader.isekaiscan.isekaiscan.en",
+    "apk": "ireader-en-isekaiscan-v2.1.apk",
+    "name": "IsekaiScan",
+    "id": 8770617315736214500,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "isekaiscan"
+  },
+  {
+    "pkg": "ireader.isekaiscaneu.isekaiscaneu.en",
+    "apk": "ireader-en-isekaiscaneu-v2.1.apk",
+    "name": "IsekaiScanEU",
+    "id": 2976569478403619124,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "isekaiscaneu"
+  },
+  {
+    "pkg": "ireader.kingmanga.kingmanga.en",
+    "apk": "ireader-en-kingmanga-v2.1.apk",
+    "name": "KingManga",
+    "id": 399125517012908249,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "kingmanga"
+  },
+  {
+    "pkg": "ireader.kissmanga.kissmanga.en",
+    "apk": "ireader-en-kissmanga-v2.1.apk",
+    "name": "KissManga",
+    "id": 6198485597827155087,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "kissmanga"
   },
   {
     "pkg": "ireader.lightnovelheaven.lightnovelheaven.en",
@@ -478,6 +670,18 @@
     "assetsDir": "multisrc/madara/lightnovelheaven/assets"
   },
   {
+    "pkg": "ireader.lnmtlfr.lnmtlfr.fr",
+    "apk": "ireader-fr-lnmtlfr-v2.1.apk",
+    "name": "Lnmtlfr",
+    "id": 1123819821847037987,
+    "lang": "fr",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "lnmtlfr"
+  },
+  {
     "pkg": "ireader.lunarletters.lunarletters.en",
     "apk": "ireader-en-lunarletters-v2.2.apk",
     "name": "LunarLetters",
@@ -489,6 +693,78 @@
     "nsfw": false,
     "sourceDir": "lunarletters",
     "assetsDir": "multisrc/madara/lunarletters/assets"
+  },
+  {
+    "pkg": "ireader.mangaread.mangaread.en",
+    "apk": "ireader-en-mangaread-v2.1.apk",
+    "name": "MangaRead",
+    "id": 8869272433642887003,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mangaread"
+  },
+  {
+    "pkg": "ireader.mangarockteam.mangarockteam.en",
+    "apk": "ireader-en-mangarockteam-v2.1.apk",
+    "name": "MangaRockTeam",
+    "id": 2124041555315976431,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mangarockteam"
+  },
+  {
+    "pkg": "ireader.mangarosie.mangarosie.en",
+    "apk": "ireader-en-mangarosie-v2.1.apk",
+    "name": "MangaRosie",
+    "id": 4327493825260308651,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mangarosie"
+  },
+  {
+    "pkg": "ireader.mangatx.mangatx.en",
+    "apk": "ireader-en-mangatx-v2.1.apk",
+    "name": "MangaTX",
+    "id": 3274683761704614629,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mangatx"
+  },
+  {
+    "pkg": "ireader.mangaweebs.mangaweebs.en",
+    "apk": "ireader-en-mangaweebs-v2.1.apk",
+    "name": "MangaWeebs",
+    "id": 9068601967331760813,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mangaweebs"
+  },
+  {
+    "pkg": "ireader.manhwachilllove.manhwachilllove.en",
+    "apk": "ireader-en-manhwachilllove-v2.1.apk",
+    "name": "ManhwachillLove",
+    "id": 3710336805327480363,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "manhwachilllove"
   },
   {
     "pkg": "ireader.markazriwayat.markazriwayat.ar",
@@ -504,6 +780,18 @@
     "assetsDir": "multisrc/madara/markazriwayat/assets"
   },
   {
+    "pkg": "ireader.massnovel.massnovel.fr",
+    "apk": "ireader-fr-massnovel-v2.1.apk",
+    "name": "MassNovel",
+    "id": 8287940850852350427,
+    "lang": "fr",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "massnovel"
+  },
+  {
     "pkg": "ireader.meionovel.meionovel.in",
     "apk": "ireader-in-meionovel-v1.2.apk",
     "name": "MeioNovel",
@@ -515,6 +803,18 @@
     "nsfw": false,
     "sourceDir": "meionovel",
     "assetsDir": "multisrc/madara/meionovel/assets"
+  },
+  {
+    "pkg": "ireader.mixednovelnet.mixednovelnet.en",
+    "apk": "ireader-en-mixednovelnet-v2.1.apk",
+    "name": "MixedNovelNet",
+    "id": 869193328628467512,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "mixednovelnet"
   },
   {
     "pkg": "ireader.morenovel.morenovel.in",
@@ -619,6 +919,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.myboxnovel.myboxnovel.en",
+    "apk": "ireader-en-myboxnovel-v2.1.apk",
+    "name": "MyBoxNovel",
+    "id": 5790249646776885579,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "myboxnovel"
+  },
+  {
     "pkg": "ireader.mydramanovel.en",
     "apk": "ireader-en-mydramanovel-v2.2.apk",
     "name": "MyDramaNovel",
@@ -667,6 +979,30 @@
     "nsfw": false,
     "sourceDir": "neosekaitranslations",
     "assetsDir": "multisrc/madara/neosekaitranslations/assets"
+  },
+  {
+    "pkg": "ireader.newnovelorg.newnovelorg.en",
+    "apk": "ireader-en-newnovelorg-v2.1.apk",
+    "name": "NewNovelOrg",
+    "id": 6248476999710063148,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "newnovelorg"
+  },
+  {
+    "pkg": "ireader.noobchan.noobchan.en",
+    "apk": "ireader-en-noobchan-v2.1.apk",
+    "name": "NoobChan",
+    "id": 8944393533938007909,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "noobchan"
   },
   {
     "pkg": "ireader.novel4up.novel4up.ar",
@@ -914,6 +1250,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.onekissnovel.onekissnovel.en",
+    "apk": "ireader-en-onekissnovel-v2.1.apk",
+    "name": "OneKissNovel",
+    "id": 3356054362536333166,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "onekissnovel"
+  },
+  {
     "pkg": "ireader.pandanovel.en",
     "apk": "ireader-en-pandanovel-v2.5.apk",
     "name": "PandaNovel",
@@ -938,6 +1286,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.pianmanga.pianmanga.en",
+    "apk": "ireader-en-pianmanga-v2.1.apk",
+    "name": "PianManga",
+    "id": 3867197648922517218,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "pianmanga"
+  },
+  {
     "pkg": "ireader.quanben.zh",
     "apk": "ireader-zh-quanben-v2.1.apk",
     "name": "Quanben",
@@ -960,6 +1320,18 @@
     "description": "Rainofsnow - English novel translations",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.randomnovel.randomnovel.en",
+    "apk": "ireader-en-randomnovel-v2.1.apk",
+    "name": "RandomNovel",
+    "id": 8863216505293688826,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "randomnovel"
   },
   {
     "pkg": "ireader.ranobes.en",
@@ -996,6 +1368,18 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.readmtl.readmtl.en",
+    "apk": "ireader-en-readmtl-v2.1.apk",
+    "name": "Readmtl",
+    "id": 46506295113007807,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "readmtl"
   },
   {
     "pkg": "ireader.readwebnovels.readwebnovels.en",
@@ -1037,6 +1421,18 @@
     "assetsDir": "multisrc/madara/sonicmtl/assets"
   },
   {
+    "pkg": "ireader.toonily.toonily.en",
+    "apk": "ireader-en-toonily-v2.1.apk",
+    "name": "Toonily",
+    "id": 5190569675461947007,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "toonily"
+  },
+  {
     "pkg": "ireader.turkcelightnovels.turkcelightnovels.tu",
     "apk": "ireader-tu-turkcelightnovels-v1.2.apk",
     "name": "TurkceLightNovels",
@@ -1050,6 +1446,18 @@
     "assetsDir": "multisrc/madara/turkcelightnovels/assets"
   },
   {
+    "pkg": "ireader.usefulnovel.usefulnovel.en",
+    "apk": "ireader-en-usefulnovel-v2.1.apk",
+    "name": "UsefulNovel",
+    "id": 1660609925621122556,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "usefulnovel"
+  },
+  {
     "pkg": "ireader.webnovellover.webnovelover.en",
     "apk": "ireader-en-webnovellover-v1.2.apk",
     "name": "WebNovelLover",
@@ -1061,6 +1469,30 @@
     "nsfw": false,
     "sourceDir": "webnovelover",
     "assetsDir": "multisrc/madara/webnovelover/assets"
+  },
+  {
+    "pkg": "ireader.zetrotranslation.zetrotranslation.en",
+    "apk": "ireader-en-zetrotranslation-v2.1.apk",
+    "name": "ZetroTranslation",
+    "id": 2826105369931651814,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "zetrotranslation"
+  },
+  {
+    "pkg": "ireader.zinmanga.zinmanga.en",
+    "apk": "ireader-en-zinmanga-v2.1.apk",
+    "name": "ZinManga",
+    "id": 5990114708086767078,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "zinmanga"
   },
   {
     "pkg": "ireader.zinnovel.zinnovel.en",
