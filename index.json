@@ -767,17 +767,16 @@
     "sourceDir": "manhwachilllove"
   },
   {
-    "pkg": "ireader.markazriwayat.markazriwayat.ar",
-    "apk": "ireader-ar-markazriwayat-v2.1.apk",
-    "name": "Markazriwayat",
+    "pkg": "ireader.markazriwayat.ar",
+    "apk": "ireader-ar-markazriwayat-v2.2.apk",
+    "name": "MarkazRiwayat",
     "id": 1441955874798897327,
     "lang": "ar",
-    "code": 1,
-    "version": "2.1",
+    "code": 2,
+    "version": "2.2",
     "description": "",
     "nsfw": false,
-    "sourceDir": "markazriwayat",
-    "assetsDir": "multisrc/madara/markazriwayat/assets"
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.massnovel.massnovel.fr",
@@ -1354,18 +1353,6 @@
     "code": 1,
     "version": "2.1",
     "description": "Read From Net - English novel site",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.readmtl.en",
-    "apk": "ireader-en-readmtl-v2.3.apk",
-    "name": "ReadMtl",
-    "id": 46506295113007807,
-    "lang": "en",
-    "code": 3,
-    "version": "2.3",
-    "description": "",
     "nsfw": false,
     "sourceDir": "main"
   },
@@ -2013,18 +2000,6 @@
     "version": "1.0.8",
     "description": "",
     "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.zelluloza.ru",
-    "apk": "ireader-ru-zelluloza-v2.1.apk",
-    "name": "Zelluloza",
-    "id": 7207524452353150991,
-    "lang": "ru",
-    "code": 1,
-    "version": "2.1",
-    "description": "Целлюлоза - Russian novel site with encrypted content",
-    "nsfw": true,
     "sourceDir": "main"
   }
 ]
