@@ -44,7 +44,8 @@ render.experimental.xml
 # Keystore files
 *.jks
 *.keystore
-
+plan
+files
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
 
