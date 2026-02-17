@@ -768,12 +768,12 @@
   },
   {
     "pkg": "ireader.markazriwayat.ar",
-    "apk": "ireader-ar-markazriwayat-v2.2.apk",
+    "apk": "ireader-ar-markazriwayat-v2.3.apk",
     "name": "MarkazRiwayat",
     "id": 1441955874798897327,
     "lang": "ar",
-    "code": 2,
-    "version": "2.2",
+    "code": 3,
+    "version": "2.3",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
@@ -1610,6 +1610,18 @@
     "nsfw": false,
     "sourceDir": "novelmt",
     "assetsDir": "multisrc/readwn/novelmt/assets"
+  },
+  {
+    "pkg": "ireader.readmtl.en",
+    "apk": "ireader-en-readmtl-v2.3.apk",
+    "name": "ReadMtl",
+    "id": 46506295113007807,
+    "lang": "en",
+    "code": 3,
+    "version": "2.3",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.readnovelfull.readnovelfull.en",
