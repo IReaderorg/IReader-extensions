@@ -88,12 +88,12 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     private suspend fun getLatest(page: Int): MangasPageInfo {
         val resp = client.get(requestBuilder("$baseUrl/latest-release-novels/$page/"))
-        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li", "div.ul-list1") { latestFromElement(it) }
+        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", "div.ul-list1") { latestFromElement(it) }
     }
 
     private suspend fun getPopular(): MangasPageInfo {
         val resp = client.get(requestBuilder("$baseUrl/most-popular-novels/"))
-        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", null) { popularFromElement(it) }
+        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", null) { latestFromElement(it) }
     }
 
     private suspend fun getSearch(query: String): MangasPageInfo {
@@ -103,7 +103,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
     private suspend fun getNewNovel(page: Int): MangasPageInfo {
         val resp = client.get(requestBuilder("$baseUrl/latest-novels/$page/"))
-        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li", "div.ul-list1") { latestFromElement(it) }
+        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", "div.ul-list1") { latestFromElement(it) }
     }
 
     override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
@@ -113,12 +113,6 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
             append(HttpHeaders.Referrer, baseUrl)
         }
     }
-
-    private fun popularFromElement(element: Element) = MangaInfo(
-        key = baseUrl + element.select("a").attr("href"),
-        title = element.select("a").attr("title"),
-        cover = baseUrl + element.select("img").attr("src")
-    )
 
     private fun latestFromElement(element: Element) = MangaInfo(
         key = baseUrl + element.select("div.txt a").attr("href"),
