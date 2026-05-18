@@ -2,12 +2,20 @@ package ireader.freewebnovel
 
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
+import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.request.url
+import io.ktor.http.ContentType
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import io.ktor.http.Parameters
+import io.ktor.http.contentType
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.ParsedHttpSource
 import ireader.core.source.asJsoup
@@ -87,31 +95,31 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     private suspend fun getLatest(page: Int): MangasPageInfo {
-        val resp = client.get(requestBuilder("$baseUrl/latest-release-novels/$page/"))
+        val resp = client.get(requestBuilder("$baseUrl/sort/latest-novel/$page/"))
         return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", "div.ul-list1") { latestFromElement(it) }
     }
 
     private suspend fun getPopular(): MangasPageInfo {
-        val resp = client.get(requestBuilder("$baseUrl/most-popular-novels/"))
+        val resp = client.get(requestBuilder("$baseUrl/most-popular/"))
         return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", null) { latestFromElement(it) }
     }
 
+
     private suspend fun getSearch(query: String): MangasPageInfo {
-        val resp = client.get(requestBuilder("$baseUrl/search/?searchkey=$query"))
-        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", null) { searchFromElement(it) }
+        val resp = client.submitForm(
+            url = "https://freewebnovel.com/search",
+            formParameters = Parameters.build {
+                append("searchkey", "love")
+            }
+        ) {
+            headersBuilder()
+        }.asJsoup()
+        return bookListParse(resp, "div.ul-list1 div.li-row", null) { searchFromElement(it) }
     }
 
     private suspend fun getNewNovel(page: Int): MangasPageInfo {
-        val resp = client.get(requestBuilder("$baseUrl/latest-novels/$page/"))
+        val resp = client.get(requestBuilder("$baseUrl/sort/latest-novels/$page/"))
         return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", "div.ul-list1") { latestFromElement(it) }
-    }
-
-    override fun HttpRequestBuilder.headersBuilder(block: HeadersBuilder.() -> Unit) {
-        headers {
-            append(HttpHeaders.UserAgent, "Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36")
-            append(HttpHeaders.CacheControl, "max-age=0")
-            append(HttpHeaders.Referrer, baseUrl)
-        }
     }
 
     private fun latestFromElement(element: Element) = MangaInfo(
