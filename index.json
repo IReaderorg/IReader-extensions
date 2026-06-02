@@ -193,6 +193,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.freewebnovel.en",
+    "apk": "ireader-en-freewebnovel-v2.14.apk",
+    "name": "FreeWebNovel",
+    "id": 3970612267773145070,
+    "lang": "en",
+    "code": 14,
+    "version": "2.14",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.genesisstudio.en",
     "apk": "ireader-en-genesisstudio-v2.1.apk",
     "name": "GenesisStudio",
