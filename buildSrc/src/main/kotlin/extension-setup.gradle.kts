@@ -2,6 +2,7 @@ import com.android.build.gradle.internal.api.ApplicationVariantImpl
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import com.android.builder.model.ProductFlavor
+import java.io.File
 
 /**
  * Extension Setup Plugin
@@ -125,6 +126,43 @@ android {
 
 tasks.register("deploy", DeployTask::class.java)
 
+// Install extension APK to connected device via adb
+tasks.register("install") {
+    group = "install"
+    description = "Build and install the extension APK to connected Android device"
+    dependsOn("assembleEnDebug")
+    
+    val apkPath = "${project.buildDir}/outputs/apk/en/debug"
+    
+    doLast {
+        val apkDir = File(apkPath)
+        val apkFile = apkDir.listFiles()?.firstOrNull { it.extension == "apk" }
+        
+        if (apkFile == null) {
+            logger.error("No APK found in $apkPath")
+            return@doLast
+        }
+        
+        logger.lifecycle("Installing ${apkFile.name}...")
+        
+        val process = Runtime.getRuntime().exec(arrayOf("adb", "install", "-r", apkFile.absolutePath))
+        val output = process.inputStream.bufferedReader().readText()
+        val exitCode = process.waitFor()
+        
+        if (exitCode == 0 && output.contains("Success")) {
+            logger.lifecycle("Installed successfully: ${apkFile.name}")
+        } else {
+            logger.error("Install failed: $output")
+        }
+    }
+}
+
+// Auto-install after every debug build so Android Studio's Run button just works
+tasks.configureEach {
+    if (name.startsWith("assemble") && name.endsWith("Debug")) {
+        finalizedBy("install")
+    }
+}
 
 // Generate JAR for each extension (for Desktop/JVM use)
 tasks.register<Jar>("extensionJar") {
