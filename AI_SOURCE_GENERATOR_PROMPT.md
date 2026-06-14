@@ -2817,3 +2817,306 @@ annotations/src/commonMain/kotlin/tachiyomix/annotations/
 
 *Following these rules will prevent 99% of compilation errors in AI-generated sources.*
 *ALWAYS prefer KSP annotations over manual code for cleaner, more maintainable sources!*
+
+---
+
+# ADVANCED: JSON API Sources
+
+When a site uses a JSON API instead of HTML scraping, you MUST override the core methods manually. The SourceFactory declarative annotations only work for HTML scraping.
+
+## JSON API Pattern
+
+```kotlin
+package ireader.mysource
+
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import ireader.core.log.Log
+import ireader.core.source.Dependencies
+import ireader.core.source.SourceFactory
+import ireader.core.source.asJsoup
+import ireader.core.source.findInstance
+import ireader.core.source.model.*
+import kotlinx.serialization.json.*
+import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
+
+@Extension
+@AutoSourceId(seed = "MySource")
+abstract class MySource(deps: Dependencies) : SourceFactory(deps = deps) {
+
+    override val lang: String get() = "en"
+    override val baseUrl: String get() = "https://example.com"
+    override val id: Long get() = MySourceSourceId.ID
+    override val name: String get() = "My Source"
+
+    override fun getFilters(): FilterList = listOf(Filter.Title())
+    override fun getCommands(): CommandList = listOf(
+        Command.Detail.Fetch(),
+        Command.Content.Fetch(),
+        Command.Chapter.Fetch(),
+    )
+
+    // BROWSE/SEARCH - Override getMangaList for JSON API
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val query = filters.findInstance<Filter.Title>()?.value ?: ""
+        val endpoint = if (query.isNotBlank()) {
+            "$baseUrl/api/search?q=$query&page=$page"
+        } else {
+            "$baseUrl/api/novels?page=$page&limit=20"
+        }
+        return try {
+            val response = client.get(requestBuilder(endpoint))
+            val body = response.bodyAsText()
+            val json = Json.parseToJsonElement(body).jsonObject
+            val data = json["data"]?.jsonArray ?: return MangasPageInfo(emptyList(), false)
+            val hasMore = json["hasMore"]?.jsonPrimitive?.boolean ?: false
+
+            val mangaList = data.map { element ->
+                val obj = element.jsonObject
+                MangaInfo(
+                    key = "$baseUrl/novel/${obj["slug"]?.jsonPrimitive?.content}",
+                    title = obj["title"]?.jsonPrimitive?.content ?: "",
+                    cover = obj["cover"]?.jsonPrimitive?.content ?: ""
+                )
+            }
+            MangasPageInfo(mangaList, hasMore)
+        } catch (e: Exception) {
+            Log.error { "Error: ${e.message}" }
+            MangasPageInfo(emptyList(), false)
+        }
+    }
+
+    // DETAIL - Override getMangaDetails for JSON API
+    override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
+        return try {
+            val response = client.get(requestBuilder("$baseUrl/api/novel/${manga.key.substringAfterLast("/")}"))
+            val body = response.bodyAsText()
+            val json = Json.parseToJsonElement(body).jsonObject
+            manga.copy(
+                title = json["title"]?.jsonPrimitive?.content ?: manga.title,
+                cover = json["cover"]?.jsonPrimitive?.content ?: manga.cover,
+                description = json["description"]?.jsonPrimitive?.content ?: "",
+                author = json["author"]?.jsonPrimitive?.content ?: ""
+            )
+        } catch (e: Exception) { manga }
+    }
+
+    // CHAPTERS - Override getChapterList for JSON API
+    override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
+        return try {
+            val slug = manga.key.substringAfterLast("/")
+            val response = client.get(requestBuilder("$baseUrl/api/novel/$slug/chapters"))
+            val body = response.bodyAsText()
+            val json = Json.parseToJsonElement(body).jsonObject
+            val chapters = json["chapters"]?.jsonArray ?: return emptyList()
+
+            chapters.map { ch ->
+                val obj = ch.jsonObject
+                ChapterInfo(
+                    name = obj["title"]?.jsonPrimitive?.content ?: "",
+                    key = "$baseUrl/novel/$slug/chapter/${obj["number"]?.jsonPrimitive?.int}"
+                )
+            }.reversed()
+        } catch (e: Exception) { emptyList() }
+    }
+
+    // CONTENT - Override getPageList (usually still HTML scraping)
+    override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+        return try {
+            val doc = client.get(requestBuilder(chapter.key)).asJsoup()
+            doc.select(".chapter-content p").map { Text(it.text()) }
+        } catch (e: Exception) { listOf(Text("Error loading content")) }
+    }
+}
+```
+
+## Dynamic JSON Parsing Rules
+
+```kotlin
+// ✅ CORRECT - Dynamic parsing (NO @Serializable!)
+val json = Json.parseToJsonElement(response).jsonObject
+val title = json["title"]?.jsonPrimitive?.content ?: ""
+val count = json["count"]?.jsonPrimitive?.int ?: 0
+val isActive = json["active"]?.jsonPrimitive?.boolean ?: false
+val items = json["items"]?.jsonArray ?: emptyList()
+val nested = json["data"]?.jsonObject?.get("name")?.jsonPrimitive?.content ?: ""
+
+// ❌ WRONG - Causes IncompatibleClassChangeError at runtime!
+@Serializable data class Novel(val title: String)
+```
+
+---
+
+# ADVANCED: Cloudflare & Anti-Bot Bypass
+
+## WebView-Based Bypass
+
+When a site has Cloudflare protection, use the WebView to get past it:
+
+```kotlin
+override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
+    // Check for pre-fetched HTML from WebView
+    commands.findInstance<Command.Chapter.Fetch>()?.let { cmd ->
+        val doc = Ksoup.parse(cmd.html)
+        return parseChapters(doc)
+    }
+
+    // If no WebView HTML, fetch normally
+    return withContext(DefaultDispatcher) {
+        val doc = client.get(requestBuilder(manga.key)).asJsoup()
+        parseChapters(doc)
+    }
+}
+
+override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+    // Check for pre-fetched HTML from WebView
+    commands.findInstance<Command.Content.Fetch>()?.let { cmd ->
+        val doc = Ksoup.parse(cmd.html)
+        return parseContent(doc)
+    }
+
+    return withContext(DefaultDispatcher) {
+        val doc = client.get(requestBuilder(chapter.key)).asJsoup()
+        parseContent(doc)
+    }
+}
+```
+
+## Custom Headers for Anti-Bot
+
+```kotlin
+override fun requestBuilder(url: String): HttpRequestBuilder {
+    return super.requestBuilder(url).apply {
+        headers.append("Referer", "$baseUrl/")
+        headers.append("Accept-Language", "en-US,en;q=0.9")
+    }
+}
+```
+
+## CloudflareConfig Annotation
+
+```kotlin
+@Extension
+@CloudflareConfig(enabled = true)
+abstract class CloudflareSource(deps: Dependencies) : SourceFactory(deps = deps) {
+    // Cloudflare bypass is handled automatically
+}
+```
+
+---
+
+# ADVANCED: Error Handling Patterns
+
+## Safe API Calls
+
+```kotlin
+override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+    return try {
+        val response = client.get(requestBuilder(endpoint))
+        
+        // Check for HTTP errors
+        if (!response.status.isSuccess()) {
+            Log.error { "HTTP ${response.status.value}: ${response.status.description}" }
+            return MangasPageInfo(emptyList(), false)
+        }
+        
+        val body = response.bodyAsText()
+        
+        // Check for rate limiting
+        if (body.contains("rate limit", ignoreCase = true)) {
+            Log.error { "Rate limited" }
+            return MangasPageInfo(emptyList(), false)
+        }
+        
+        // Parse JSON
+        val json = Json.parseToJsonElement(body).jsonObject
+        // ... parse data
+        
+    } catch (e: kotlinx.serialization.SerializationException) {
+        Log.error { "JSON parse error: ${e.message}" }
+        MangasPageInfo(emptyList(), false)
+    } catch (e: io.ktor.client.plugins.ResponseException) {
+        Log.error { "HTTP error: ${e.message}" }
+        MangasPageInfo(emptyList(), false)
+    } catch (e: Exception) {
+        Log.error { "Unexpected error: ${e.message}" }
+        MangasPageInfo(emptyList(), false)
+    }
+}
+```
+
+## Content Not Available Handling
+
+```kotlin
+override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+    return try {
+        val doc = client.get(requestBuilder(chapter.key)).asJsoup()
+        
+        val content = doc.selectFirst(".chapter-content, #content, article")
+        if (content == null) {
+            return listOf(Text("Chapter not found or content locked."))
+        }
+        
+        val paragraphs = content.select("p").map { it.text().trim() }.filter { it.isNotBlank() }
+        if (paragraphs.isEmpty()) {
+            return listOf(Text("No content available."))
+        }
+        
+        paragraphs.map { Text(it) }
+    } catch (e: Exception) {
+        listOf(Text("Error loading chapter: ${e.message}"))
+    }
+}
+```
+
+---
+
+# QUICK REFERENCE: Method Signatures
+
+```kotlin
+// These are the EXACT method signatures - do not guess!
+override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo
+override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo
+override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo
+override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo>
+override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page>
+```
+
+---
+
+# FILE STRUCTURE CHEAT SHEET
+
+```
+sources/{lang}/{sourcename}/
+├── build.gradle.kts           # Extension registration
+├── README.md                  # Optional documentation
+└── main/
+    ├── assets/
+    │   └── icon.png           # 192x192 recommended
+    └── src/
+        └── ireader/
+            └── {sourcename}/  # Must match package name
+                └── {SourceName}.kt
+```
+
+## build.gradle.kts Template
+```kotlin
+listOf("en").map { lang ->
+    Extension(
+        name = "SourceName",
+        versionCode = 1,
+        libVersion = "2",
+        lang = lang,
+        description = "Description here",
+        nsfw = false,
+        icon = DEFAULT_ICON,
+        assetsDir = "en/sourcename/main/assets",
+    )
+}.also(::register)
+```
+
+---
+
+*This document is the single source of truth for creating IReader extensions.*
+*All patterns are verified against the actual codebase.*
