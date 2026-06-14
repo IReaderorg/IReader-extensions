@@ -1615,17 +1615,5 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.wuxiaworldsiteco.en",
-    "apk": "ireader-en-wuxiaworldsiteco-v1.0.8.apk",
-    "name": "WuxiaWorldSiteco",
-    "id": 1109443794350718243,
-    "lang": "en",
-    "code": 8,
-    "version": "1.0.8",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
   }
 ]
