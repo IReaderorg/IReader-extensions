@@ -5,11 +5,15 @@ import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import ireader.core.source.model.*
+import kotlinx.coroutines.*
+import java.io.File
+import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
 // Global source manager
 val sourceManager = SourceManager()
 val sourceScanner = SourceScanner()
+lateinit var sourceWatcher: SourceWatcher
 
 fun Application.configureRouting() {
     routing {
@@ -138,6 +142,100 @@ fun Application.configureRouting() {
                 }
             }
             
+            // Build and reload a specific source
+            post("/build/{name}") {
+                val name = call.parameters["name"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ApiError("Invalid", "Source name required"))
+                
+                val lang = call.request.queryParameters["lang"] ?: "en"
+                val langCap = lang.replaceFirstChar { it.uppercase() }
+                
+                call.respond(mapOf(
+                    "success" to true,
+                    "message" to "Building $name...",
+                    "building" to true
+                ))
+                
+                // Build in background
+                launch(Dispatchers.IO) {
+                    try {
+                        val gradleTask = ":extensions:individual:$lang:$name:assemble${langCap}Debug"
+                        
+                        val process = ProcessBuilder(
+                            "./gradlew", gradleTask, "--daemon"
+                        )
+                            .directory(File("."))
+                            .redirectErrorStream(true)
+                            .start()
+                        
+                        val output = process.inputStream.bufferedReader().readText()
+                        val success = process.waitFor(120, TimeUnit.SECONDS)
+                        
+                        if (success && process.exitValue() == 0) {
+                            // Reload the source
+                            val deps = sourceManager.getDependencies()
+                            val dex2jarLoader = Dex2JarLoader(deps)
+                            sourceManager.removeByName(name)
+                            val reloaded = dex2jarLoader.reloadSource(name)
+                            
+                            if (reloaded != null) {
+                                sourceManager.registerSource(reloaded)
+                                println("   Build & reloaded: ${reloaded.name}")
+                            } else {
+                                println("   Build OK but reload failed: $name")
+                            }
+                        } else {
+                            val errorLines = output.lines().filter { it.contains("error:", ignoreCase = true) }.take(5)
+                            val errorMsg = if (errorLines.isNotEmpty()) {
+                                errorLines.joinToString("\n")
+                            } else {
+                                "Build failed (exit: ${process.exitValue()})"
+                            }
+                            println("   Build failed: $name\n   $errorMsg")
+                        }
+                    } catch (e: Exception) {
+                        println("   Build error: ${e.message}")
+                    }
+                }
+            }
+            
+            // Start watching for file changes (auto-rebuild)
+            post("/watch/start") {
+                if (sourceWatcher.isWatching) {
+                    call.respond(mapOf(
+                        "success" to true,
+                        "message" to "Already watching",
+                        "watching" to true
+                    ))
+                } else {
+                    sourceWatcher.startWatching()
+                    call.respond(mapOf(
+                        "success" to true,
+                        "message" to "Started watching for changes",
+                        "watching" to true
+                    ))
+                }
+            }
+            
+            // Stop watching
+            post("/watch/stop") {
+                sourceWatcher.stopWatching()
+                call.respond(mapOf(
+                    "success" to true,
+                    "message" to "Stopped watching",
+                    "watching" to false
+                ))
+            }
+            
+            // Check watch status
+            get("/watch/status") {
+                val message = if (sourceWatcher.isWatching) "Watching for file changes" else "Not watching"
+                call.respond(mapOf(
+                    "watching" to sourceWatcher.isWatching,
+                    "message" to message
+                ))
+            }
+            
             // Get source info
             get("/sources/{id}") {
                 val id = call.parameters["id"]?.toLongOrNull()
@@ -216,9 +314,17 @@ fun Application.configureRouting() {
                 val url = call.request.queryParameters["url"]
                     ?: return@get call.respond(HttpStatusCode.BadRequest, ApiError("Invalid", "URL parameter required"))
                 
+                val html = call.request.queryParameters["html"] ?: ""
+                
+                val commands = if (html.isNotBlank()) {
+                    listOf(Command.Chapter.Fetch(html = html))
+                } else {
+                    emptyList()
+                }
+                
                 var chapters: List<ChapterInfo>
                 val timing = measureTimeMillis {
-                    chapters = source.getChapterList(MangaInfo(key = url, title = ""), emptyList())
+                    chapters = source.getChapterList(MangaInfo(key = url, title = ""), commands)
                 }
                 
                 call.respond(ChaptersResponse(
@@ -240,9 +346,17 @@ fun Application.configureRouting() {
                 val url = call.request.queryParameters["url"]
                     ?: return@get call.respond(HttpStatusCode.BadRequest, ApiError("Invalid", "URL parameter required"))
                 
+                val html = call.request.queryParameters["html"] ?: ""
+                
+                val commands = if (html.isNotBlank()) {
+                    listOf(Command.Content.Fetch(html = html))
+                } else {
+                    emptyList()
+                }
+                
                 var pages: List<Page>
                 val timing = measureTimeMillis {
-                    pages = source.getPageList(ChapterInfo(key = url, name = ""), emptyList())
+                    pages = source.getPageList(ChapterInfo(key = url, name = ""), commands)
                 }
                 
                 val content = pages.mapNotNull { page ->
@@ -274,7 +388,9 @@ fun Application.configureRouting() {
                 tests.add(runTest("Browse Latest") {
                     val listing = source.getListings().firstOrNull()
                     val result = source.getMangaList(listing, 1)
-                    "Found ${result.mangas.size} manga(s), hasNextPage: ${result.hasNextPage}"
+                    val count = result.mangas.size
+                    if (count == 0) throw Exception("No manga found - source may be broken")
+                    "Found $count manga(s), hasNextPage: ${result.hasNextPage}"
                 })
                 
                 // Test 2: Search (if supported)
@@ -295,25 +411,33 @@ fun Application.configureRouting() {
                 if (firstManga != null) {
                     tests.add(runTest("Get Details") {
                         val details = source.getMangaDetails(firstManga, emptyList())
+                        if (details.title.isBlank()) throw Exception("Title is empty")
                         "Title: ${details.title}, Author: ${details.author}"
                     })
                     
                     // Test 4: Get chapters
+                    val chapters = try {
+                        source.getChapterList(firstManga, emptyList())
+                    } catch (e: Exception) { emptyList() }
+                    
                     tests.add(runTest("Get Chapters") {
-                        val chapters = source.getChapterList(firstManga, emptyList())
+                        if (chapters.isEmpty()) throw Exception("No chapters found - source may be broken")
+                        if (chapters.size < 3) throw Exception("Only ${chapters.size} chapters found - likely insufficient data")
                         "Found ${chapters.size} chapter(s)"
                     })
                     
                     // Test 5: Get content (if chapters exist)
-                    val firstChapter = try {
-                        source.getChapterList(firstManga, emptyList()).firstOrNull()
-                    } catch (e: Exception) { null }
+                    val firstChapter = chapters.firstOrNull()
                     
                     if (firstChapter != null) {
                         tests.add(runTest("Get Content") {
                             val pages = source.getPageList(firstChapter, emptyList())
-                            val textCount = pages.count { it is Text }
-                            "Found $textCount text page(s)"
+                            val textPages = pages.filterIsInstance<Text>()
+                            val textCount = textPages.size
+                            if (textCount == 0) throw Exception("No text content found - source may require JavaScript or be broken")
+                            val totalChars = textPages.sumOf { it.text.length }
+                            if (totalChars < 50) throw Exception("Content too short ($totalChars chars) - likely not actual content")
+                            "Found $textCount paragraphs, $totalChars characters"
                         })
                     }
                 }

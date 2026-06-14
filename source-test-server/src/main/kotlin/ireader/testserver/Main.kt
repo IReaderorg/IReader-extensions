@@ -12,6 +12,9 @@ import io.ktor.server.response.*
 import ireader.core.source.CatalogSource
 import ireader.core.source.Dependencies
 import ireader.core.log.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 
 fun main(args: Array<String>) {
@@ -26,31 +29,42 @@ fun main(args: Array<String>) {
         ║         IReader Source Test Server                        ║
         ║                                                           ║
         ║  Starting server on http://localhost:8080                 ║
-        ║  📋 Verbose logging ENABLED - source logs will appear     ║
-        ║  📋 View logs at http://localhost:8080/api/logs           ║
+        ║  Verbose logging ENABLED - source logs will appear        ║
+        ║  View logs at http://localhost:8080/api/logs              ║
+        ║                                                           ║
+        ║  Hot-reload: POST /api/watch/start                       ║
+        ║  Auto-rebuilds when .kt files change                      ║
         ╚═══════════════════════════════════════════════════════════╝
     """.trimIndent())
     
     // Auto-discover and register all Extension classes
-    println("\n📦 Discovering sources from compiled classes...")
+    println("\nDiscovering sources from compiled classes...")
     discoverAndRegisterSources(sourceManager)
     
     val count = sourceManager.getAllSources().size
-    println("\n✅ $count source(s) loaded and ready to test")
+    println("\n$count source(s) loaded and ready to test")
     if (count > 0) {
         sourceManager.getAllSources().sortedBy { it.name }.forEach { 
-            println("   • ${it.name} (${it.lang})")
+            println("   - ${it.name} (${it.lang})")
         }
     } else {
         println("""
         
-   ⚠️  No sources found! Make sure to compile sources first:
+   No sources found! Make sure to compile sources first:
        ./gradlew assembleDebug
        
    Then run the test server again.
         """.trimIndent())
     }
     println("─".repeat(60))
+    
+    // Initialize source watcher with callback
+    val serverScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    sourceWatcher = SourceWatcher(sourceManager, serverScope)
+    sourceWatcher.setOnSourceReloaded { name, success, message ->
+        val status = if (success) "OK" else "FAILED"
+        println("   [$status] $name: $message")
+    }
     
     embeddedServer(Netty, port = 8080, host = "0.0.0.0") {
         configurePlugins()

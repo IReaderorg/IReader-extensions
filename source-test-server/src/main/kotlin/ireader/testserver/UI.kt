@@ -484,13 +484,17 @@ fun getIndexHtml(): String {
                     Available sources are compiled but not loaded. Click to see how to add them.
                 </div>
                 <div class="sidebar-footer">
-                    <button class="reload-btn" onclick="reloadSources()">
+                    <button class="reload-btn" onclick="toggleWatch()" id="watchBtn" style="background: rgba(16, 185, 129, 0.2); border-color: var(--success);">
+                        <span>👁</span> <span id="watchBtnText">Start Hot-Reload</span>
+                    </button>
+                    <button class="reload-btn" onclick="reloadSources()" style="margin-top: 8px;">
                         <span>🔄</span> Reload Sources
                     </button>
                     <button class="reload-btn" onclick="forceReloadAll()" style="margin-top: 8px; background: rgba(239, 68, 68, 0.2); border-color: var(--error);">
                         <span>🔥</span> Force Reload All
                     </button>
                     <div class="status-text" id="dex2jarStatus"></div>
+                    <div class="status-text" id="watchStatus" style="color: var(--success);"></div>
                 </div>
             </aside>
             
@@ -534,6 +538,7 @@ fun getIndexHtml(): String {
                         <div class="actions">
                             <button class="btn-secondary" onclick="runTestSuite()">🧪 Run Tests</button>
                             <button class="btn-secondary" onclick="showSourceInfo()">ℹ️ Source Info</button>
+                            <button class="btn-secondary" onclick="buildAndReload()" style="background: rgba(99, 102, 241, 0.2); border-color: var(--accent);">🔨 Build & Reload</button>
                             <button class="btn-secondary" onclick="reloadCurrentSource()" style="background: rgba(239, 68, 68, 0.2); border-color: var(--error);">🔄 Reload Source</button>
                         </div>
                     </div>
@@ -553,6 +558,7 @@ fun getIndexHtml(): String {
             loadSources();
             loadAvailableSources();
             checkDex2JarStatus();
+            checkWatchStatus();
         });
         
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
@@ -565,14 +571,58 @@ fun getIndexHtml(): String {
                 const data = await response.json();
                 const statusEl = document.getElementById('dex2jarStatus');
                 if (data.available) {
-                    statusEl.innerHTML = '✅ dex2jar ready';
+                    statusEl.innerHTML = 'dex2jar ready';
                     statusEl.style.color = 'var(--success)';
                 } else {
-                    statusEl.innerHTML = '⚠️ dex2jar not found';
+                    statusEl.innerHTML = 'dex2jar not found';
                     statusEl.style.color = 'var(--error)';
                 }
             } catch (e) {
                 console.error('Failed to check dex2jar status:', e);
+            }
+        }
+        
+        let isWatching = false;
+        
+        async function checkWatchStatus() {
+            try {
+                const response = await fetch('/api/watch/status');
+                const data = await response.json();
+                isWatching = data.watching;
+                updateWatchUI();
+            } catch (e) {
+                console.error('Failed to check watch status:', e);
+            }
+        }
+        
+        function updateWatchUI() {
+            const btn = document.getElementById('watchBtn');
+            const btnText = document.getElementById('watchBtnText');
+            const statusEl = document.getElementById('watchStatus');
+            
+            if (isWatching) {
+                btn.style.background = 'rgba(239, 68, 68, 0.2)';
+                btn.style.borderColor = 'var(--error)';
+                btnText.textContent = 'Stop Hot-Reload';
+                statusEl.innerHTML = 'Watching for .kt changes...';
+                statusEl.style.color = 'var(--success)';
+            } else {
+                btn.style.background = 'rgba(16, 185, 129, 0.2)';
+                btn.style.borderColor = 'var(--success)';
+                btnText.textContent = 'Start Hot-Reload';
+                statusEl.innerHTML = '';
+            }
+        }
+        
+        async function toggleWatch() {
+            const endpoint = isWatching ? '/api/watch/stop' : '/api/watch/start';
+            try {
+                const response = await fetch(endpoint, { method: 'POST' });
+                const data = await response.json();
+                isWatching = data.watching;
+                updateWatchUI();
+            } catch (e) {
+                console.error('Failed to toggle watch:', e);
             }
         }
         
@@ -660,6 +710,70 @@ fun getIndexHtml(): String {
                 resultsArea.innerHTML = '<div class="card glass"><h3 class="card-title">❌ Reload Failed</h3>' +
                     '<p style="color: var(--error);">' + (e.message || 'Unknown error') + '</p></div>';
                 console.error('Reload source failed:', e);
+            }
+        }
+        
+        async function buildAndReload() {
+            if (!currentSourceId) return;
+            
+            const currentSource = sources.find(s => s.id === currentSourceId);
+            if (!currentSource) {
+                alert('Source not found');
+                return;
+            }
+            
+            const statusEl = document.getElementById('dex2jarStatus');
+            const resultsArea = document.getElementById('resultsArea');
+            
+            statusEl.innerHTML = '🔨 Building ' + currentSource.name + '...';
+            statusEl.style.color = 'var(--accent)';
+            resultsArea.innerHTML = '<div class="loading"><div class="spinner"></div> Building source with Gradle...<br><small>This may take 30-60 seconds</small></div>';
+            
+            try {
+                const response = await fetch('/api/build/' + encodeURIComponent(currentSource.name) + '?lang=en', { method: 'POST' });
+                const data = await response.json();
+                
+                statusEl.innerHTML = '⏳ Build started for ' + currentSource.name + ' - waiting...';
+                statusEl.style.color = 'var(--warning)';
+                
+                // Poll for build completion
+                let attempts = 0;
+                const maxAttempts = 60;
+                
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+                    
+                    try {
+                        const srcResponse = await fetch('/api/sources');
+                        const srcData = await srcResponse.json();
+                        const updatedSource = srcData.find(s => s.name === currentSource.name);
+                        
+                        if (updatedSource && updatedSource.id !== currentSource.id) {
+                            clearInterval(pollInterval);
+                            statusEl.innerHTML = '✅ Built & reloaded ' + currentSource.name;
+                            statusEl.style.color = 'var(--success)';
+                            resultsArea.innerHTML = '<div class="card glass"><h3 class="card-title">✅ Build Complete</h3>' +
+                                '<p style="color: var(--text-secondary);">Source <strong>' + currentSource.name + '</strong> has been built and reloaded.</p></div>';
+                            await loadSources();
+                            selectSource(updatedSource.id);
+                        } else if (attempts >= maxAttempts) {
+                            clearInterval(pollInterval);
+                            statusEl.innerHTML = '⚠️ Build timed out - check terminal';
+                            statusEl.style.color = 'var(--warning)';
+                            resultsArea.innerHTML = '<div class="card glass"><h3 class="card-title">⚠️ Build Timed Out</h3>' +
+                                '<p style="color: var(--text-secondary);">The build is taking longer than expected. Check the terminal for progress.</p></div>';
+                        }
+                    } catch (e) {
+                        // Ignore polling errors
+                    }
+                }, 1000);
+                
+            } catch (e) {
+                statusEl.innerHTML = '❌ Build failed';
+                statusEl.style.color = 'var(--error)';
+                resultsArea.innerHTML = '<div class="card glass"><h3 class="card-title">❌ Build Failed</h3>' +
+                    '<p style="color: var(--error);">' + (e.message || 'Unknown error') + '</p></div>';
+                console.error('Build source failed:', e);
             }
         }
         

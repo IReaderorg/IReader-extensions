@@ -117,7 +117,7 @@ class SourceManager {
 class TestHttpClients(private val client: HttpClient) : HttpClientsInterface {
     override val default: HttpClient get() = client
     override val cloudflareClient: HttpClient get() = client
-    override val browser: BrowserEngine get() = BrowserEngine()
+    override val browser: ireader.core.http.BrowserEngine get() = ireader.core.http.BrowserEngine()
     override val config: NetworkConfig get() = NetworkConfig()
     override val sslConfig: SSLConfiguration get() = SSLConfiguration()
     override val cookieSynchronizer: CookieSynchronizer get() = CookieSynchronizer()
