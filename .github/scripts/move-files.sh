@@ -10,17 +10,21 @@ ICONS=(**/icon/*.png)
 JS_FILES=(**/js/*.js)
 
 # Load working sources filter if working-sources.json exists
-WORKING_SOURCES_JSON="../master/working-sources.json"
+# Script runs from master/ directory, file is in repo root
+WORKING_SOURCES_JSON="working-sources.json"
 ENABLED_SOURCES=""
 if [ -f "$WORKING_SOURCES_JSON" ]; then
+    echo "Found working-sources.json"
     ENABLED_SOURCES=$(python3 -c "
-import json, sys
+import json
 data = json.load(open('$WORKING_SOURCES_JSON'))
 sources = data.get('sources', {})
-if sources:
-    enabled = [k for k, v in sources.items() if v.get('enabled', False)]
-    print(' '.join(enabled))
-" 2>/dev/null || echo "")
+enabled = [k for k, v in sources.items() if v.get('enabled', False)]
+print(' '.join(enabled))
+")
+    echo "Enabled sources count: $(echo $ENABLED_SOURCES | wc -w)"
+else
+    echo "working-sources.json not found, building all sources"
 fi
 
 # Filter APKs based on working sources
