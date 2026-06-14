@@ -116,8 +116,9 @@ for f in glob.glob('**/index.min.json', recursive=True):
     except:
         pass
 
-# Filter entries by source name
-filtered = [e for e in all_entries if e.get('name', '') in enabled]
+# Filter entries by source name (case-insensitive)
+enabled_lower = {s.lower() for s in enabled}
+filtered = [e for e in all_entries if e.get('name', '').lower() in enabled_lower]
 
 with open('$DEST_JSON/$MINIFIED_MERGED_JSON', 'w') as out:
     json.dump(filtered, out, separators=(',', ':'))

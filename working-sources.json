@@ -9,6 +9,10 @@
       "enabled": false,
       "reason": "need update"
     },
+    "allnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "allnovelfull": {
       "enabled": true,
       "reason": "Working"
@@ -17,9 +21,45 @@
       "enabled": false,
       "reason": "Working"
     },
+    "aquamanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "archiveofourown": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "armtl": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "arnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "azora": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "bakainua": {
       "enabled": false,
       "reason": "Working"
+    },
+    "beautymanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "bestmanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "bonnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "boxnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "chireads": {
       "enabled": true,
@@ -29,9 +69,21 @@
       "enabled": false,
       "reason": "Working"
     },
+    "clicknovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "coffeemanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "coolnovel": {
       "enabled": true,
       "reason": "Working"
+    },
+    "cratenovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "crimsonscrolls": {
       "enabled": false,
@@ -53,6 +105,10 @@
       "enabled": true,
       "reason": "Working"
     },
+    "fantasyworldonline": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "fenrir": {
       "enabled": true,
       "reason": "Working"
@@ -61,21 +117,65 @@
       "enabled": true,
       "reason": "Working"
     },
+    "fenrirtranslations": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "fictionzone": {
       "enabled": true,
       "reason": "Working"
+    },
+    "firstkissnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "foxaholic": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "freefullnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "freemanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "freenovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "freewebnovel": {
       "enabled": true,
       "reason": "Working"
     },
+    "genesisstudio": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "genesistudio": {
       "enabled": false,
       "reason": "Working"
     },
+    "harimanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "hizomanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "indowebnovel": {
       "enabled": true,
       "reason": "Working"
+    },
+    "isekaiscan": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "isekaiscaneu": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "ixdzs8": {
       "enabled": true,
@@ -93,6 +193,14 @@
       "enabled": false,
       "reason": "Working"
     },
+    "kingmanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "kissmanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "kolnovel": {
       "enabled": true,
       "reason": "Working"
@@ -104,6 +212,10 @@
     "libread": {
       "enabled": false,
       "reason": "Cloudflare protection blocking requests"
+    },
+    "lightnovelheaven": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "lightnovelpub": {
       "enabled": false,
@@ -117,33 +229,137 @@
       "enabled": false,
       "reason": "Working"
     },
+    "lightnovelsme": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "lnmtl": {
       "enabled": true,
       "reason": "Working"
+    },
+    "lnmtlfr": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "ltnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "lunarletters": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mangaread": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mangarockteam": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mangarosie": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mangatx": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mangaweebs": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "manhwachilllove": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "markazriwayat": {
       "enabled": true,
       "reason": "Working"
     },
+    "massnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "meionovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mixednovelnet": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "morenovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "mtlnation": {
       "enabled": false,
       "reason": "Working"
+    },
+    "mtlnovelclub": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mtlnovelen": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mtlnoveles": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mtlnovelfr": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "mtlnovelin": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "mvlempyr": {
       "enabled": true,
       "reason": "Working"
     },
+    "myboxnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "mydramanovel": {
       "enabled": false,
       "reason": "Working"
+    },
+    "mysticalseries": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "neobook": {
       "enabled": true,
       "reason": "Working"
     },
+    "neosekaitranslations": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "newnovelorg": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "noobchan": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "novel4up": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "novel543": {
       "enabled": true,
       "reason": "Working"
+    },
+    "novelbin": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "novelbuddy": {
       "enabled": false,
@@ -181,6 +397,14 @@
       "enabled": false,
       "reason": "Working"
     },
+    "novelmt": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "novelmultiverse": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "novelonline": {
       "enabled": true,
       "reason": "Working"
@@ -205,9 +429,17 @@
       "enabled": true,
       "reason": "Working"
     },
+    "noveltranslate": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "novelupdates": {
       "enabled": true,
       "reason": "Working"
+    },
+    "onekissnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "pandanovel": {
       "enabled": false,
@@ -217,6 +449,10 @@
       "enabled": true,
       "reason": "Working"
     },
+    "pianmanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "quanben": {
       "enabled": true,
       "reason": "Working"
@@ -224,6 +460,10 @@
     "rainofsnow": {
       "enabled": false,
       "reason": "Working"
+    },
+    "randomnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "ranobes": {
       "enabled": true,
@@ -236,6 +476,18 @@
     "readmtl": {
       "enabled": false,
       "reason": "Working"
+    },
+    "readnovelfull": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "readwebnovels": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "readwn": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "realmnovel": {
       "enabled": false,
@@ -281,6 +533,18 @@
       "enabled": true,
       "reason": "Working"
     },
+    "skynovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "sleepytranslations": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "sonicmtl": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "storyseedling": {
       "enabled": true,
       "reason": "Working"
@@ -293,6 +557,10 @@
       "enabled": true,
       "reason": "Working"
     },
+    "toonily": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "truyenfull": {
       "enabled": false,
       "reason": "Working"
@@ -301,9 +569,21 @@
       "enabled": true,
       "reason": "Working"
     },
+    "turkcelightnovels": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "uaranobeclub": {
       "enabled": true,
       "reason": "Working"
+    },
+    "usefulnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "wbnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "webnovel": {
       "enabled": true,
@@ -313,6 +593,14 @@
       "enabled": true,
       "reason": "Working"
     },
+    "webnovellover": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "webnovelpub": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "webnovelsite": {
       "enabled": true,
       "reason": "Working"
@@ -321,9 +609,25 @@
       "enabled": true,
       "reason": "Working"
     },
+    "wuxiabox": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
     "wuxiaclick": {
       "enabled": true,
       "reason": "Working"
+    },
+    "wuxiafox": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "wuxiaspot": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "wuxiav": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     },
     "wuxiaworld": {
       "enabled": true,
@@ -340,6 +644,18 @@
     "zelluloza": {
       "enabled": true,
       "reason": "Working"
+    },
+    "zetrotranslation": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "zinmanga": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
+    },
+    "zinnovel": {
+      "enabled": true,
+      "reason": "Working (multisrc)"
     }
   }
 }
