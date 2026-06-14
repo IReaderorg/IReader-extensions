@@ -4,10 +4,41 @@ shopt -s globstar nullglob extglob
 
 # Get APKs from previous jobs' artifacts
 cp -R ~/artifacts/ $PWD
-APKS=(**/apk/*.apk)
+ALL_APKS=(**/apk/*.apk)
 JARS=(**/jar/*.jar)
 ICONS=(**/icon/*.png)
 JS_FILES=(**/js/*.js)
+
+# Load working sources filter if working-sources.json exists
+WORKING_SOURCES_JSON="../master/working-sources.json"
+ENABLED_SOURCES=""
+if [ -f "$WORKING_SOURCES_JSON" ]; then
+    ENABLED_SOURCES=$(python3 -c "
+import json, sys
+data = json.load(open('$WORKING_SOURCES_JSON'))
+sources = data.get('sources', {})
+if sources:
+    enabled = [k for k, v in sources.items() if v.get('enabled', False)]
+    print(' '.join(enabled))
+" 2>/dev/null || echo "")
+fi
+
+# Filter APKs based on working sources
+if [ -n "$ENABLED_SOURCES" ]; then
+    APKS=()
+    for APK in "${ALL_APKS[@]}"; do
+        BASENAME=$(basename "$APK")
+        # APK format: ireader-{lang}-{name}-v{version}.apk
+        # Extract source name (third part after splitting by -)
+        SOURCE_NAME=$(echo "$BASENAME" | sed -E 's/^ireader-[^-]+-([^-]+)-v.*/\1/')
+        if echo "$ENABLED_SOURCES" | grep -qw "$SOURCE_NAME"; then
+            APKS+=("$APK")
+        fi
+    done
+    echo "Working sources filter: ${#APKS[@]} of ${#ALL_APKS[@]} APKs enabled"
+else
+    APKS=("${ALL_APKS[@]}")
+fi
 
 # Fail if too few APKs have been found
 if [ "${#APKS[@]}" -le "10" ]; then
@@ -63,28 +94,47 @@ MERGED_JSON="index.json"
 MINIFIED_MERGED_JSON="index.min.json"
 JSON_FILES=(**/index.min.json)
 
-# Create an empty array to store JSON objects
-JSON_OBJECTS=()
+# Filter and merge index entries
+if [ -n "$ENABLED_SOURCES" ] && [ ${#JSON_FILES[@]} -gt 0 ]; then
+    # Use Python to filter and merge JSON with working sources
+    python3 -c "
+import json, glob, sys
 
-# Read each JSON file and extract the JSON objects
-for JSON_FILE in "${JSON_FILES[@]}"; do
-    # Read the content of the JSON file
-    JSON_CONTENT=$(cat "$JSON_FILE")
+enabled = set('''$ENABLED_SOURCES'''.split())
+all_entries = []
 
-    # Check if the JSON content is an array
-    if [[ $JSON_CONTENT == \[*\] ]]; then
-        # Remove brackets from the JSON content
-        JSON_CONTENT=${JSON_CONTENT#"["}
-        JSON_CONTENT=${JSON_CONTENT%"]"}
-        JSON_OBJECTS+=("$JSON_CONTENT")
-    fi
-done
+for f in glob.glob('**/index.min.json', recursive=True):
+    try:
+        with open(f) as fh:
+            data = json.load(fh)
+            if isinstance(data, list):
+                all_entries.extend(data)
+    except:
+        pass
 
-# Create a single JSON array from the extracted JSON objects
-MERGED_CONTENT=$(IFS=,; echo "[${JSON_OBJECTS[*]}]")
+# Filter entries by source name
+filtered = [e for e in all_entries if e.get('name', '') in enabled]
 
-# Save the merged JSON content to a file
-echo "$MERGED_CONTENT" > "$DEST_JSON/$MINIFIED_MERGED_JSON"
+with open('$DEST_JSON/$MINIFIED_MERGED_JSON', 'w') as out:
+    json.dump(filtered, out, separators=(',', ':'))
 
-# Beautify the merged JSON file
-jq '.' "$DEST_JSON/$MINIFIED_MERGED_JSON" > "$DEST_JSON/$MERGED_JSON"
+with open('$DEST_JSON/$MERGED_JSON', 'w') as out:
+    json.dump(filtered, out, indent=2)
+
+print(f'Filtered index: {len(filtered)} of {len(all_entries)} entries')
+"
+else
+    # Fallback: merge without filtering
+    JSON_OBJECTS=()
+    for JSON_FILE in "${JSON_FILES[@]}"; do
+        JSON_CONTENT=$(cat "$JSON_FILE")
+        if [[ $JSON_CONTENT == \[*\] ]]; then
+            JSON_CONTENT=${JSON_CONTENT#"["}
+            JSON_CONTENT=${JSON_CONTENT%"]"}
+            JSON_OBJECTS+=("$JSON_CONTENT")
+        fi
+    done
+    MERGED_CONTENT=$(IFS=,; echo "[${JSON_OBJECTS[*]}]")
+    echo "$MERGED_CONTENT" > "$DEST_JSON/$MINIFIED_MERGED_JSON"
+    jq '.' "$DEST_JSON/$MINIFIED_MERGED_JSON" > "$DEST_JSON/$MERGED_JSON"
+fi

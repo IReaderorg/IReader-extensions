@@ -111,18 +111,18 @@ fun File.getChunk(chunk: Int, chunkSize: Int, block: (File) -> Unit) {
         ?.sortedBy { it.name }
         ?.filterNotNull()
         ?: emptyList()
-    
+
     if (allDirs.isEmpty()) {
         println("Warning: No source directories found in ${this.path}")
         return
     }
-    
+
     val chunks = allDirs.chunked(chunkSize)
     if (chunk >= chunks.size) {
         println("Warning: Chunk $chunk is out of bounds (total chunks: ${chunks.size})")
         return
     }
-    
+
     chunks[chunk].forEach { block(it) }
 }
 
