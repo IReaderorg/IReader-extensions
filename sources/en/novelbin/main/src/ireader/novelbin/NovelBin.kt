@@ -19,9 +19,16 @@ import ireader.core.source.model.Text
 import com.fleeksoft.ksoup.Ksoup
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
+import tachiyomix.annotations.GenerateTests
 
 @Extension
 @AutoSourceId(seed = "NovelBin")
+@GenerateTests(
+    unitTests = true,
+    integrationTests = false,
+    searchQuery = "cultivation",
+    minSearchResults = 1
+)
 abstract class NovelBin(private val deps: Dependencies) : SourceFactory(deps = deps) {
 
     override val lang: String get() = "en"
