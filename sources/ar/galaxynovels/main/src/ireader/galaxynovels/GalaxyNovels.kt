@@ -116,7 +116,7 @@ abstract class GalaxyNovels(deps: Dependencies) : SourceFactory(deps = deps) {
     ): List<ChapterInfo> {
         val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
         if (chapterFetch != null && chapterFetch.html.isNotBlank()) {
-            return chaptersParse(chapterFetch.html.asJsoup()).reversed()
+            return chaptersParse(chapterFetch.html.asJsoup())
         }
         return super.getChapterList(manga, commands)
     }
