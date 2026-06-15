@@ -122,13 +122,10 @@ Generated integration tests use Robolectric which blocks network requests by def
 3. Disable integration tests for now: `integrationTests = false` in `@GenerateTests`
 
 **For future reference:**
-```kotlin
-@GenerateTests(
-    unitTests = true,
-    integrationTests = false,  // Robolectric blocks network
-    searchQuery = "test"
-)
-```
+- Integration tests now use plain JUnit with real Ktor HTTP (no Robolectric)
+- Generated `TestHttpClients` uses `HttpClient(OkHttp)` for network requests
+- Unit tests are safe (no network), integration tests make real requests
+- Set `integrationTests = false` if site has Cloudflare or requires browser
 
 ---
 

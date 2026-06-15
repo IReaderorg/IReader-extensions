@@ -29,7 +29,7 @@ import tachiyomix.annotations.SelectorSnapshot
 @AutoSourceId(seed = "ReadNovelFull")
 @GenerateTests(
     unitTests = true,
-    integrationTests = false,
+    integrationTests = true,
     searchQuery = "longevity",
     minSearchResults = 1
 )

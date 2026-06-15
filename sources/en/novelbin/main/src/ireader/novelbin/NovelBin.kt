@@ -25,7 +25,7 @@ import tachiyomix.annotations.GenerateTests
 @AutoSourceId(seed = "NovelBin")
 @GenerateTests(
     unitTests = true,
-    integrationTests = false,
+    integrationTests = true,
     searchQuery = "cultivation",
     minSearchResults = 1
 )
@@ -145,11 +145,26 @@ abstract class NovelBin(private val deps: Dependencies) : SourceFactory(deps = d
         commands.findInstance<Command.Detail.Fetch>()?.let { cmd ->
             if (cmd.html.isNotBlank()) return parseDetailsFromHtml(cmd.html, manga)
         }
-        return try {
+        
+        // Use browser for detail page (JS-heavy for descriptions)
+        val html = try {
+            val browserResult = deps.httpClients.browser.fetch(
+                url = manga.key,
+                selector = ".novel-description-block, #novel-description-content",
+                timeout = 30000
+            )
+            if (browserResult.isSuccess && browserResult.responseBody.isNotBlank()) {
+                browserResult.responseBody
+            } else {
+                val response = client.get(requestBuilder(manga.key))
+                response.bodyAsText()
+            }
+        } catch (e: Exception) {
             val response = client.get(requestBuilder(manga.key))
-            val body = response.bodyAsText()
-            parseDetailsFromHtml(body, manga)
-        } catch (e: Exception) { manga }
+            response.bodyAsText()
+        }
+        
+        return parseDetailsFromHtml(html, manga)
     }
 
     private fun parseDetailsFromHtml(html: String, manga: MangaInfo): MangaInfo {
