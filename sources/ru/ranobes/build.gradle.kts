@@ -1,12 +1,12 @@
-listOf("ar").map { lang ->
+listOf("ru").map { lang ->
     Extension(
-        name = "KolNovel",
+        name = "Ranobes",
         versionCode = 1,
         libVersion = "2",
         lang = lang,
-        description = "Novels from KolNovel",
+        description = "Ranobes - Russian ranobe/novel site",
         nsfw = false,
         icon = DEFAULT_ICON,
-        assetsDir = "ar/kolnovel/main/assets",
+        assetsDir = "ru/ranobes/main/assets",
     )
 }.also(::register)

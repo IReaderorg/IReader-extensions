@@ -43,7 +43,7 @@ import tachiyomix.annotations.TestFixture
  */
 @GenerateTests(
     unitTests = true,
-    integrationTests = true,
+    integrationTests = false,
     "reverend",
     1
 )

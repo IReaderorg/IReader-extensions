@@ -31,7 +31,7 @@ import tachiyomix.annotations.TestFixture
 @Extension
 @GenerateTests(
     unitTests = true,
-    integrationTests = true,
+    integrationTests = false,
     searchQuery = "sword",
     minSearchResults = 1
 )

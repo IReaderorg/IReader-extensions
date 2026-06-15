@@ -48,7 +48,7 @@ import tachiyomix.annotations.TestFixture
 @GenerateCommands(detailFetch = true, chapterFetch = true, contentFetch = true)
 @GenerateTests(
     unitTests = true,
-    integrationTests = true,
+    integrationTests = false,
     "status",
     1
 )

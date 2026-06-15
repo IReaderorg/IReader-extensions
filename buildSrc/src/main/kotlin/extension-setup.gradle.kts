@@ -130,16 +130,23 @@ tasks.register("deploy", DeployTask::class.java)
 tasks.register("install") {
     group = "install"
     description = "Build and install the extension APK to connected Android device"
-    dependsOn("assembleEnDebug")
     
-    val apkPath = "${project.buildDir}/outputs/apk/en/debug"
+    // Find the correct assemble task for this extension's language
+    val assembleTask = tasks.findByName("assembleDebug") ?: tasks.findByName("assembleEnDebug")
+    if (assembleTask != null) {
+        dependsOn(assembleTask)
+    }
+    
+    val buildDirPath = layout.buildDirectory.dir("outputs/apk").get().asFile.absolutePath
     
     doLast {
-        val apkDir = File(apkPath)
-        val apkFile = apkDir.listFiles()?.firstOrNull { it.extension == "apk" }
+        val buildDir = File(buildDirPath)
+        val apkFile = buildDir.walkTopDown()
+            .filter { it.isFile && it.extension == "apk" && !it.name.contains("androidTest") }
+            .firstOrNull()
         
         if (apkFile == null) {
-            logger.error("No APK found in $apkPath")
+            logger.error("No APK found in ${buildDir.absolutePath}")
             return@doLast
         }
         
