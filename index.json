@@ -1,5 +1,89 @@
 [
   {
+    "pkg": "ireader.webnovelsite.en",
+    "apk": "ireader-en-webnovelsite-v2.2.apk",
+    "name": "WebNovelSite",
+    "id": 9209566972422369682,
+    "lang": "en",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.wnmtl.en",
+    "apk": "ireader-en-wnmtl-v2.6.apk",
+    "name": "Wnmtl",
+    "id": 4763782515108004706,
+    "lang": "en",
+    "code": 6,
+    "version": "2.6",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.wuxiaclick.en",
+    "apk": "ireader-en-wuxiaclick-v2.1.apk",
+    "name": "WuxiaClick",
+    "id": 8205328871368913707,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read Wuxia, Light and Korean Novels at WuxiaClick",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.wuxiaworld.en",
+    "apk": "ireader-en-wuxiaworld-v2.4.apk",
+    "name": "Wuxiaworld",
+    "id": 6540843430852844328,
+    "lang": "en",
+    "code": 4,
+    "version": "2.4",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.wuxiaworldsite.en",
+    "apk": "ireader-en-wuxiaworldsite-v2.11.apk",
+    "name": "WuxiaWorldSite",
+    "id": 2450173456282426491,
+    "lang": "en",
+    "code": 11,
+    "version": "2.11",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.wuxiaworldsiteco.en",
+    "apk": "ireader-en-wuxiaworldsiteco-v1.0.8.apk",
+    "name": "WuxiaWorldSiteco",
+    "id": 1109443794350718243,
+    "lang": "en",
+    "code": 8,
+    "version": "1.0.8",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.zelluloza.ru",
+    "apk": "ireader-ru-zelluloza-v2.1.apk",
+    "name": "Zelluloza",
+    "id": 7207524452353150991,
+    "lang": "ru",
+    "code": 1,
+    "version": "2.1",
+    "description": "\u0426\u0435\u043b\u043b\u044e\u043b\u043e\u0437\u0430 - Russian novel site with encrypted content",
+    "nsfw": true,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.allnovelfull.en",
     "apk": "ireader-en-allnovelfull-v2.3.apk",
     "name": "AllNovelFull",
@@ -158,15 +242,16 @@
   },
   {
     "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v2.17.apk",
+    "apk": "ireader-ar-kolnovel-v2.1.apk",
     "name": "KolNovel",
     "id": 1070515268391361388,
     "lang": "ar",
-    "code": 17,
-    "version": "2.17",
-    "description": "",
+    "code": 1,
+    "version": "2.1",
+    "description": "Novels from KolNovel",
     "nsfw": false,
-    "sourceDir": "main"
+    "sourceDir": "main",
+    "assetsDir": "ar/kolnovel/main/assets"
   },
   {
     "pkg": "ireader.leafstudio.en",
@@ -849,6 +934,19 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.novelbin.en",
+    "apk": "ireader-en-novelbin-v2.1.apk",
+    "name": "NovelBin",
+    "id": 1876355330276701201,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels from NovelBin",
+    "nsfw": true,
+    "sourceDir": "main",
+    "assetsDir": "en/novelbin/main/assets"
+  },
+  {
     "pkg": "ireader.noveldeglace.fr",
     "apk": "ireader-fr-noveldeglace-v2.2.apk",
     "name": "NovelDeGlace",
@@ -1032,18 +1130,6 @@
     "sourceDir": "pianmanga"
   },
   {
-    "pkg": "ireader.quanben.zh",
-    "apk": "ireader-zh-quanben-v2.1.apk",
-    "name": "Quanben",
-    "id": 4712328156844803272,
-    "lang": "zh",
-    "code": 1,
-    "version": "2.1",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.randomnovel.randomnovel.en",
     "apk": "ireader-en-randomnovel-v2.1.apk",
     "name": "RandomNovel",
@@ -1054,18 +1140,6 @@
     "description": "",
     "nsfw": false,
     "sourceDir": "randomnovel"
-  },
-  {
-    "pkg": "ireader.ranobes.en",
-    "apk": "ireader-en-ranobes-v2.9.apk",
-    "name": "Ranobes",
-    "id": 7992304614005451099,
-    "lang": "en",
-    "code": 9,
-    "version": "2.9",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
   },
   {
     "pkg": "ireader.readwebnovels.readwebnovels.en",
@@ -1298,6 +1372,43 @@
     "assetsDir": "multisrc/readwn/novelmt/assets"
   },
   {
+    "pkg": "ireader.quanben.zh",
+    "apk": "ireader-zh-quanben-v2.1.apk",
+    "name": "Quanben",
+    "id": 4712328156844803272,
+    "lang": "zh",
+    "code": 1,
+    "version": "2.1",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.ranobes.en",
+    "apk": "ireader-en-ranobes-v2.9.apk",
+    "name": "Ranobes",
+    "id": 7992304614005451099,
+    "lang": "en",
+    "code": 9,
+    "version": "2.9",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.ranobes.ru",
+    "apk": "ireader-ru-ranobes-v2.1.apk",
+    "name": "Ranobes",
+    "id": 2142278276308964093,
+    "lang": "ru",
+    "code": 1,
+    "version": "2.1",
+    "description": "Ranobes - Russian ranobe/novel site",
+    "nsfw": false,
+    "sourceDir": "main",
+    "assetsDir": "ru/ranobes/main/assets"
+  },
+  {
     "pkg": "ireader.readnovelfull.readnovelfull.en",
     "apk": "ireader-en-readnovelfull-v2.1.apk",
     "name": "ReadNovelFull",
@@ -1505,30 +1616,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.webnovelsite.en",
-    "apk": "ireader-en-webnovelsite-v2.2.apk",
-    "name": "WebNovelSite",
-    "id": 9209566972422369682,
-    "lang": "en",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.wnmtl.en",
-    "apk": "ireader-en-wnmtl-v2.6.apk",
-    "name": "Wnmtl",
-    "id": 4763782515108004706,
-    "lang": "en",
-    "code": 6,
-    "version": "2.6",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.wuxiabox.wuxiabox.en",
     "apk": "ireader-en-wuxiabox-v2.1.apk",
     "name": "Wuxiabox",
@@ -1540,18 +1627,6 @@
     "nsfw": false,
     "sourceDir": "wuxiabox",
     "assetsDir": "multisrc/readwn/wuxiabox/assets"
-  },
-  {
-    "pkg": "ireader.wuxiaclick.en",
-    "apk": "ireader-en-wuxiaclick-v2.1.apk",
-    "name": "WuxiaClick",
-    "id": 8205328871368913707,
-    "lang": "en",
-    "code": 1,
-    "version": "2.1",
-    "description": "Read Wuxia, Light and Korean Novels at WuxiaClick",
-    "nsfw": false,
-    "sourceDir": "main"
   },
   {
     "pkg": "ireader.wuxiafox.wuxiafox.en",
@@ -1591,29 +1666,5 @@
     "nsfw": false,
     "sourceDir": "wuxiav",
     "assetsDir": "multisrc/readwn/wuxiav/assets"
-  },
-  {
-    "pkg": "ireader.wuxiaworld.en",
-    "apk": "ireader-en-wuxiaworld-v2.4.apk",
-    "name": "Wuxiaworld",
-    "id": 6540843430852844328,
-    "lang": "en",
-    "code": 4,
-    "version": "2.4",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.wuxiaworldsite.en",
-    "apk": "ireader-en-wuxiaworldsite-v2.11.apk",
-    "name": "WuxiaWorldSite",
-    "id": 2450173456282426491,
-    "lang": "en",
-    "code": 11,
-    "version": "2.11",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
   }
 ]
