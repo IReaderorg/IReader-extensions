@@ -31,7 +31,7 @@ abstract class Novelshub(private val deps: Dependencies) : SourceFactory(deps = 
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
-        Filter.Sort("Sort By:", arrayOf("Latest", "Popular", "Top RateAdAAB", "Name")),
+        Filter.Sort("Sort By:", arrayOf("Latest", "Popular", "Top Rated", "Name")),
         Filter.Select("Type", arrayOf("All", "Web Novel", "Light Novel", "Manhwa", "Manga", "Manhua")),
         Filter.Select("Status", arrayOf("All", "Ongoing", "Completed", "Hiatus", "Cancelled")),
         Filter.Select("Genre", arrayOf(
