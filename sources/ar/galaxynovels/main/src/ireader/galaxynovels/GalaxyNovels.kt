@@ -74,7 +74,10 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         Command.Content.Fetch(),
     )
 
-    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+import ireader.core.source.model.Filter
+import ireader.core.source.model.FilterList
+import ireader.core.source.model.Listing
+import ireader.core.source.model.MangaInfo
         return getLatest(page)
     }
 
