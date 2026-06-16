@@ -1,10 +1,7 @@
 listOf("ar").map { lang ->
-listOf("ar").map { lang ->
   Extension(
     name = "GalaxyNovels",
     versionCode = 1,
-    libVersion = "2",
-    lang = lang,
     libVersion = "2",
     lang = lang,
     description = "",
