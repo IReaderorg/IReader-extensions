@@ -278,18 +278,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.lnmtl.en",
-    "apk": "ireader-en-lnmtl-v2.2.apk",
-    "name": "LnMtl",
-    "id": 5475081638229100683,
-    "lang": "en",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.aquamanga.aquamanga.en",
     "apk": "ireader-en-aquamanga-v2.1.apk",
     "name": "AquaManga",
@@ -597,6 +585,18 @@
     "nsfw": false,
     "sourceDir": "lightnovelheaven",
     "assetsDir": "multisrc/madara/lightnovelheaven/assets"
+  },
+  {
+    "pkg": "ireader.lnmtl.en",
+    "apk": "ireader-en-lnmtl-v2.2.apk",
+    "name": "LnMtl",
+    "id": 5475081638229100683,
+    "lang": "en",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.lnmtlfr.lnmtlfr.fr",
@@ -1106,18 +1106,6 @@
     "sourceDir": "onekissnovel"
   },
   {
-    "pkg": "ireader.pawread.en",
-    "apk": "ireader-en-pawread-v2.2.apk",
-    "name": "Pawread",
-    "id": 8494608835809223663,
-    "lang": "en",
-    "code": 2,
-    "version": "2.2",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.pianmanga.pianmanga.en",
     "apk": "ireader-en-pianmanga-v2.1.apk",
     "name": "PianManga",
@@ -1600,18 +1588,6 @@
     "code": 1,
     "version": "2.1",
     "description": "Webnovel - Popular web novel platform",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
-    "pkg": "ireader.webnovelcom.en",
-    "apk": "ireader-en-webnovelcom-v2.8.apk",
-    "name": "WebNovelCom",
-    "id": 1917247548522700447,
-    "lang": "en",
-    "code": 8,
-    "version": "2.8",
-    "description": "",
     "nsfw": false,
     "sourceDir": "main"
   },
