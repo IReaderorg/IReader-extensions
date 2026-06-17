@@ -1,5 +1,17 @@
 [
   {
+    "pkg": "ireader.webnovelcom.en",
+    "apk": "ireader-en-webnovelcom-v2.8.apk",
+    "name": "WebNovelCom",
+    "id": 1917247548522700447,
+    "lang": "en",
+    "code": 8,
+    "version": "2.8",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.webnovelsite.en",
     "apk": "ireader-en-webnovelsite-v2.2.apk",
     "name": "WebNovelSite",
@@ -189,6 +201,18 @@
     "code": 14,
     "version": "2.14",
     "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.galaxynovels.ar",
+    "apk": "ireader-ar-galaxynovels-v2.1.apk",
+    "name": "GalaxyNovels",
+    "id": 5839019927924950627,
+    "lang": "ar",
+    "code": 1,
+    "version": "2.1",
+    "description": "\u0645\u062c\u0631\u0629 \u0627\u0644\u0631\u0648\u0627\u064a\u0627\u062a - \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0631\u0648\u0627\u064a\u0627\u062a \u0627\u0644\u0645\u062a\u0631\u062c\u0645\u0629 \u0628\u062c\u0648\u062f\u0629 \u0639\u0627\u0644\u064a\u0629",
     "nsfw": false,
     "sourceDir": "main"
   },
@@ -909,6 +933,19 @@
     "sourceDir": "noobchan"
   },
   {
+    "pkg": "ireader.novebo.tu",
+    "apk": "ireader-tu-novebo-v2.1.apk",
+    "name": "Novebo",
+    "id": 33619062789468770,
+    "lang": "tu",
+    "code": 1,
+    "version": "2.1",
+    "description": "Novels from Novebo",
+    "nsfw": false,
+    "sourceDir": "main",
+    "assetsDir": "tu/novebo/main/assets"
+  },
+  {
     "pkg": "ireader.novel4up.novel4up.ar",
     "apk": "ireader-ar-novel4up-v1.2.apk",
     "name": "Novel4Up",
@@ -932,6 +969,19 @@
     "description": "Novel543 - Chinese novel site",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.novelarab.ar",
+    "apk": "ireader-ar-novelarab-v2.1.apk",
+    "name": "NovelArab",
+    "id": 3940288497625517554,
+    "lang": "ar",
+    "code": 1,
+    "version": "2.1",
+    "description": "Novels from NovelArab",
+    "nsfw": false,
+    "sourceDir": "main",
+    "assetsDir": "ar/novelarab/main/assets"
   },
   {
     "pkg": "ireader.novelbin.en",
@@ -1043,6 +1093,19 @@
     "description": "Novel source based on novelsonline.net",
     "nsfw": false,
     "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.novelshub.en",
+    "apk": "ireader-en-novelshub-v2.1.apk",
+    "name": "Novelshub",
+    "id": 7287878848577420054,
+    "lang": "en",
+    "code": 1,
+    "version": "2.1",
+    "description": "Read novels from Novelshub (NovelDex)",
+    "nsfw": true,
+    "sourceDir": "main",
+    "assetsDir": "en/novelshub/main/assets"
   },
   {
     "pkg": "ireader.novelsonline.en",
@@ -1358,6 +1421,18 @@
     "nsfw": false,
     "sourceDir": "novelmt",
     "assetsDir": "multisrc/readwn/novelmt/assets"
+  },
+  {
+    "pkg": "ireader.pawread.en",
+    "apk": "ireader-en-pawread-v2.2.apk",
+    "name": "Pawread",
+    "id": 8494608835809223663,
+    "lang": "en",
+    "code": 2,
+    "version": "2.2",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.quanben.zh",
