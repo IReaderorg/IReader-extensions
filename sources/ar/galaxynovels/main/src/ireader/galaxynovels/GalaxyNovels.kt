@@ -290,7 +290,7 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         return try {
             val browserResult = deps.httpClients.browser.fetch(
                 url = chapter.key,
-                selector = ".wor-chapter-content, .entry-content, .chapter-content, #chr-content, .wor-reading-content, .post-body, .chapter-body, article",
+                selector = "#content > article > div > p:nth-child(2)",
                 timeout = 50000
             )
             if (browserResult.isSuccess && browserResult.responseBody.isNotBlank()) {
@@ -309,20 +309,9 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
     private fun parseContentFromHtml(html: String): List<Page> {
         val doc = Ksoup.parse(html)
 
-        val contentSelectors = listOf(
-            ".wor-chapter-content",
-            ".entry-content",
-            ".chapter-content",
-            "#chr-content",
-            ".wor-reading-content",
-            ".chapter-body",
-            ".post-body",
-            "article .content"
-        )
 
-        for (selector in contentSelectors) {
-            val contentDiv = doc.selectFirst(selector)
-            if (contentDiv != null) {
+            val contentDiv = doc.select("#content p")
+
                 val paragraphs = contentDiv.select("p").map { it.text() }.filter { it.isNotBlank() }
                 if (paragraphs.isNotEmpty()) {
                     return paragraphs.map { Text(it) }
@@ -331,8 +320,8 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
                 if (text.isNotBlank()) {
                     return text.split("\n").filter { it.isNotBlank() }.map { Text(it) }
                 }
-            }
-        }
+
+
 
         return listOf(Text("لم يتم العثور على محتوى الفصل. قد تحتاج إلى تسجيل الدخول."))
     }
