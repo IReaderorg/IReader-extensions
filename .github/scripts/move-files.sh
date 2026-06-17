@@ -9,37 +9,36 @@ JARS=(**/jar/*.jar)
 ICONS=(**/icon/*.png)
 JS_FILES=(**/js/*.js)
 
-# Load working sources filter if working-sources.json exists
+# Load not-working sources filter if not-working-source.json exists
 # Script runs from master/ directory, file is in repo root
-WORKING_SOURCES_JSON="working-sources.json"
-ENABLED_SOURCES=""
-if [ -f "$WORKING_SOURCES_JSON" ]; then
-    echo "Found working-sources.json"
-    ENABLED_SOURCES=$(python3 -c "
+NOT_WORKING_JSON="not-working-source.json"
+DISABLED_SOURCES=""
+if [ -f "$NOT_WORKING_JSON" ]; then
+    echo "Found not-working-source.json"
+    DISABLED_SOURCES=$(python3 -c "
 import json
-data = json.load(open('$WORKING_SOURCES_JSON'))
+data = json.load(open('$NOT_WORKING_JSON'))
 sources = data.get('sources', {})
-enabled = [k for k, v in sources.items() if v.get('enabled', False)]
-print(' '.join(enabled))
+print(' '.join(sources.keys()))
 ")
-    echo "Enabled sources count: $(echo $ENABLED_SOURCES | wc -w)"
+    echo "Disabled sources count: $(echo $DISABLED_SOURCES | wc -w)"
 else
-    echo "working-sources.json not found, building all sources"
+    echo "not-working-source.json not found, building all sources"
 fi
 
-# Filter APKs based on working sources
-if [ -n "$ENABLED_SOURCES" ]; then
+# Filter APKs excluding not-working sources
+if [ -n "$DISABLED_SOURCES" ]; then
     APKS=()
     for APK in "${ALL_APKS[@]}"; do
         BASENAME=$(basename "$APK")
         # APK format: ireader-{lang}-{name}-v{version}.apk
         # Extract source name (third part after splitting by -)
         SOURCE_NAME=$(echo "$BASENAME" | sed -E 's/^ireader-[^-]+-([^-]+)-v.*/\1/')
-        if echo "$ENABLED_SOURCES" | grep -qw "$SOURCE_NAME"; then
+        if ! echo "$DISABLED_SOURCES" | grep -qw "$SOURCE_NAME"; then
             APKS+=("$APK")
         fi
     done
-    echo "Working sources filter: ${#APKS[@]} of ${#ALL_APKS[@]} APKs enabled"
+    echo "Not-working sources filter: ${#APKS[@]} of ${#ALL_APKS[@]} APKs enabled"
 else
     APKS=("${ALL_APKS[@]}")
 fi
@@ -99,12 +98,12 @@ MINIFIED_MERGED_JSON="index.min.json"
 JSON_FILES=(**/index.min.json)
 
 # Filter and merge index entries
-if [ -n "$ENABLED_SOURCES" ] && [ ${#JSON_FILES[@]} -gt 0 ]; then
-    # Use Python to filter and merge JSON with working sources
+if [ -n "$DISABLED_SOURCES" ] && [ ${#JSON_FILES[@]} -gt 0 ]; then
+    # Use Python to filter and merge JSON excluding not-working sources
     python3 -c "
 import json, glob, sys
 
-enabled = set('''$ENABLED_SOURCES'''.split())
+disabled = set('''$DISABLED_SOURCES'''.split())
 all_entries = []
 
 for f in glob.glob('**/index.min.json', recursive=True):
@@ -116,9 +115,9 @@ for f in glob.glob('**/index.min.json', recursive=True):
     except:
         pass
 
-# Filter entries by source name (case-insensitive)
-enabled_lower = {s.lower() for s in enabled}
-filtered = [e for e in all_entries if e.get('name', '').lower() in enabled_lower]
+# Filter entries by source name (case-insensitive), excluding disabled
+disabled_lower = {s.lower() for s in disabled}
+filtered = [e for e in all_entries if e.get('name', '').lower() not in disabled_lower]
 
 with open('$DEST_JSON/$MINIFIED_MERGED_JSON', 'w') as out:
     json.dump(filtered, out, separators=(',', ':'))
