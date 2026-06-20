@@ -31,7 +31,7 @@ data class Extension(
      */
     val sourceId: Long = generateSourceId(name, lang),
     val flavor: String = getFlavorName(sourceDir, lang),
-    val applicationId: String = generateApplicationId(name, flavor),
+    val applicationId: String = generateApplicationId(name, lang, sourceDir),
     val icon: String = "",
     val assetsDir: String = "",
     val projectDependencies: Set<String> = emptySet(),
@@ -82,6 +82,7 @@ private fun generateSourceId(name: String, lang: String, versionId: Int = 1): Lo
         .reduce(Long::or) and Long.MAX_VALUE
 }
 
-private fun generateApplicationId(name: String, flavor: String): String {
-    return "ireader.$name.$flavor".toLowerCase().replace(packageRegex, ".")
+private fun generateApplicationId(name: String, lang: String, sourceDir: String): String {
+    val pkgName = if (sourceDir == "main") name else sourceDir
+    return "ireader.$pkgName.$lang".toLowerCase().replace(packageRegex, ".")
 }

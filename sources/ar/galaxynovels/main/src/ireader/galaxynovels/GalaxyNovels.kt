@@ -330,4 +330,4 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         }
         return listOf(Text("لم يتم العثور على محتوى الفصل. قد تحتاج إلى تسجيل الدخول."))
     }
-}git status
+}
