@@ -5,6 +5,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
@@ -110,7 +111,14 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
         val query = filters.findInstance<Filter.Title>()?.value
         if (!query.isNullOrBlank()) {
-            return super.getMangaList(filters, page)
+            return try {
+                val url = "$baseUrl/search?title=${java.net.URLEncoder.encode(query, "UTF-8")}"
+                val document = client.get(requestBuilder(url)).asJsoup()
+                parseNovelList(document)
+            } catch (e: Exception) {
+                Log.error { "Error searching: ${e.message}" }
+                MangasPageInfo(emptyList(), false)
+            }
         }
         
         // Handle filters
@@ -137,23 +145,27 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
     }
     
     private fun parseNovelList(document: Document): MangasPageInfo {
-        val novels = document.select(".list-item a, article ul li a").mapNotNull { element ->
-            val title = element.selectFirst("h4")?.text()?.trim() ?: return@mapNotNull null
+        val novels = document.select(".list-item a, article ul li a, div[class*=list] a, a[href*='/novel/']").mapNotNull { element ->
+            val title = (element.selectFirst("h4")?.text() ?: element.selectFirst("h3")?.text()
+                ?: element.selectFirst(".title")?.text() ?: element.text())?.trim()
+                ?: return@mapNotNull null
+            if (title.isBlank()) return@mapNotNull null
             val link = element.attr("href")
             val imgElement = element.selectFirst("img")
-            var cover = imgElement?.attr("src") ?: ""
+            var cover = imgElement?.attr("src") ?: imgElement?.attr("data-src") ?: ""
             
-            // Filter out placeholder images
-            if (cover.contains("placeholder")) cover = ""
+            if (cover.contains("placeholder") || cover.isBlank()) cover = ""
+            
+            val href = link.ifBlank { element.attr("href") }
+            if (href.isBlank() || !href.contains("/novel/")) return@mapNotNull null
             
             MangaInfo(
-                key = if (link.startsWith("http")) link else "$baseUrl$link",
+                key = if (href.startsWith("http")) href else "$baseUrl$href",
                 title = title,
                 cover = if (cover.startsWith("http")) cover else if (cover.isNotBlank()) "$baseUrl$cover" else ""
             )
         }
         
-        // SuNovels uses client-side pagination, so we can't reliably detect next page
         return MangasPageInfo(novels, novels.isNotEmpty())
     }
 
@@ -168,8 +180,8 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
             BaseExploreFetcher(
                 "Latest",
                 endpoint = "/library",
-                selector = "article ul li",
-                nameSelector = "h4",
+                selector = ".list-item, article ul li, .novel-list li, div[class*=list] a",
+                nameSelector = "h4, h3, .title, span",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
@@ -178,15 +190,14 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
                 addBaseurlToCoverLink = true,
                 maxPage = 1,  // Client-side pagination
                 onCover = { cover, _ ->
-                    // Filter out placeholder images
-                    if (cover.contains("placeholder")) "" else cover
+                    if (cover.contains("placeholder") || cover.isBlank()) "" else cover
                 }
             ),
             BaseExploreFetcher(
                 "Search",
                 endpoint = "/search?title={query}",
-                selector = "article ul li",
-                nameSelector = "h4",
+                selector = ".list-item, article ul li, .novel-list li, div[class*=list] a",
+                nameSelector = "h4, h3, .title, span",
                 linkSelector = "a",
                 linkAtt = "href",
                 coverSelector = "img",
@@ -195,8 +206,7 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
                 addBaseurlToCoverLink = true,
                 type = SourceFactory.Type.Search,
                 onCover = { cover, _ ->
-                    // Filter out placeholder images
-                    if (cover.contains("placeholder")) "" else cover
+                    if (cover.contains("placeholder") || cover.isBlank()) "" else cover
                 }
             )
         )
@@ -213,13 +223,12 @@ abstract class Sunovels(deps: Dependencies) : SourceFactory(deps = deps) {
     override val detailFetcher: Detail
         get() = Detail(
             nameSelector = "article h3",
-            coverSelector = "link[rel='preload'][as='image'][href*='/uploads/']",
-            coverAtt = "href",
+            coverSelector = "meta[property='og:image']",
+            coverAtt = "content",
             descriptionSelector = "article > div > div p",
             authorBookSelector = ".author",
             categorySelector = "article ul li a[href*='category']",
             statusSelector = "article strong",
-            addBaseurlToCoverLink = true,
             onStatus = { status ->
                 val lower = status.lowercase()
                 when {

@@ -1,7 +1,5 @@
 package ireader.novelparadise
 
-import io.ktor.client.HttpClient
-import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.model.Command
@@ -9,11 +7,12 @@ import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
-import com.fleeksoft.ksoup.nodes.Document
+import tachiyomix.annotations.AutoSourceId
 import tachiyomix.annotations.Extension
 
 
 @Extension
+@AutoSourceId(seed = "NovelParadise")
 abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
@@ -23,7 +22,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     override val baseUrl: String
         get() = "https://novelsparadise.site"
     override val id: Long
-        get() = 50
+        get() = NovelParadiseSourceId.ID
     override val name: String
         get() = "NovelParadise"
 
@@ -39,10 +38,10 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         )
     }
 
-    fun fetcherCreator(name:String, endpoint:String) :BaseExploreFetcher{
+    fun fetcherCreator(name: String, order: String): BaseExploreFetcher {
         return BaseExploreFetcher(
             name,
-            endpoint = "/series/?page={page}&status=&type=&order=$name",
+            endpoint = "/series/?page={page}&status=&type=&order=$order",
             selector = ".maindet",
             nameSelector = ".mdinfo h2 a",
             coverSelector = "img",
@@ -52,10 +51,11 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
             maxPage = 50,
         )
     }
-    fun search() :BaseExploreFetcher{
+
+    fun searchFetcher(): BaseExploreFetcher {
         return BaseExploreFetcher(
             "Search",
-            endpoint = "/page/{page}}/?s={query}",
+            endpoint = "/page/{page}/?s={query}",
             selector = ".maindet",
             nameSelector = ".mdinfo h2 a",
             coverSelector = "img",
@@ -66,22 +66,12 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
             type = SourceFactory.Type.Search
         )
     }
+
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
-            fetcherCreator("Last Update","update"),
-            search()
-
+            fetcherCreator("Last Update", "update"),
+            searchFetcher()
         )
-
-    override suspend fun getListRequest(
-        baseExploreFetcher: BaseExploreFetcher,
-        page: Int,
-        query: String
-    ): Document {
-        val re=  super.getListRequest(baseExploreFetcher, page, query)
-        Log.error { re.html() }
-        return re
-    }
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -103,7 +93,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = "entry-title",
+            pageTitleSelector = "h1.entry-title",
             pageContentSelector = ".entry-content p",
         )
 }

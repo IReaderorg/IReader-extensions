@@ -204,21 +204,14 @@ abstract class RewayatClub(deps: Dependencies) : SourceFactory(deps = deps) {
             return parseChaptersFromHtml(chapterFetch.html.asJsoup(), manga.key)
         }
 
-        // Get novel slug from URL
         val novelSlug = manga.key.substringAfter("/novel/").substringBefore("/")
 
-        // First, get total chapter count from novel page
-        val document = client.get(requestBuilder(manga.key)).asJsoup()
-        val chapterCountText = document.selectFirst("div.v-tab--active span.mr-1")?.text() ?: "0"
-        val totalChapters = chapterCountText.replace(Regex("[^\\d]"), "").toIntOrNull() ?: 0
-        val totalPages = (totalChapters + 23) / 24 // 24 chapters per page, ceiling division
-
         val chapters = mutableListOf<ChapterInfo>()
+        var currentUrl: String? = "$apiUrl/api/chapters/$novelSlug/?ordering=number&page=1"
 
-        for (page in 1..maxOf(1, totalPages)) {
+        while (currentUrl != null) {
             try {
-                val chaptersUrl = "$apiUrl/api/chapters/$novelSlug/?ordering=number&page=$page"
-                val response = client.get(requestBuilder(chaptersUrl)).bodyAsText()
+                val response = client.get(requestBuilder(currentUrl)).bodyAsText()
                 val jsonElement = json.parseToJsonElement(response).jsonObject
                 val results = jsonElement["results"]?.jsonArray ?: break
 
@@ -236,8 +229,9 @@ abstract class RewayatClub(deps: Dependencies) : SourceFactory(deps = deps) {
                     )
                 }
 
-                val hasNext = jsonElement["next"]?.jsonPrimitive?.contentOrNull != null
-                if (!hasNext) break
+                val nextUrl = jsonElement["next"]?.jsonPrimitive?.contentOrNull
+                if (nextUrl.isNullOrBlank()) break
+                currentUrl = nextUrl
             } catch (e: Exception) {
                 break
             }

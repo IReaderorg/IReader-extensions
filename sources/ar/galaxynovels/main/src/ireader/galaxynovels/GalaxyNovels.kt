@@ -290,7 +290,7 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         return try {
             val browserResult = deps.httpClients.browser.fetch(
                 url = chapter.key,
-                selector = "#content > article > div > p:nth-child(2)",
+                selector = ".wor-chapter-content, #content, .chapter-content, .entry-content",
                 timeout = 50000
             )
             if (browserResult.isSuccess && browserResult.responseBody.isNotBlank()) {
@@ -308,21 +308,26 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
 
     private fun parseContentFromHtml(html: String): List<Page> {
         val doc = Ksoup.parse(html)
-
-
-            val contentDiv = doc.select("#content p")
-
-                val paragraphs = contentDiv.select("p").map { it.text() }.filter { it.isNotBlank() }
-                if (paragraphs.isNotEmpty()) {
-                    return paragraphs.map { Text(it) }
-                }
-                val text = contentDiv.text()
-                if (text.isNotBlank()) {
-                    return text.split("\n").filter { it.isNotBlank() }.map { Text(it) }
-                }
-
-
-
+        val selectors = listOf(
+            ".wor-chapter-content p",
+            ".chapter-content p",
+            ".entry-content p",
+            "#content p",
+            "#content article p",
+        )
+        for (selector in selectors) {
+            val paragraphs = doc.select(selector).map { it.text() }.filter { it.isNotBlank() }
+            if (paragraphs.isNotEmpty()) {
+                return paragraphs.map { Text(it) }
+            }
+        }
+        val contentDiv = doc.selectFirst(".wor-chapter-content, .chapter-content, .entry-content, #content")
+        if (contentDiv != null) {
+            val text = contentDiv.text()
+            if (text.isNotBlank()) {
+                return text.split("\n").filter { it.isNotBlank() }.map { Text(it) }
+            }
+        }
         return listOf(Text("لم يتم العثور على محتوى الفصل. قد تحتاج إلى تسجيل الدخول."))
     }
-}
+}git status
