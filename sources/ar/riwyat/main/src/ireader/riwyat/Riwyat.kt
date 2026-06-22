@@ -1,5 +1,6 @@
 package ireader.riwyat
 
+import com.fleeksoft.ksoup.nodes.Document
 import io.ktor.client.request.post
 import ireader.core.source.Dependencies
 import ireader.core.source.asJsoup
@@ -11,7 +12,6 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.Page
 import ireader.core.source.SourceFactory
-import com.fleeksoft.ksoup.nodes.Document
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.GenerateTests
 import tachiyomix.annotations.TestExpectations
@@ -25,10 +25,10 @@ import tachiyomix.annotations.TestFixture
     1
 )
 @TestFixture(
-    "https://cenele.com/cont/beyond-the-timescape/",
-    chapterUrl = "https://cenele.com/cont/beyond-the-timescape/%d8%a7%d9%84%d9%81%d8%b5%d9%84-1321/",
+    "https://cenele.com/cont/beyond-the-time/",
+    chapterUrl = "https://cenele.com/cont/beyond-the-time/%d8%a7%d9%84%d9%81%d8%b5%d9%84-1321/",
     expectedAuthor = "",
-    expectedTitle = "ما وراء الأفق الزمن",
+    expectedTitle = "رواية ما وراء الزمن",
 
     )
 @TestExpectations()
@@ -65,8 +65,29 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
                 linkAtt = "href",
                 coverSelector = "img",
                 coverAtt = "src",
-                nextPageSelector = ".wp-pagenavi .last",
-                nextPageValue = "&raquo"
+                nextPageSelector = ".orw-pagination a.next, a.next.page-numbers",
+            ),
+            BaseExploreFetcher(
+                "Most Views",
+                endpoint = "/novel/page/{page}/?m_orderby=views",
+                selector = ".page-item-detail",
+                nameSelector = ".h5 > a",
+                linkSelector = ".h5 > a",
+                linkAtt = "href",
+                coverSelector = "img",
+                coverAtt = "src",
+                nextPageSelector = ".orw-pagination a.next, a.next.page-numbers",
+            ),
+            BaseExploreFetcher(
+                "New",
+                endpoint = "/novel/page/{page}/?m_orderby=new-manga",
+                selector = ".page-item-detail",
+                nameSelector = ".h5 > a",
+                linkSelector = ".h5 > a",
+                linkAtt = "href",
+                coverSelector = "img",
+                coverAtt = "src",
+                nextPageSelector = ".orw-pagination a.next, a.next.page-numbers",
             ),
             BaseExploreFetcher(
                 "Search",
@@ -82,72 +103,19 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
                 nextPageValue = "Older Posts",
                 type = SourceFactory.Type.Search
             ),
-            BaseExploreFetcher(
-                "Trending",
-                endpoint = "/novel-list/page/{page}/?m_orderby=trending",
-                selector = ".page-content-listing .c-image-hover a",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
-            ),
-            BaseExploreFetcher(
-                "New",
-                endpoint = "/novel-list/page/{page}/?m_orderby=new-manga",
-                selector = ".page-content-listing .c-image-hover a",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
-            ),
-            BaseExploreFetcher(
-                "Most Views",
-                endpoint = "/novel-list/page/{page}/?m_orderby=views",
-                selector = ".page-content-listing .c-image-hover a",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
-            ),
-            BaseExploreFetcher(
-                "Rating",
-                endpoint = "/novel-list/page/{page}/?m_orderby=rating",
-                selector = ".page-content-listing .c-image-hover a",
-                nameSelector = "a",
-                nameAtt = "title",
-                linkSelector = "a",
-                linkAtt = "href",
-                coverSelector = "a img",
-                coverAtt = "src",
-                nextPageSelector = ".nav-previous",
-                nextPageValue = "Older Posts"
-            ),
-
         )
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = ".manga-title h1",
+            nameSelector = ".manga-title h2",
             coverSelector = ".summary_image img",
             coverAtt = "src",
             descriptionSelector = ".description-summary p",
-            statusSelector = ".genres",
+            statusSelector = ".manga-status .nhv-meta-value, .genres",
             onStatus = { status ->
-                if (status.contains("مستمرة")) {
-                    MangaInfo.ONGOING
-                } else {
-                    MangaInfo.COMPLETED
+                when {
+                    status.contains("مستمرة") || status.contains("Ongoing", true) -> MangaInfo.ONGOING
+                    status.contains("مكتملة") || status.contains("Completed", true) -> MangaInfo.COMPLETED
+                    else -> MangaInfo.UNKNOWN
                 }
             },
         )
@@ -162,19 +130,62 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageTitleSelector = "h1#chapter-heading",
-            pageContentSelector = "p",
+            pageTitleSelector = "h3.chapter-name",
+            pageContentSelector = ".reading-content .text-left p",
         )
 
+    private val invisibleCharRegex = Regex(
+        "[\\u200B-\\u200F\\u2028-\\u202F\\u2060-\\u206F\\uFEFF\\u00AD\\u034F\\u061C\\u115F-\\u1160\\u17B4-\\u17B5\\u180E\\u2000-\\u200A]"
+    )
+
+    private val watermarkIndicatorRegex = Regex(
+        "فضا⁣ء|فضاء|شاي|رواي.?ات|تطبي.?ق|سار.?ق|مسرو.?ق|ت.?مويه|محتو.?ى|بدون.?اذن|بدون.?إذن" +
+        "|حقوق.?الترجمة|حقوق.?النشر|جميع.?الحقوق|يقوم.?بنقل|ينقل.?المحتوى" +
+        "|ohnovel|novelfull|cenele|cenel|tale.?read|app|تحميل|تنزيل" +
+        "#\\w{4,}",
+        RegexOption.IGNORE_CASE
+    )
+
+    private fun sanitizeElement(element: com.fleeksoft.ksoup.nodes.Element) {
+        element.select(
+            "span[aria-hidden=true], span[role=presentation], span[data-nosnippet=true], " +
+            "input[type=hidden]"
+        ).remove()
+        element.select("span[style]").filter { s ->
+            val style = s.attr("style")
+            style.contains("opacity:0") || style.contains("visibility:hidden") ||
+            (style.contains("overflow:hidden") && style.contains("position:absolute")) ||
+            style.contains("clip-path")
+        }.forEach { it.remove() }
+        element.select("span[data-ro4q3prp], span[data-elgslyf8], span[data-mlnolt4r], " +
+            "span[data-we8luxao], span[data-bkq0thcb], span[data-o4ufbgva], " +
+            "span[data-ixrnb3k6], span[data-rfdne8tt]").remove()
+        element.select("span[id^=data-]").remove()
+    }
+
     override fun pageContentParse(document: Document): List<Page> {
-        val par = document.select(contentFetcher.pageContentSelector!!).eachText().dropLast(15)
+        val doc = document.clone()
+
+        val allParagraphs = doc.select(contentFetcher.pageContentSelector!!)
+            .mapNotNull { element ->
+                sanitizeElement(element)
+                var text = element.text()
+                text = invisibleCharRegex.replace(text, "")
+                text = text.replace(Regex("\\s{2,}"), " ").trim()
+
+                if (text.length < 4) return@mapNotNull null
+                if (watermarkIndicatorRegex.containsMatchIn(text)) return@mapNotNull null
+
+                text
+            }
+
         val head = selectorReturnerStringType(
-            document,
+            doc,
             selector = contentFetcher.pageTitleSelector,
             contentFetcher.pageTitleAtt
         )
 
-        return listOf(head.toPage()) + par.map { it.toPage() }
+        return listOf(head.toPage()) + allParagraphs.map { it.toPage() }
     }
 
     override suspend fun getChapterList(
