@@ -158,8 +158,6 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                     if (arr.isEmpty()) break
                     arr.filter { el ->
                         val obj = el.jsonObject
-                        val isNovel = obj["is_novel"]?.jsonPrimitive?.booleanOrNull ?: false
-                        if (!isNovel) return@filter false
                         val title = obj["title"]?.jsonPrimitive?.content ?: ""
                         val arabicTitle = obj["arabic_title"]?.jsonPrimitive?.contentOrNull ?: ""
                         val english = obj["english"]?.jsonPrimitive?.contentOrNull ?: ""
