@@ -57,7 +57,11 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
         Filter.Title(),
     )
 
-    override fun getCommands(): CommandList = emptyList()
+    override fun getCommands(): CommandList = listOf(
+        Command.Detail.Fetch(),
+        Command.Content.Fetch(),
+        Command.Chapter.Fetch(),
+    )
 
     override fun getListings(): List<Listing> = listOf(LatestListing())
 
@@ -66,19 +70,19 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
     private fun buildCoverUrl(id: Int, coverFile: String?): String {
         if (coverFile.isNullOrBlank()) return ""
         if (coverFile.startsWith("http")) return coverFile
-        return "$baseUrl/uploads/$coverFile"
+        if (coverFile.startsWith("uploads/")) return "$baseUrl/$coverFile"
+        return "$baseUrl/uploads/mangas/$coverFile"
     }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return try {
-            val response = client.get(requestBuilder("$baseUrl/api/mangas?orderBy=created&orderDir=desc&page=$page&limit=50"))
+            val limit = 100
+            val response = client.get(requestBuilder("$baseUrl/api/mangas?orderBy=created&orderDir=desc&page=$page&limit=$limit"))
             val body = response.bodyAsText()
             val arr = jsonParser.parseToJsonElement(body).jsonArray
             val mangaList = arr.mapNotNull { el ->
                 val obj = el.jsonObject
                 val id = obj["id"]?.jsonPrimitive?.intOrNull ?: return@mapNotNull null
-                val isNovel = obj["is_novel"]?.jsonPrimitive?.booleanOrNull ?: false
-                if (!isNovel) return@mapNotNull null
                 val title = obj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
                 val coverFile = obj["cover"]?.jsonPrimitive?.contentOrNull
                 val cover = buildCoverUrl(id, coverFile)
@@ -90,7 +94,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                     status = MangaInfo.UNKNOWN
                 )
             }.distinctBy { it.key }
-            MangasPageInfo(mangaList, mangaList.size >= 50)
+            MangasPageInfo(mangaList, mangaList.size >= limit)
         } catch (e: Exception) {
             Log.error { "Error fetching manga list: ${e.message}" }
             MangasPageInfo(emptyList(), false)
@@ -103,15 +107,14 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
         if (query != null) {
             return try {
                 val allResults = mutableListOf<MangaInfo>()
-                for (p in 1..20) {
-                    val response = client.get(requestBuilder("$baseUrl/api/mangas?orderBy=created&orderDir=desc&page=$p&limit=50"))
+                val searchLimit = 500
+                for (p in 1..5) {
+                    val response = client.get(requestBuilder("$baseUrl/api/mangas?orderBy=created&orderDir=desc&page=$p&limit=$searchLimit"))
                     val body = response.bodyAsText()
                     val arr = jsonParser.parseToJsonElement(body).jsonArray
                     if (arr.isEmpty()) break
                     arr.filter { el ->
                         val obj = el.jsonObject
-                        val isNovel = obj["is_novel"]?.jsonPrimitive?.booleanOrNull ?: false
-                        if (!isNovel) return@filter false
                         val title = obj["title"]?.jsonPrimitive?.content ?: ""
                         val arabicTitle = obj["arabic_title"]?.jsonPrimitive?.contentOrNull ?: ""
                         val english = obj["english"]?.jsonPrimitive?.contentOrNull ?: ""
@@ -128,9 +131,11 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                         val cover = buildCoverUrl(id, coverFile)
                         allResults.add(MangaInfo(key = id.toString(), title = title, cover = cover))
                     }
+                    if (arr.size < searchLimit) break
                 }
                 MangasPageInfo(allResults.distinctBy { it.key }, false)
             } catch (e: Exception) {
+                Log.error { "Error searching: ${e.message}" }
                 MangasPageInfo(emptyList(), false)
             }
         }
@@ -226,10 +231,23 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+        commands.findInstance<Command.Content.Fetch>()?.let { cmd ->
+            if (cmd.html.isNotBlank()) {
+                try {
+                    val doc = com.fleeksoft.ksoup.Ksoup.parse(cmd.html)
+                    val paragraphs = doc.select("p").map { it.text().trim() }
+                        .filter { it.isNotBlank() && it.length > 1 }
+                    if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
+                } catch (_: Exception) { }
+            }
+        }
+
         return try {
             val response = client.get(requestBuilder("$baseUrl/api/releases/${chapter.key}"))
             val body = response.bodyAsText()
-            parseContentFromJson(body)
+            val result = parseContentFromJson(body)
+            if (result.isNotEmpty()) return result
+            listOf(Text("محتوى الفصل غير متاح"))
         } catch (e: Exception) {
             Log.error { "Error fetching pages: ${e.message}" }
             listOf(Text("محتوى الفصل غير متاح"))
@@ -241,14 +259,18 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
             val obj = jsonParser.parseToJsonElement(jsonStr).jsonObject
             val storageKey = obj["storage_key"]?.jsonPrimitive?.contentOrNull ?: ""
             val pages = obj["pages"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
+            val webpPages = obj["webp_pages"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
             val contentText = obj["content"]?.jsonPrimitive?.contentOrNull
 
-            if (!contentText.isNullOrBlank()) {
+            if (!contentText.isNullOrBlank() && contentText.length > 10) {
                 val doc = com.fleeksoft.ksoup.Ksoup.parse(contentText)
-                val paragraphs = doc.select("p, br + text, div").map { it.text().trim() }.filter { it.isNotBlank() }
+                val paragraphs = doc.select("p")
+                    .map { it.text().trim() }
+                    .filter { it.isNotBlank() && it.length > 1 }
                 if (paragraphs.isNotEmpty()) {
                     return paragraphs.map { Text(it) }
                 }
+
                 val plainText = contentText
                     .replace(Regex("<br\\s*/?>"), "\n")
                     .replace(Regex("<[^>]+>"), "")
@@ -260,22 +282,35 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                     .replace("&#8217;", "'")
                     .replace("&#8230;", "...")
                     .replace(Regex("\\n{3,}"), "\n\n")
-                val lines = plainText.split("\n").map { it.trim() }.filter { it.isNotBlank() }
+                val lines = plainText.split("\n").map { it.trim() }.filter { it.isNotBlank() && it.length > 1 }
                 if (lines.isNotEmpty()) {
                     return lines.map { Text(it) }
                 }
             }
 
-            if (pages.isNotEmpty() && storageKey.isNotBlank()) {
-                return pages.map { page ->
+            val imagePages = if (webpPages.isNotEmpty() && storageKey.isNotBlank()) {
+                webpPages
+            } else {
+                pages
+            }
+
+            if (imagePages.isNotEmpty() && storageKey.isNotBlank()) {
+                return imagePages.map { page ->
                     ImageUrl("$baseUrl/uploads/releases/$storageKey/$page")
                 }
             }
 
-            listOf(Text("محتوى الفصل غير متاح"))
+            if (!contentText.isNullOrBlank()) {
+                val cleaned = contentText.trim()
+                if (cleaned.isNotEmpty() && cleaned.length > 5) {
+                    return listOf(Text(cleaned))
+                }
+            }
+
+            emptyList()
         } catch (e: Exception) {
             Log.error { "Error parsing pages: ${e.message}" }
-            listOf(Text("محتوى الفصل غير متاح"))
+            emptyList()
         }
     }
 }

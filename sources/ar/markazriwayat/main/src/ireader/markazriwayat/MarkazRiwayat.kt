@@ -152,6 +152,21 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageContentSelector = ".reading-content .text-right p",
+            onContent = { contents ->
+                contents
+                    .filter { it.isNotBlank() }
+                    .filter { text ->
+                        val normalizedText = text.trim().lowercase()
+                        !normalizedText.contains("مركز الروايات") &&
+                        !normalizedText.contains("محتوى مسروق") &&
+                        !normalizedText.contains("النسخة الأصلية") &&
+                        !normalizedText.contains("تابعونا") &&
+                        !normalizedText.contains("رابط الفصل") &&
+                        !normalizedText.contains("ترجمة") &&
+                        !normalizedText.contains("موقع مركز الروايات")
+                    }
+                    .map { it.trim() }
+            }
         )
 
     // ═══════════════════════════════════════════════════════════════
@@ -292,37 +307,43 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     }
 
     /**
-     * Override getChapterList to use API-based fetching
-     * Priority:
-     * 1. WebView HTML (if Command.Chapter.Fetch is present)
-     * 2. API-based fetching (extract manga_id and fetch via API)
-     * 3. HTML-based fallback (default behavior)
+     * Override getChapterList to always use API-based fetching for all chapters
+     * HTML only returns first 30 chapters, so API pagination is required
      */
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        // Priority 1: Check for WebView HTML first
+        // Priority 1: API-based fetching with pagination (gets all chapters)
+        try {
+            val mangaId = extractMangaId(manga.key)
+            if (mangaId != null) {
+                val chapters = fetchChaptersViaApi(mangaId, perPage = 100)
+                if (chapters.isNotEmpty()) {
+                    return chapters.reversed()
+                }
+            }
+        } catch (e: Exception) {
+            // Fall through to HTML-based fetching
+        }
+
+        // Priority 2: Check for WebView HTML
         val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
         if (chapterFetch != null && chapterFetch.html.isNotBlank()) {
             return chaptersParse(chapterFetch.html.asJsoup()).reversed()
         }
 
-        // Priority 2: Try API-based fetching
+        // Priority 3: HTML-based fetching (only first 30 chapters)
         try {
-            val mangaId = extractMangaId(manga.key)
-            if (mangaId != null) {
-                val chapters = fetchChaptersViaApi(mangaId)
-                if (chapters.isNotEmpty()) {
-                    // API returns in DESC order by default, so reverse for reading order
-                    return chapters.reversed()
-                }
+            val document = client.get(requestBuilder(manga.key)).asJsoup()
+            val chapters = chaptersParse(document)
+            if (chapters.isNotEmpty()) {
+                return chapters
             }
         } catch (e: Exception) {
-            // If API fails, fall through to HTML-based fetching
+            // Return empty list if all methods fail
         }
 
-        // Priority 3: Fall back to default HTML-based fetching
-        return super.getChapterList(manga, commands)
+        return emptyList()
     }
 }

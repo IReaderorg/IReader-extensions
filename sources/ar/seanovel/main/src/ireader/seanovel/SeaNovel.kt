@@ -20,7 +20,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
 import tachiyomix.annotations.GenerateTests
@@ -179,30 +178,52 @@ abstract class SeaNovel(private val deps: Dependencies) : SourceFactory(deps = d
 
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let { cmd ->
-            if (cmd.html.isNotBlank()) return parseChaptersFromHtml(cmd.html)
+            if (cmd.html.isNotBlank()) {
+                try { return parseChaptersFromHtml(cmd.html) } catch (_: Exception) { }
+            }
         }
 
         val slug = manga.key.substringAfterLast("/novels/")
+        val allChapters = mutableListOf<ChapterInfo>()
+        var offset = 0
+        val limit = 100
 
-        return try {
-            val response = client.get(requestBuilder("$baseUrl/api/novel/$slug/chapters?offset=0&limit=5000"))
-            val body = response.bodyAsText()
-            val obj = json.parseToJsonElement(body).jsonObject
-            val chaptersArr = obj["chapters"]?.jsonArray ?: return emptyList()
-            chaptersArr.mapNotNull { element ->
-                try {
-                    val chapterObj = element.jsonObject
-                    val id = chapterObj["id"]?.jsonPrimitive?.content?.toIntOrNull() ?: return@mapNotNull null
-                    val title = chapterObj["title"]?.jsonPrimitive?.content ?: "Chapter $id"
-                    ChapterInfo(
-                        name = title,
-                        key = "$baseUrl/novels/$slug/chapters/$id"
-                    )
-                } catch (e: Exception) { null }
+        do {
+            try {
+                val response = client.get(requestBuilder("$baseUrl/api/novel/$slug/chapters?offset=$offset&limit=$limit"))
+                val body = response.bodyAsText()
+                val obj = try {
+                    json.parseToJsonElement(body).jsonObject
+                } catch (_: Exception) {
+                    break
+                }
+                val chaptersArr = obj["chapters"]?.jsonArray ?: break
+                val hasMore = obj["hasMore"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false
+
+                for (element in chaptersArr) {
+                    try {
+                        val chapterObj = element.jsonObject
+                        val idStr = chapterObj["id"]?.jsonPrimitive?.content ?: continue
+                        val id = idStr.toDoubleOrNull()?.toInt() ?: idStr.toIntOrNull() ?: continue
+                        val title = chapterObj["title"]?.jsonPrimitive?.content ?: "Chapter $id"
+                        allChapters.add(
+                            ChapterInfo(
+                                name = title,
+                                key = "$baseUrl/novels/$slug/chapters/$id",
+                                number = id.toFloat()
+                            )
+                        )
+                    } catch (_: Exception) { }
+                }
+
+                if (!hasMore || chaptersArr.size < limit) break
+                offset += limit
+            } catch (_: Exception) {
+                break
             }
-        } catch (e: Exception) {
-            emptyList()
-        }
+        } while (true)
+
+        return allChapters
     }
 
     private fun parseChaptersFromHtml(html: String): List<ChapterInfo> {
@@ -220,41 +241,162 @@ abstract class SeaNovel(private val deps: Dependencies) : SourceFactory(deps = d
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
         commands.findInstance<Command.Content.Fetch>()?.let { cmd ->
-            if (cmd.html.isNotBlank()) return parseContentFromHtml(cmd.html)
+            if (cmd.html.isNotBlank()) {
+                try { return parseContentFromHtml(cmd.html) } catch (_: Exception) { }
+            }
         }
 
         return try {
             val response = client.get(requestBuilder(chapter.key))
             val body = response.bodyAsText()
-            parseContentFromHtml(body)
+            val result = try { parseContentFromHtml(body) } catch (_: Exception) { emptyList() }
+            if (result.isNotEmpty()) return result
+
+            val fallback = try { extractRscParagraphs(body) } catch (_: Exception) { emptyList() }
+            if (fallback.isNotEmpty()) return fallback.map { Text(it) }
+
+            val plain = try { extractPlainTextFallback(body) } catch (_: Exception) { emptyList() }
+            if (plain.isNotEmpty()) return plain.map { Text(it) }
+
+            listOf(Text("محتوى الفصل غير متاح حالياً."))
         } catch (e: Exception) {
             listOf(Text("محتوى الفصل غير متاح حالياً."))
         }
     }
 
     private fun parseContentFromHtml(html: String): List<Page> {
-        val doc = Ksoup.parse(html)
+        val allParagraphs = mutableListOf<String>()
 
-        val content = doc.selectFirst(".chapter-content, .reader-content, article.reader-content")
-        if (content != null) {
-            val extracted = extractContentFromElement(content)
-            if (extracted.isNotEmpty()) return extracted.map { Text(it) }
+        try {
+            val doc = Ksoup.parse(html)
+            val readerContent = doc.selectFirst("article.reader-content")
+            if (readerContent != null) {
+                val inlineParagraphs = readerContent.select("p")
+                    .filter { !it.hasClass("sr-only") && !it.hasClass("hidden") }
+                    .map { it.text().trim() }
+                    .filter { it.isNotBlank() && it.length > 1 }
+                allParagraphs.addAll(inlineParagraphs)
+            }
+        } catch (_: Exception) { }
+
+        try {
+            val hiddenDivParagraphs = extractFromHiddenDivs(html)
+            allParagraphs.addAll(hiddenDivParagraphs)
+        } catch (_: Exception) { }
+
+        if (allParagraphs.size > 3) {
+            val filtered = allParagraphs.filter { it.isNotBlank() && it.length > 1 }
+            if (filtered.isNotEmpty()) return filtered.map { Text(it) }
         }
 
-        val readerContainer = doc.selectFirst(".reader-container")
-        if (readerContainer != null) {
-            val paragraphs = readerContainer.select("p")
-                .filter { !it.hasClass("sr-only") && !it.hasClass("hidden") }
-                .map { it.text().trim() }
-                .filter { it.isNotBlank() && it.length > 1 }
-            if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
+        try {
+            val doc = Ksoup.parse(html)
+            val content = doc.selectFirst(".chapter-content, .reader-content")
+            if (content != null) {
+                val extracted = extractContentFromElement(content)
+                if (extracted.isNotEmpty()) return extracted.map { Text(it) }
+            }
+        } catch (_: Exception) { }
+
+        try {
+            val initialParagraphs = extractInitialParagraphsFromJson(html)
+            if (initialParagraphs.isNotEmpty()) return initialParagraphs.map { Text(it) }
+        } catch (_: Exception) { }
+
+        return try {
+            extractRscParagraphs(html).map { Text(it) }
+        } catch (_: Exception) {
+            extractPlainTextFallback(html).map { Text(it) }
+        }
+    }
+
+    private val hiddenDivPattern = Regex(
+        """<div hidden id="S:(\w+)">\s*<p(?:\s[^>]*)?>(.*?)</p>\s*</div>""",
+        RegexOption.DOT_MATCHES_ALL
+    )
+
+    private fun extractFromHiddenDivs(html: String): List<String> {
+        val paragraphs = mutableListOf<String>()
+        val matches = hiddenDivPattern.findAll(html)
+        for (match in matches) {
+            val rawText = match.groupValues[2]
+            val text = unescapeHtmlEntities(rawText).trim()
+            if (text.isNotBlank() && text.length > 1 && isContentParagraph(text)) {
+                paragraphs.add(text)
+            }
+        }
+        return paragraphs
+    }
+
+    private fun unescapeHtmlEntities(text: String): String {
+        return text
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&#39;", "'")
+            .replace("&nbsp;", " ")
+            .replace(Regex("&#(\\d+);")) { match ->
+                try { String(Character.toChars(match.groupValues[1].toInt())) } catch (_: Exception) { match.value }
+            }
+    }
+
+    private fun extractPlainTextFallback(html: String): List<String> {
+        val textPattern = Regex(""""children":"((?:[^"\\]|\\.)*)"""")
+        return try {
+            textPattern.findAll(html)
+                .map { unescapeJsonString(it.groupValues[1]) }
+                .filter { it.length > 10 && isContentParagraph(it) }
+                .toList()
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun extractInitialParagraphsFromJson(html: String): List<String> {
+        val pushPayload = try {
+            buildString {
+                pushPayloadPattern.findAll(html).forEach { match ->
+                    append(match.groupValues[1])
+                    append("\n")
+                }
+            }
+        } catch (_: Exception) { "" }
+
+        val searchText = if (pushPayload.isNotEmpty()) {
+            try { unescapeFullPayload(pushPayload) } catch (_: Exception) { pushPayload }
+        } else html
+
+        val startMarker = "\"initialParagraphs\":"
+        val startIdx = searchText.indexOf(startMarker)
+        if (startIdx < 0) return emptyList()
+
+        val arrayStart = startIdx + startMarker.length
+        var depth = 0
+        var i = arrayStart
+        try {
+            while (i < searchText.length && i < arrayStart + 500_000) {
+                when (searchText[i]) {
+                    '[' -> depth++
+                    ']' -> { depth--; if (depth == 0) break }
+                }
+                i++
+            }
+        } catch (_: Exception) {
+            return emptyList()
         }
 
-        val bodyText = doc.body()?.text() ?: ""
-        val bodyParagraphs = extractChapterContentFromText(bodyText)
-        if (bodyParagraphs.isNotEmpty()) return bodyParagraphs.map { Text(it) }
-
-        return extractRscParagraphs(html).map { Text(it) }
+        if (depth != 0 || i >= searchText.length) return emptyList()
+        val arrayContent = searchText.substring(arrayStart, i)
+        val stringPattern = Regex(""""((?:[^"\\]|\\.)*)"""")
+        return try {
+            stringPattern.findAll(arrayContent)
+                .map { unescapeJsonString(it.groupValues[1]) }
+                .filter { it.isNotBlank() && it.length > 1 && isContentParagraph(it) }
+                .toList()
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     private fun extractContentFromElement(element: com.fleeksoft.ksoup.nodes.Element): List<String> {
@@ -306,7 +448,7 @@ abstract class SeaNovel(private val deps: Dependencies) : SourceFactory(deps = d
     }
 
     private val pushPayloadPattern = Regex(
-        """self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)""",
+        """self\.__next_f\.push\(\[1,"((?:[^\\]|\\.)*)"\]\)""",
         RegexOption.DOT_MATCHES_ALL
     )
 
@@ -325,63 +467,72 @@ abstract class SeaNovel(private val deps: Dependencies) : SourceFactory(deps = d
     private fun extractRscParagraphs(html: String): List<String> {
         val paragraphs = mutableListOf<String>()
 
-        val pushPayload = buildString {
-            pushPayloadPattern.findAll(html).forEach { match ->
-                append(match.groupValues[1])
-                append("\n")
+        val pushPayload = try {
+            buildString {
+                pushPayloadPattern.findAll(html).forEach { match ->
+                    append(match.groupValues[1])
+                    append("\n")
+                }
             }
-        }
+        } catch (_: Exception) { "" }
 
         val searchText = if (pushPayload.isNotEmpty()) {
             try {
                 unescapeFullPayload(pushPayload)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 pushPayload
             }
         } else {
             html
         }
 
-        val tPattern = Regex("""T\d+:((?:(?!T\d+:).)*)""", RegexOption.DOT_MATCHES_ALL)
-        tPattern.findAll(searchText).forEach { match ->
-            val text = match.groupValues[1].trim()
-            if (isContentParagraph(text) && text.length > 5) {
-                text.split("\n").map { it.trim() }.filter { it.isNotBlank() && it.length > 5 }.forEach { line ->
-                    if (isContentParagraph(line)) paragraphs.add(line)
+        try {
+            val tPattern = Regex("""T\d+:((?:(?!T\d+:).)*)""", RegexOption.DOT_MATCHES_ALL)
+            tPattern.findAll(searchText).forEach { match ->
+                val text = match.groupValues[1].trim()
+                if (isContentParagraph(text) && text.length > 5) {
+                    text.split("\n").map { it.trim() }.filter { it.isNotBlank() && it.length > 5 }.forEach { line ->
+                        if (isContentParagraph(line)) paragraphs.add(line)
+                    }
                 }
             }
-        }
+        } catch (_: Exception) { }
 
-        extractInitialParagraphs(searchText, paragraphs)
+        try { extractInitialParagraphs(searchText, paragraphs) } catch (_: Exception) { }
 
-        extractChildrenPatterns(searchText, paragraphs)
+        try { extractChildrenPatterns(searchText, paragraphs) } catch (_: Exception) { }
 
-        if (paragraphs.isEmpty()) {
-            extractNestedContent(searchText, paragraphs)
-        }
+        try { extractRscParagraphsWithRefs(searchText, paragraphs) } catch (_: Exception) { }
 
         if (paragraphs.isEmpty()) {
-            extractPlainTextParagraphs(searchText, paragraphs)
+            try { extractNestedContent(searchText, paragraphs) } catch (_: Exception) { }
+        }
+
+        if (paragraphs.isEmpty()) {
+            try { extractPlainTextParagraphs(searchText, paragraphs) } catch (_: Exception) { }
         }
 
         return paragraphs.distinct().filter { it.isNotBlank() && it.length > 1 }
     }
 
     private fun extractInitialParagraphs(searchText: String, paragraphs: MutableList<String>) {
-        val startMarker = "\"initialParagraphs\":["
+        val startMarker = "\"initialParagraphs\":"
         val startIdx = searchText.indexOf(startMarker)
         if (startIdx < 0) return
         val arrayStart = startIdx + startMarker.length
-        var depth = 1
+        var depth = 0
         var i = arrayStart
-        while (i < searchText.length && depth > 0) {
+        while (i < searchText.length) {
             when (searchText[i]) {
                 '[' -> depth++
-                ']' -> depth--
+                ']' -> {
+                    depth--
+                    if (depth == 0) break
+                }
             }
             i++
         }
-        val arrayContent = searchText.substring(arrayStart, i - 1)
+        val arrayContent = searchText.substring(arrayStart, i)
         val stringPattern = Regex(""""((?:[^"\\]|\\.)*)"""")
         stringPattern.findAll(arrayContent).forEach { m ->
             val text = unescapeJsonString(m.groupValues[1])
@@ -399,26 +550,139 @@ abstract class SeaNovel(private val deps: Dependencies) : SourceFactory(deps = d
             if (isContentParagraph(text)) paragraphs.add(text)
         }
 
-        if (paragraphs.isEmpty()) {
-            val allChildrenPattern = Regex(
-                """"children":"((?:[^"\\]|\\.)*)"(?:"[^"]*"|,)(?:\}|$)""",
-                RegexOption.DOT_MATCHES_ALL
-            )
-            allChildrenPattern.findAll(searchText).forEach { match ->
-                val text = unescapeJsonString(match.groupValues[1])
-                if (isContentParagraph(text)) paragraphs.add(text)
+        var startPos = 0
+        while (startPos < searchText.length - 30) {
+            val idx = searchText.indexOf(""""children":"[""", startPos)
+            if (idx < 0) break
+
+            var i = idx + 13
+            while (i < searchText.length - 2) {
+                if (searchText[i] == ']' && searchText[i + 1] == '"') {
+                    val text = searchText.substring(idx + 13, i)
+                    if (text.isNotEmpty() && isContentParagraph(text) && text.length > 5) {
+                        paragraphs.add(unescapeJsonString(text))
+                    }
+                    break
+                }
+                if (searchText[i] == '"' && i + 2 < searchText.length &&
+                    searchText[i + 1] == '}' && searchText[i + 2] == ']') {
+                    val text = searchText.substring(idx + 13, i)
+                    if (text.isNotEmpty() && isContentParagraph(text) && text.length > 5) {
+                        paragraphs.add(unescapeJsonString(text))
+                    }
+                    break
+                }
+                i++
             }
+
+            startPos = idx + 1
+        }
+    }
+
+    private fun extractRscParagraphsWithRefs(searchText: String, paragraphs: MutableList<String>) {
+        // Pattern: $Lxx:["$","p","id",{"children":"..."}] 
+        val marker = "${'$'}L"
+        var searchPos = 0
+        while (searchPos < searchText.length - 20) {
+            val refIdx = searchText.indexOf(marker, searchPos)
+            if (refIdx < 0) break
+
+            var hexEnd = refIdx + 2
+            while (hexEnd < searchText.length && searchText[hexEnd].isLetterOrDigit()) hexEnd++
+
+            if (hexEnd >= searchText.length || searchText[hexEnd] != ':') {
+                searchPos = hexEnd
+                continue
+            }
+
+            val afterColon = searchText.substring(hexEnd + 1)
+            if (!afterColon.startsWith("[")) {
+                searchPos = hexEnd
+                continue
+            }
+
+            val pIdx = afterColon.indexOf("\"p\"")
+            if (pIdx < 0) {
+                searchPos = hexEnd
+                continue
+            }
+
+            val afterP = afterColon.substring(pIdx + 4)
+            val childrenIdx = afterP.indexOf("\"children\"")
+            if (childrenIdx < 0) {
+                searchPos = hexEnd + pIdx + 4
+                continue
+            }
+
+            val afterChildrenKey = afterP.substring(childrenIdx + 11)
+            var textStart = -1
+            if (afterChildrenKey.startsWith(":\"")) {
+                textStart = 2
+            } else if (afterChildrenKey.startsWith(":")) {
+                val quoteIdx = afterChildrenKey.indexOf('"')
+                if (quoteIdx >= 0) textStart = quoteIdx + 1
+            }
+
+            if (textStart >= 0) {
+                val textAfterQuote = afterChildrenKey.substring(textStart)
+                // Find pattern "}]+ 
+                var endPos = -1
+                for (i in textAfterQuote.indices) {
+                    if (textAfterQuote[i] == '"' && 
+                        i + 2 < textAfterQuote.length && 
+                        textAfterQuote[i + 1] == '}' && 
+                        textAfterQuote[i + 2] == ']') {
+                        endPos = i
+                        break
+                    }
+                }
+                if (endPos > 0) {
+                    val extracted = textAfterQuote.substring(0, endPos)
+                    if (extracted.isNotEmpty() && isContentParagraph(extracted) && extracted.length > 5) {
+                        paragraphs.add(unescapeJsonString(extracted))
+                    }
+                }
+            }
+
+            searchPos = hexEnd + pIdx + childrenIdx + 20
         }
     }
 
     private fun unescapeFullPayload(payload: String): String {
-        return payload
-            .replace("\\\\n", "\n")
-            .replace("\\n", "\n")
-            .replace("\\r", "\r")
-            .replace("\\t", "\t")
-            .replace("\\\"", "\"")
-            .replace("\\\\\\\\", "\\\\")
+        val sb = StringBuilder(payload.length)
+        var i = 0
+        while (i < payload.length) {
+            if (payload[i] == '\\' && i + 1 < payload.length) {
+                when (payload[i + 1]) {
+                    'n' -> sb.append('\n')
+                    'r' -> sb.append('\r')
+                    't' -> sb.append('\t')
+                    '"' -> sb.append('"')
+                    '\\' -> sb.append('\\')
+                    '/' -> sb.append('/')
+                    'u' -> {
+                        if (i + 5 < payload.length) {
+                            val hex = payload.substring(i + 2, i + 6)
+                            val codePoint = hex.toIntOrNull(16)
+                            if (codePoint != null) sb.appendCodePoint(codePoint)
+                            i += 4
+                        } else {
+                            sb.append(payload[i])
+                            sb.append(payload[i + 1])
+                        }
+                    }
+                    else -> {
+                        sb.append(payload[i])
+                        sb.append(payload[i + 1])
+                    }
+                }
+                i += 2
+            } else {
+                sb.append(payload[i])
+                i++
+            }
+        }
+        return sb.toString()
     }
 
     private fun extractNestedContent(searchText: String, paragraphs: MutableList<String>) {
