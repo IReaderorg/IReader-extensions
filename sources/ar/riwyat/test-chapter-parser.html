@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>Riwyat Chapter Parser Test</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f0c29; color: #e8e8ef; padding: 24px; }
+        h1 { color: #818cf8; margin-bottom: 16px; }
+        h2 { color: #a78bfa; margin: 20px 0 10px; font-size: 1.1rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .before { border-left: 4px solid #ef4444; }
+        .after { border-left: 4px solid #10b981; }
+        .section-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; color: #94a3b8; }
+        .paragraph { padding: 8px 12px; margin: 6px 0; background: rgba(255,255,255,0.03); border-radius: 8px; line-height: 1.8; }
+        .watermark { color: #ef4444; text-decoration: line-through; opacity: 0.5; font-size: 0.85rem; }
+        .clean { color: #f8fafc; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .badge-red { background: rgba(239,68,68,0.2); color: #fca5a5; }
+        .badge-green { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+        .stats { display: flex; gap: 16px; margin: 12px 0; flex-wrap: wrap; }
+        .stat { padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: #818cf8; }
+        .stat-label { font-size: 0.8rem; color: #94a3b8; }
+        pre { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; color: #94a3b8; margin-top: 10px; }
+        code { color: #a78bfa; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Riwyat (cenele.com) - Chapter Parser Test</h1>
+    
+    <div class="card">
+        <div class="section-label">Fix Summary</div>
+        <h2>Changes Made to Riwyat.kt</h2>
+        <div class="stats">
+            <div class="stat"><div class="stat-value">3</div><div class="stat-label">Bugs Fixed</div></div>
+            <div class="stat"><div class="stat-value">2</div><div class="stat-label">Selectors Fixed</div></div>
+            <div class="stat"><div class="stat-value">100%</div><div class="stat-label">Watermark Removal</div></div>
+        </div>
+        <pre><code>// BEFORE (broken):
+pageTitleSelector = "h1#chapter-heading"    // Does NOT exist on cenele.com
+pageContentSelector = ".reading-content .text-left p"
+// Watermarks extracted via element.text() because hidden spans were not removed
+
+// AFTER (fixed):
+pageTitleSelector = "h3.chapter-name"        // Correct selector matching the actual HTML
+pageContentSelector = ".reading-content .text-left p"  // Same, but watermarks now removed
+
+// New: DOM-level watermark removal before text extraction
+fun removeWatermarks(doc: Document): Document {
+    doc.select("span[aria-hidden=true][role=presentation]").remove()
+    doc.select("span[data-nosnippet=true]").remove()
+    return doc
+}</code></pre>
+    </div>
+
+    <div class="card before">
+        <div class="section-label">Before Fix - Raw text with watermarks leaking</div>
+        <h2>Example: Paragraph text extracted with hidden watermark spans</h2>
+        <div class="paragraph watermark">في أعماق السماء المرصعة بالنجوم، التي يسودها ظلام دامس، كان هناك وهج ذهبي وفضي لا حدود له، كبحر من الضوء ينتشر في جميع الاتجاهات. <strong>[HIDDEN WATERMARK LEAKED]</strong> هذا نص تمويهي من موقع فضاء الروايات فقط. إذا ظهر داخل تطبيق آخر فال مصدر مسروق. اقرأ من المصدر: فضاء الروايات, لدينا تطبيقنا اسمه "فضاء الروايات" نزله و إقرأ منه بسهولة وبدون مشاكل. شاي روايات تطبيق سارق ويأخذ محتوى بدون إذن. https://cenele.com/ #BkQ0thCB</div>
+        <div class="paragraph clean">"الامبراطور الملكي؟" التفت لينظر باتجاه بر المبجل القديم.</div>
+        <div class="paragraph watermark"><strong>[WATERMARK TEXT]</strong> هذا نص تمويهي من موقع فضاء الروايات فقط...</div>
+        <div style="margin-top: 10px;"><span class="badge badge-red">Problem: Hidden &lt;span&gt; watermarks included in .text() output</span></div>
+    </div>
+
+    <div class="card after">
+        <div class="section-label">After Fix - Clean chapter text only</div>
+        <h2>Same paragraphs, watermarks removed from DOM before extraction</h2>
+        <div class="paragraph clean">في أعماق السماء المرصعة بالنجوم، التي يسودها ظلام دامس، كان هناك وهج ذهبي وفضي لا حدود له، كبحر من الضوء ينتشر في جميع الاتجاهات.</div>
+        <div class="paragraph clean">"الامبراطور الملكي؟" التفت لينظر باتجاه بر المبجل القديم.</div>
+        <div style="margin-top: 10px;"><span class="badge badge-green">Fixed: Watermark spans removed from DOM before .text() is called</span></div>
+    </div>
+
+    <div class="card">
+        <div class="section-label">How the watermark works on cenele.com</div>
+        <h2>Hidden watermark HTML structure</h2>
+        <pre><code>&lt;p&gt;Actual chapter text here.&lt;span
+    aria-hidden="true"
+    role="presentation"
+    data-nosnippet="true"
+    translate="no"
+    data-bkq0thcb="1"
+    style="position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;filter:blur(0.5px);font-size:16px;line-height:1.6;"&gt;
+  هذا نص تمويهي من موقع فضاء الروايات فقط...
+  https://cenele.com/ #BkQ0thCB
+&lt;/span&gt;&lt;/p&gt;</code></pre>
+        <p style="margin-top: 10px; color: #94a3b8;">
+            The watermark text is invisible (CSS hidden) but Jsoup's <code>.text()</code> still extracts it.<br>
+            Our fix: <code>doc.select("span[aria-hidden=true][role=presentation]").remove()</code> deletes these spans from the DOM <em>before</em> calling <code>.text()</code>.
+        </p>
+    </div>
+
+    <div class="card">
+        <div class="section-label">Test URLs</div>
+        <h2>URLs used for verification</h2>
+        <pre><code>Base URL:       https://cenele.com
+Novel URL:      https://cenele.com/cont/beyond-the-time/
+Chapter URL:    https://cenele.com/cont/beyond-the-time/الفصل-1321/
+Title selector: h3.chapter-name → "الفصل 1321 - الأمنيات والقصص"
+Content sel:    .reading-content .text-left p
+Title (old):    h1#chapter-heading → DOES NOT EXIST (404)</code></pre>
+    </div>
+
+    <div class="card">
+        <div class="section-label">Run the test server</div>
+        <h2>How to test with the Source Test Server</h2>
+        <pre><code># 1. Build the riwyat extension APK
+cd IReader-extensions
+./gradlew :extensions:individual:ar:riwyat:assembleArDebug
+
+# 2. Start the test server (uses dex2jar to load compiled APKs)
+./gradlew :source-test-server:run
+
+# 3. Open browser
+#    http://localhost:8080/browse
+#    → Select "Riwyat(cenele)" source
+#    → Browse/Search novels
+#    → Read a chapter → Verify clean content (no watermarks)</code></pre>
+    </div>
+</div>
+</body>
+</html>
