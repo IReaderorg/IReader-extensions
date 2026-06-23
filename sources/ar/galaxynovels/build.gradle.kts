@@ -1,7 +1,7 @@
 listOf("ar").map { lang ->
     Extension(
         name = "GalaxyNovels",
-        versionCode = 3,
+        versionCode = 2,
         libVersion = "2",
         lang = lang,
         description = "مجرة الروايات - قراءة الروايات المترجمة بجودة عالية",
