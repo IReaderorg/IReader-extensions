@@ -290,16 +290,15 @@
   },
   {
     "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v2.1.apk",
+    "apk": "ireader-ar-kolnovel-v2.2.apk",
     "name": "KolNovel",
     "id": 1070515268391361388,
     "lang": "ar",
-    "code": 1,
-    "version": "2.1",
-    "description": "Novels from KolNovel",
+    "code": 2,
+    "version": "2.2",
+    "description": "\u0645\u0644\u0648\u0643 \u0627\u0644\u0631\u0648\u0627\u064a\u0627\u062a - \u0631\u0648\u0627\u064a\u0627\u062a \u0639\u0631\u0628\u064a\u0629 \u0645\u062a\u0631\u062c\u0645\u0629",
     "nsfw": false,
-    "sourceDir": "main",
-    "assetsDir": "ar/kolnovel/main/assets"
+    "sourceDir": "main"
   },
   {
     "pkg": "ireader.leafstudio.en",
@@ -1535,13 +1534,13 @@
   },
   {
     "pkg": "ireader.rewayatfans.ar",
-    "apk": "ireader-ar-rewayatfans-v2.3.apk",
-    "name": "Rewayatfans",
+    "apk": "ireader-ar-rewayatfans-v2.1.apk",
+    "name": "RewayatFans",
     "id": 3083109954792853783,
     "lang": "ar",
-    "code": 3,
-    "version": "2.3",
-    "description": "",
+    "code": 1,
+    "version": "2.1",
+    "description": "\u0631\u0648\u0627\u064a\u0627\u062a \u0641\u0627\u0646\u0632 - \u062a\u0631\u062c\u0645\u0629 \u0631\u0648\u0627\u064a\u0627\u062a \u0627\u0644\u0648\u064a\u0628",
     "nsfw": false,
     "sourceDir": "main"
   },
@@ -1595,12 +1594,12 @@
   },
   {
     "pkg": "ireader.seanovel.ar",
-    "apk": "ireader-ar-seanovel-v2.1.apk",
+    "apk": "ireader-ar-seanovel-v2.2.apk",
     "name": "SeaNovel",
     "id": 7953088418839296694,
     "lang": "ar",
-    "code": 1,
-    "version": "2.1",
+    "code": 2,
+    "version": "2.2",
     "description": "\u0631\u0648\u0627\u064a\u0627\u062a \u0639\u0631\u0628\u064a\u0629 \u0645\u062a\u0631\u062c\u0645\u0629 - \u0628\u062d\u0631 \u0627\u0644\u0631\u0648\u0627\u064a\u0627\u062a",
     "nsfw": false,
     "sourceDir": "main"
