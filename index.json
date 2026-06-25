@@ -241,18 +241,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.golden.ar",
-    "apk": "ireader-ar-golden-v2.1.apk",
-    "name": "Golden",
-    "id": 8229659245461031498,
-    "lang": "ar",
-    "code": 1,
-    "version": "2.1",
-    "description": "Golden Rest - Arabic Manga/Novel Source",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.indowebnovel.in",
     "apk": "ireader-in-indowebnovel-v2.2.apk",
     "name": "IndoWebNovel",
