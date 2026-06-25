@@ -1,10 +1,10 @@
 listOf("ar").map { lang ->
     Extension(
         name = "Golden",
-        versionCode = 1,
+        versionCode = 2,
         libVersion = "2",
         lang = lang,
-        description = "Golden Rest - Arabic Manga/Novel Source",
+        description = "Golden Rest - Arabic Novel Source",
         nsfw = false,
         icon = DEFAULT_ICON,
     )

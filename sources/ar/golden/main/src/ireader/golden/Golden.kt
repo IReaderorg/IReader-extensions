@@ -63,9 +63,10 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
         Command.Chapter.Fetch(),
     )
 
-    override fun getListings(): List<Listing> = listOf(LatestListing())
+    override fun getListings(): List<Listing> = listOf(LatestNovelsListing(), LatestChaptersListing())
 
-    class LatestListing : Listing("Latest")
+    class LatestNovelsListing : Listing("Latest Novels")
+    class LatestChaptersListing : Listing("Latest Chapters")
 
     private fun buildCoverUrl(id: Int, coverFile: String?): String {
         if (coverFile.isNullOrBlank()) return ""
@@ -75,6 +76,13 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
     }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return when (sort) {
+            is LatestChaptersListing -> getLatestChapters(page)
+            else -> getLatestNovels(page)
+        }
+    }
+
+    private suspend fun getLatestNovels(page: Int): MangasPageInfo {
         return try {
             val limit = 100
             val response = client.get(requestBuilder("$baseUrl/api/mangas?orderBy=created&orderDir=desc&page=$page&limit=$limit"))
@@ -82,6 +90,8 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
             val arr = jsonParser.parseToJsonElement(body).jsonArray
             val mangaList = arr.mapNotNull { el ->
                 val obj = el.jsonObject
+                val isNovel = obj["is_novel"]?.jsonPrimitive?.booleanOrNull ?: false
+                if (!isNovel) return@mapNotNull null
                 val id = obj["id"]?.jsonPrimitive?.intOrNull ?: return@mapNotNull null
                 val title = obj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
                 val coverFile = obj["cover"]?.jsonPrimitive?.contentOrNull
@@ -96,7 +106,40 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
             }.distinctBy { it.key }
             MangasPageInfo(mangaList, mangaList.size >= limit)
         } catch (e: Exception) {
-            Log.error { "Error fetching manga list: ${e.message}" }
+            Log.error { "Error fetching novel list: ${e.message}" }
+            MangasPageInfo(emptyList(), false)
+        }
+    }
+
+    private suspend fun getLatestChapters(page: Int): MangasPageInfo {
+        return try {
+            val limit = 100
+            val response = client.get(requestBuilder("$baseUrl/api/releases?orderBy=created&orderDir=desc&page=$page&limit=$limit"))
+            val body = response.bodyAsText()
+            val obj = jsonParser.parseToJsonElement(body).jsonObject
+            val releases = obj["releases"]?.jsonArray ?: return MangasPageInfo(emptyList(), false)
+            val seenMangaIds = mutableSetOf<Int>()
+            val mangaList = releases.mapNotNull { el ->
+                val release = el.jsonObject
+                val mangaObj = release["manga"]?.jsonObject ?: return@mapNotNull null
+                val isNovel = mangaObj["is_novel"]?.jsonPrimitive?.booleanOrNull ?: false
+                if (!isNovel) return@mapNotNull null
+                val id = mangaObj["id"]?.jsonPrimitive?.intOrNull ?: return@mapNotNull null
+                if (!seenMangaIds.add(id)) return@mapNotNull null
+                val title = mangaObj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                val coverFile = mangaObj["cover"]?.jsonPrimitive?.contentOrNull
+                val cover = buildCoverUrl(id, coverFile)
+                MangaInfo(
+                    key = id.toString(),
+                    title = title,
+                    cover = cover,
+                    description = "",
+                    status = MangaInfo.UNKNOWN
+                )
+            }
+            MangasPageInfo(mangaList, releases.size >= limit)
+        } catch (e: Exception) {
+            Log.error { "Error fetching latest chapters: ${e.message}" }
             MangasPageInfo(emptyList(), false)
         }
     }
