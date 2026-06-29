@@ -205,18 +205,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.freewebnovel.en",
-    "apk": "ireader-en-freewebnovel-v2.14.apk",
-    "name": "FreeWebNovel",
-    "id": 3970612267773145070,
-    "lang": "en",
-    "code": 14,
-    "version": "2.14",
-    "description": "",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.galaxynovels.ar",
     "apk": "ireader-ar-galaxynovels-v2.2.apk",
     "name": "GalaxyNovels",
@@ -237,6 +225,18 @@
     "code": 1,
     "version": "2.1",
     "description": "Novel source from genesistudio.com",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.golden.ar",
+    "apk": "ireader-ar-golden-v2.2.apk",
+    "name": "Golden",
+    "id": 8229659245461031498,
+    "lang": "ar",
+    "code": 2,
+    "version": "2.2",
+    "description": "Golden Rest - Arabic Novel Source",
     "nsfw": false,
     "sourceDir": "main"
   },
