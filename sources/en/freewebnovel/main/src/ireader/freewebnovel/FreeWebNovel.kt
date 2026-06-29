@@ -1,5 +1,6 @@
 package ireader.freewebnovel
 
+import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.nodes.Element
 import io.ktor.client.HttpClient
@@ -28,6 +29,13 @@ import ireader.core.source.model.FilterList
 import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
+import ireader.core.util.DefaultDispatcher
+import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.int
 import tachiyomix.annotations.AutoSourceId
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.GenerateCommands
@@ -163,7 +171,30 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     )
 
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> =
-        chaptersParse(client.get(chaptersRequest(manga)).asJsoup())
+        withContext(DefaultDispatcher) {
+            val chapters = mutableListOf<ChapterInfo>()
+            val baseUrl = manga.key
+            var page = 1
+            var totalPage = 1
+            do {
+                val response = client.get("$baseUrl?ajax=chapters&page=$page&pageSize=200")
+                val json = Json.parseToJsonElement(response.bodyAsText()).jsonObject
+                totalPage = json["totalPage"]?.jsonPrimitive?.int ?: 1
+                val html = json["html"]?.jsonPrimitive?.content ?: ""
+                val doc = Ksoup.parse("<ul>$html</ul>")
+                doc.select("li").forEach { element ->
+                    val a = element.select("a")
+                    chapters.add(
+                        ChapterInfo(
+                            name = a.attr("title").ifBlank { a.text() },
+                            key = (baseUrl.substringBeforeLast("/") + a.attr("href")).replaceFirst("novel/","")
+                        )
+                    )
+                }
+                page++
+            } while (page <= totalPage)
+            chapters
+        }
 
     override fun pageContentParse(document: Document): List<String> =
         document.select("div.txt h4,p").eachText()
