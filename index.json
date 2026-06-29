@@ -205,6 +205,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.freewebnovel.en",
+    "apk": "ireader-en-freewebnovel-v2.15.apk",
+    "name": "FreeWebNovel",
+    "id": 3970612267773145070,
+    "lang": "en",
+    "code": 15,
+    "version": "2.15",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.galaxynovels.ar",
     "apk": "ireader-ar-galaxynovels-v2.2.apk",
     "name": "GalaxyNovels",
