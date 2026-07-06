@@ -1,17 +1,5 @@
 [
   {
-    "pkg": "ireader.webnovel.en",
-    "apk": "ireader-en-webnovel-v2.1.apk",
-    "name": "Webnovel",
-    "id": 2969574715769350777,
-    "lang": "en",
-    "code": 1,
-    "version": "2.1",
-    "description": "Webnovel - Popular web novel platform",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.webnovelcom.en",
     "apk": "ireader-en-webnovelcom-v2.8.apk",
     "name": "WebNovelCom",
@@ -206,12 +194,12 @@
   },
   {
     "pkg": "ireader.freewebnovel.en",
-    "apk": "ireader-en-freewebnovel-v2.15.apk",
+    "apk": "ireader-en-freewebnovel-v2.16.apk",
     "name": "FreeWebNovel",
     "id": 3970612267773145070,
     "lang": "en",
-    "code": 15,
-    "version": "2.15",
+    "code": 16,
+    "version": "2.16",
     "description": "",
     "nsfw": false,
     "sourceDir": "main"
