@@ -4,8 +4,9 @@ listOf("ar").map { lang ->
         versionCode = 2,
         libVersion = "2",
         lang = lang,
-        description = "ملوك الروايات - روايات عربية مترجمة",
+        description = "Novels from KolNovel",
         nsfw = false,
         icon = DEFAULT_ICON,
+        assetsDir = "ar/kolnovel/main/assets",
     )
 }.also(::register)
