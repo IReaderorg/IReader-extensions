@@ -1519,6 +1519,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.novelparadise.ar",
+    "apk": "ireader-ar-novelparadise-v2.5.apk",
+    "name": "NovelParadise",
+    "id": 7351326936191662005,
+    "lang": "ar",
+    "code": 5,
+    "version": "2.5",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.novelshub.en",
     "apk": "ireader-en-novelshub-v2.1.apk",
     "name": "Novelshub",
