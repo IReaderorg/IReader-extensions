@@ -114,14 +114,15 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
 
 
     private suspend fun getSearch(query: String): MangasPageInfo {
-        val resp = client.submitForm(
-            url = "https://freewebnovel.com/search",
-            formParameters = Parameters.build {
-                append("searchkey", query)
-            }
-        ) {
-            headersBuilder()
-        }.asJsoup()
+//        val resp = client.submitForm(
+//            url = "https://freewebnovel.com/search",
+//            formParameters = Parameters.build {
+//                append("searchkey", query)
+//            }
+//        ) {
+//            headersBuilder()
+//        }.asJsoup()
+        val resp = client.get(requestBuilder("$baseUrl/search?keyword=$query")).asJsoup()
         return bookListParse(resp, "div.ul-list1 div.li-row", null) { searchFromElement(it) }
     }
 
@@ -197,7 +198,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         }
 
     override fun pageContentParse(document: Document): List<String> =
-        document.select("div.txt h4,p").eachText()
+        document.select("div.txt #article h4,div.txt #article p").eachText()
 
     override fun contentRequest(chapter: ChapterInfo) = HttpRequestBuilder().apply {
         url(chapter.key)

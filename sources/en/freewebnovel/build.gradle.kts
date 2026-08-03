@@ -1,7 +1,7 @@
 listOf("en").map { lang ->
   Extension(
     name = "FreeWebNovel",
-    versionCode = 16,
+    versionCode = 17,
     libVersion = "2",
     lang = lang,
     description = "",
