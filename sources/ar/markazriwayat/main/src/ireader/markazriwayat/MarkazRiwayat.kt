@@ -11,6 +11,7 @@ import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
+import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangaInfo.Companion.COMPLETED
 import ireader.core.source.model.MangaInfo.Companion.ONGOING
@@ -22,7 +23,11 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.booleanOrNull
+import ireader.core.util.DefaultDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.GenerateTests
 import tachiyomix.annotations.TestExpectations
@@ -78,10 +83,48 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
         Command.Content.Fetch(),
     )
 
+    class PopularListing : Listing("الأكثر شهرة")
+    class NewListing : Listing("أضيف حديثاً")
+    class LatestChaptersListing : Listing("أحدث الفصول")
+
+    override fun getListings(): List<Listing> {
+        return listOf(
+            PopularListing(),
+            NewListing(),
+            LatestChaptersListing(),
+        )
+    }
+
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return when (sort) {
+            is PopularListing -> getLists(exploreFetchers[0], page, "", emptyList())
+            is NewListing -> getLists(exploreFetchers[1], page, "", emptyList())
+            is LatestChaptersListing -> getLists(exploreFetchers[2], page, "", emptyList())
+            else -> getLists(
+                exploreFetchers.firstOrNull { it.type != Type.Search } ?: return emptyMangaPage(),
+                page,
+                "",
+                emptyList(),
+            )
+        }
+    }
+
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
-                "Recently Added",
+                "الأكثر شهرة",
+                endpoint = "/popular/",
+                selector = "a.lib-card",
+                nameSelector = ".lib-card__title",
+                coverSelector = ".lib-card__img img",
+                coverAtt = "data-src",
+                addBaseurlToCoverLink = true,
+                linkSelector = "a.lib-card",
+                linkAtt = "href",
+                addBaseUrlToLink = true,
+            ),
+            BaseExploreFetcher(
+                "أضيف حديثاً",
                 endpoint = "/new/",
                 selector = "a.lib-card",
                 nameSelector = ".lib-card__title",
@@ -93,14 +136,14 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
                 addBaseUrlToLink = true,
             ),
             BaseExploreFetcher(
-                "Library",
-                endpoint = "/library/",
-                selector = "a.lib-card",
-                nameSelector = ".lib-card__title",
-                coverSelector = ".lib-card__img img",
+                "أحدث الفصول",
+                endpoint = "/",
+                selector = "article.latest-card",
+                nameSelector = "a.latest-title",
+                coverSelector = "a.latest-cover img",
                 coverAtt = "data-src",
                 addBaseurlToCoverLink = true,
-                linkSelector = "a.lib-card",
+                linkSelector = "a.latest-title",
                 linkAtt = "href",
                 addBaseUrlToLink = true,
             ),
@@ -145,7 +188,8 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
             nameSelector = ".ch-title",
             linkSelector = "a",
             linkAtt = "href",
-            reverseChapterList = true,  // Newest first, so reverse for reading order
+            numberSelector = ".ch-num",
+            reverseChapterList = true,
             addBaseUrlToLink = true,
         )
 
@@ -223,56 +267,79 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     }
     
     /**
-     * Fetch chapters via API with pagination
-     * API endpoint: /wp-json/theam/v1/manga-chapters?manga_id={id}&order=DESC&page={page}&per_page=30
+     * Fetch ALL chapters via API with fast parallel pagination.
+     * The server caps per_page at 100, so we fetch page 1 (which returns `total`)
+     * then download the remaining pages concurrently.
+     * API endpoint: /wp-json/theam/v1/manga-chapters?manga_id={id}&order=DESC&page={page}&per_page=100
      */
-    private suspend fun fetchChaptersViaApi(
-        mangaId: String,
-        order: String = "DESC",
-        perPage: Int = 30
-    ): List<ChapterInfo> {
-        val allChapters = mutableListOf<ChapterInfo>()
-        var currentPage = 1
-        var hasMore = true
-        
-        while (hasMore) {
-            val apiUrl = "$baseUrl/wp-json/theam/v1/manga-chapters?manga_id=$mangaId&order=$order&page=$currentPage&per_page=$perPage"
-            
-            try {
-                val response = client.get(requestBuilder(apiUrl)).bodyAsText()
-                val jsonObj = json.parseToJsonElement(response).jsonObject
-                
-                // Parse items array
-                val items = jsonObj["items"]?.jsonArray ?: emptyList()
-                
-                val pageChapters = items.mapNotNull { element ->
-                    val item = element.jsonObject
-                    
-                    val label = item["label"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                    val url = item["url"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                    val num = item["num"]?.jsonPrimitive?.contentOrNull ?: ""
-                    val date = item["date"]?.jsonPrimitive?.contentOrNull ?: ""
-                    
-                    ChapterInfo(
-                        name = label,
-                        key = url,
-                        dateUpload = 0L // Could parse date if needed
-                    )
-                }
-                
-                allChapters.addAll(pageChapters)
-                
-                // Check if there are more pages
-                hasMore = jsonObj["has_more"]?.jsonPrimitive?.booleanOrNull == true
-                currentPage++
-                
-            } catch (e: Exception) {
-                // If API fails, break the loop
-                hasMore = false
+    private suspend fun fetchChaptersViaApi(mangaId: String): List<ChapterInfo> {
+        return withContext(DefaultDispatcher) {
+            val firstPage = fetchApiChapterPage(mangaId, 1)
+                ?: return@withContext emptyList()
+            val total = firstPage.second
+            val totalPages = ((total + 99) / 100).coerceAtLeast(1)
+
+            val allChapters = firstPage.first.toMutableList()
+            val remaining = (2..totalPages).map { page ->
+                async { fetchApiChapterPage(mangaId, page) }
             }
+            remaining.forEach { deferred ->
+                deferred.await()?.first?.let(allChapters::addAll)
+            }
+            allChapters.sortedByDescending { it.number }
         }
-        
-        return allChapters
+    }
+
+    /**
+     * Fetch a single page of chapters from the API.
+     * Returns the parsed chapters plus the reported `total` count.
+     */
+    private suspend fun fetchApiChapterPage(mangaId: String, page: Int): Pair<List<ChapterInfo>, Int>? {
+        return try {
+            val apiUrl = "$baseUrl/wp-json/theam/v1/manga-chapters?manga_id=$mangaId&order=DESC&page=$page&per_page=100"
+            val response = client.get(requestBuilder(apiUrl)).bodyAsText()
+            val jsonObj = json.parseToJsonElement(response).jsonObject
+            val total = jsonObj["total"]?.jsonPrimitive?.intOrNull ?: 0
+            val items = jsonObj["items"]?.jsonArray ?: return null
+
+            val chapters = items.mapNotNull { element ->
+                val item = element.jsonObject
+                val label = item["label"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                val url = item["url"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                val num = item["num"]?.jsonPrimitive?.contentOrNull ?: ""
+                val ts = item["ts"]?.jsonPrimitive?.longOrNull ?: 0L
+                ChapterInfo(
+                    name = label,
+                    key = url,
+                    number = num.toFloatOrNull() ?: 0f,
+                    dateUpload = ts
+                )
+            }
+            chapters to total
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun fetchLatestChapters(page: Int): MangasPageInfo {
+        val perPage = 50
+        val apiUrl = "$baseUrl/wp-json/theam/v1/latest-chapters?per_page=$perPage&page=$page"
+        return try {
+            val response = client.get(requestBuilder(apiUrl)).bodyAsText()
+            val jsonObj = json.parseToJsonElement(response).jsonObject
+            val items = jsonObj["items"]?.jsonArray ?: emptyList()
+            val novels = items.mapNotNull { element ->
+                val item = element.jsonObject
+                val title = item["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                val permalink = item["permalink"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                val cover = item["cover"]?.jsonPrimitive?.contentOrNull ?: ""
+                MangaInfo(key = permalink, title = title, cover = cover)
+            }
+            val hasNext = items.size >= perPage
+            MangasPageInfo(novels, hasNext)
+        } catch (e: Exception) {
+            MangasPageInfo(emptyList(), false)
+        }
     }
 
     /**
@@ -292,37 +359,41 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     }
 
     /**
-     * Override getChapterList to use API-based fetching
+     * Override getChapterList to use API-based fetching first (all chapters, fast parallel pagination)
      * Priority:
-     * 1. WebView HTML (if Command.Chapter.Fetch is present)
-     * 2. API-based fetching (extract manga_id and fetch via API)
-     * 3. HTML-based fallback (default behavior)
+     * 1. API-based fetching (fetches every chapter, ~5s via parallel pages)
+     * 2. WebView HTML (if Command.Chapter.Fetch is present)
+     * 3. HTML-based fetching from novel page (single request, but only 30 chapters)
      */
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        // Priority 1: Check for WebView HTML first
+        // Priority 1: API - fetch ALL chapters
+        try {
+            val mangaId = extractMangaId(manga.key)
+            if (!mangaId.isNullOrBlank()) {
+                val apiChapters = fetchChaptersViaApi(mangaId)
+                if (apiChapters.isNotEmpty()) {
+                    return apiChapters
+                }
+            }
+        } catch (e: Exception) {
+            // fall through to HTML if the API path fails
+        }
+
+        // Priority 2: Check for WebView HTML
         val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
         if (chapterFetch != null && chapterFetch.html.isNotBlank()) {
             return chaptersParse(chapterFetch.html.asJsoup()).reversed()
         }
 
-        // Priority 2: Try API-based fetching
-        try {
-            val mangaId = extractMangaId(manga.key)
-            if (mangaId != null) {
-                val chapters = fetchChaptersViaApi(mangaId)
-                if (chapters.isNotEmpty()) {
-                    // API returns in DESC order by default, so reverse for reading order
-                    return chapters.reversed()
-                }
-            }
+        // Priority 3: HTML-based fetching (fast, but only first ~30 chapters)
+        return try {
+            super.getChapterList(manga, commands)
         } catch (e: Exception) {
-            // If API fails, fall through to HTML-based fetching
+            // Priority 3: Fall back to API if HTML fails
+            emptyList()
         }
-
-        // Priority 3: Fall back to default HTML-based fetching
-        return super.getChapterList(manga, commands)
     }
 }
