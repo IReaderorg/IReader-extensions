@@ -32,7 +32,11 @@ android {
 dependencies {
     // Core dependencies - always included
     implementation(project(":multisrc"))
-    implementation(libs.bundles.common)
+    implementation(libs.ksoup)
+    implementation(libs.ktor.core)
+    implementation(libs.ireader.core)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.serialization.json)
     implementation(libs.bundles.commonTesting)
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.8.2")
     implementation(project(":annotations"))
@@ -41,6 +45,6 @@ dependencies {
     // Extension to test - ADD YOUR EXTENSION HERE
     // The test scripts will automatically configure this
     // For manual testing, uncomment and modify one of these:
-    // implementation(project(":extensions:v5:en:novelbuddy"))
-    // implementation(project(":extensions:individual:en:mylovenovel"))
+    implementation(project(":extensions:individual:ar:rewayahfans"))
+    implementation(project(":extensions:individual:ar:rewayatfans"))
 }

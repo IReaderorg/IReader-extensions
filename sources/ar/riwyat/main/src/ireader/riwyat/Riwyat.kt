@@ -1,6 +1,7 @@
 package ireader.riwyat
 
 import com.fleeksoft.ksoup.nodes.Document
+import com.fleeksoft.ksoup.nodes.Element
 import io.ktor.client.request.get
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.headers
@@ -188,6 +189,11 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
             reverseChapterList = false,
             addBaseUrlToLink = true,
         )
+
+    override fun chapterFromElement(element: Element): ChapterInfo {
+        val chapter = super.chapterFromElement(element)
+        return chapter.copy(number = extractChapterNumberFromUrl(chapter.key))
+    }
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(

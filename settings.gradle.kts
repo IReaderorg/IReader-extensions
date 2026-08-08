@@ -21,9 +21,12 @@ if (System.getenv("CI") == null || System.getenv("CI_MODULE_GEN") == "true") {
         if (dir.name != "multisrc") {
             dir.eachDir { subDir ->
                 if (File(subDir, "build.gradle.kts").exists()) {
-                    val name = ":extensions:individual:${dir.name}:${subDir.name}"
-                    include(name)
-                    project(name).projectDir = File("sources/${dir.name}/${subDir.name}")
+                    val extDir = File(rootDir, "extensions/individual/${dir.name}/${subDir.name}")
+                    if (extDir.exists() || extDir.mkdirs()) {
+                        val name = ":extensions:individual:${dir.name}:${subDir.name}"
+                        include(name)
+                        project(name).projectDir = File(rootDir, "sources/${dir.name}/${subDir.name}").absoluteFile
+                    }
                 }
             }
         }
@@ -31,10 +34,12 @@ if (System.getenv("CI") == null || System.getenv("CI_MODULE_GEN") == "true") {
 
     File(rootDir, "sources/multisrc").eachDir { dir ->
         if (File(dir, "build.gradle.kts").exists()) {
-            val dirName = ":extensions:multisrc:${dir.name}"
-            include(dirName)
-            project(dirName).projectDir =
-                File("sources/multisrc/${dir.name}")
+            val extDir = File(rootDir, "extensions/multisrc/${dir.name}")
+            if (extDir.exists() || extDir.mkdirs()) {
+                val dirName = ":extensions:multisrc:${dir.name}"
+                include(dirName)
+                project(dirName).projectDir = File(rootDir, "sources/multisrc/${dir.name}").absoluteFile
+            }
         }
     }
 
@@ -43,9 +48,12 @@ if (System.getenv("CI") == null || System.getenv("CI_MODULE_GEN") == "true") {
         if (dir.name != "multisrc") {
             dir.eachDir { subDir ->
                 if (File(subDir, "build.gradle.kts").exists()) {
-                    val name = ":extensions:v5:${dir.name}:${subDir.name}"
-                    include(name)
-                    project(name).projectDir = File("sources-v5-batch/${dir.name}/${subDir.name}")
+                    val extDir = File(rootDir, "extensions/v5/${dir.name}/${subDir.name}")
+                    if (extDir.exists() || extDir.mkdirs()) {
+                        val name = ":extensions:v5:${dir.name}:${subDir.name}"
+                        include(name)
+                        project(name).projectDir = File(rootDir, "sources-v5-batch/${dir.name}/${subDir.name}").absoluteFile
+                    }
                 }
             }
         }

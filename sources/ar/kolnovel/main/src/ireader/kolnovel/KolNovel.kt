@@ -167,6 +167,19 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
         )
     }
 
+    override fun getUserAgent(): String {
+        return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    override val chapterFetcher: Chapters
+        get() = Chapters(
+            selector = "li[data-ID] a[href*='/shaag'], li[data-ID] a[href*='/chapter/']",
+            nameSelector = "a",
+            linkSelector = "a",
+            linkAtt = "href",
+            reverseChapterList = true
+        )
+
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let { cmd ->
             if (cmd.html.isNotBlank()) return parseChaptersFromHtml(cmd.html)
@@ -180,7 +193,9 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
     }
 
     private fun parseChaptersFromHtml(html: String): List<ChapterInfo> {
-        val doc = Ksoup.parse(html)
+        val startIndex = html.indexOf("<div id=\"chapter_list\"")
+        val chapterListHtml = if (startIndex >= 0) html.substring(startIndex) else html
+        val doc = Ksoup.parse(chapterListHtml)
         val chapters = mutableListOf<ChapterInfo>()
 
         doc.select("li[data-ID] a[href*='/shaag'], li[data-ID] a[href*='/chapter/']").forEach { link ->
@@ -229,6 +244,11 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
         }
         return -1f
     }
+
+    override val contentFetcher: Content
+        get() = Content(
+            pageContentSelector = "#kol_content p",
+        )
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
         commands.findInstance<Command.Content.Fetch>()?.let { cmd ->
