@@ -1,9 +1,9 @@
 listOf("ar").map { lang ->
   Extension(
     name = "MarkazRiwayat",
-    versionCode = 4,
-    libVersion = "2",
+    versionCode = 5,
+    libVersion = "3",
     lang = lang,
-    description = "",
+    description = "مركز الروايات - روايات عربية مترجمة",
     nsfw = false)
 }.also(::register)

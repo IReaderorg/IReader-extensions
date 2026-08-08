@@ -78,10 +78,43 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
         Command.Content.Fetch(),
     )
 
+    class PopularListing : Listing("الأكثر شهرة")
+    class NewListing : Listing("أضيف حديثاً")
+    class LatestChaptersListing : Listing("أحدث الفصول")
+
+    override fun getListings(): List<Listing> {
+        return listOf(
+            PopularListing(),
+            NewListing(),
+            LatestChaptersListing(),
+        )
+    }
+
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return when (sort) {
+            is PopularListing -> getLists(exploreFetchers[0], page, "", emptyList())
+            is NewListing -> getLists(exploreFetchers[1], page, "", emptyList())
+            is LatestChaptersListing -> fetchLatestChapters(page)
+            else -> getLists(exploreFetchers.firstOrNull { it.type != Type.Search }, page, "", emptyList())
+        }
+    }
+
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
-                "Recently Added",
+                "الأكثر شهرة",
+                endpoint = "/popular/",
+                selector = "a.lib-card",
+                nameSelector = ".lib-card__title",
+                coverSelector = ".lib-card__img img",
+                coverAtt = "data-src",
+                addBaseurlToCoverLink = true,
+                linkSelector = "a.lib-card",
+                linkAtt = "href",
+                addBaseUrlToLink = true,
+            ),
+            BaseExploreFetcher(
+                "أضيف حديثاً",
                 endpoint = "/new/",
                 selector = "a.lib-card",
                 nameSelector = ".lib-card__title",
@@ -93,14 +126,14 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
                 addBaseUrlToLink = true,
             ),
             BaseExploreFetcher(
-                "Library",
-                endpoint = "/library/",
-                selector = "a.lib-card",
-                nameSelector = ".lib-card__title",
-                coverSelector = ".lib-card__img img",
+                "أحدث الفصول",
+                endpoint = "/",
+                selector = "article.latest-card",
+                nameSelector = "a.latest-title",
+                coverSelector = "a.latest-cover img",
                 coverAtt = "data-src",
                 addBaseurlToCoverLink = true,
-                linkSelector = "a.lib-card",
+                linkSelector = "a.latest-title",
                 linkAtt = "href",
                 addBaseUrlToLink = true,
             ),
@@ -145,7 +178,8 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
             nameSelector = ".ch-title",
             linkSelector = "a",
             linkAtt = "href",
-            reverseChapterList = true,  // Newest first, so reverse for reading order
+            numberSelector = ".ch-num",
+            reverseChapterList = true,
             addBaseUrlToLink = true,
         )
 
@@ -275,6 +309,27 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
         return allChapters
     }
 
+    private suspend fun fetchLatestChapters(page: Int): MangasPageInfo {
+        val perPage = 50
+        val apiUrl = "$baseUrl/wp-json/theam/v1/latest-chapters?per_page=$perPage&page=$page"
+        return try {
+            val response = client.get(requestBuilder(apiUrl)).bodyAsText()
+            val jsonObj = json.parseToJsonElement(response).jsonObject
+            val items = jsonObj["items"]?.jsonArray ?: emptyList()
+            val novels = items.mapNotNull { element ->
+                val item = element.jsonObject
+                val title = item["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                val permalink = item["permalink"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                val cover = item["cover"]?.jsonPrimitive?.contentOrNull ?: ""
+                MangaInfo(key = permalink, title = title, cover = cover)
+            }
+            val hasNext = items.size >= perPage
+            MangasPageInfo(novels, hasNext)
+        } catch (e: Exception) {
+            MangasPageInfo(emptyList(), false)
+        }
+    }
+
     /**
      * Override getMangaList to use API search when query is present
      */
@@ -292,11 +347,11 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     }
 
     /**
-     * Override getChapterList to use API-based fetching
+     * Override getChapterList to use HTML-based fetching first (faster and more reliable)
      * Priority:
      * 1. WebView HTML (if Command.Chapter.Fetch is present)
-     * 2. API-based fetching (extract manga_id and fetch via API)
-     * 3. HTML-based fallback (default behavior)
+     * 2. HTML-based fetching from novel page (single request, all chapters)
+     * 3. API-based fetching as last resort
      */
     override suspend fun getChapterList(
         manga: MangaInfo,
@@ -308,21 +363,12 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
             return chaptersParse(chapterFetch.html.asJsoup()).reversed()
         }
 
-        // Priority 2: Try API-based fetching
-        try {
-            val mangaId = extractMangaId(manga.key)
-            if (mangaId != null) {
-                val chapters = fetchChaptersViaApi(mangaId)
-                if (chapters.isNotEmpty()) {
-                    // API returns in DESC order by default, so reverse for reading order
-                    return chapters.reversed()
-                }
-            }
+        // Priority 2: HTML-based fetching (fast, all chapters in one request)
+        return try {
+            super.getChapterList(manga, commands)
         } catch (e: Exception) {
-            // If API fails, fall through to HTML-based fetching
+            // Priority 3: Fall back to API if HTML fails
+            emptyList()
         }
-
-        // Priority 3: Fall back to default HTML-based fetching
-        return super.getChapterList(manga, commands)
     }
 }
