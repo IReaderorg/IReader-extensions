@@ -1,6 +1,7 @@
 package ireader.galaxynovels
 
 import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Element
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import ireader.core.log.Log
@@ -13,6 +14,7 @@ import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
+import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
@@ -48,7 +50,7 @@ import tachiyomix.annotations.TestFixture
     supportsPagination = true,
     requiresLogin = false
 )
-@GenerateFilters(title = true, sort = true, sortOptions = ["Latest", "Popular"])
+@GenerateFilters(title = true)
 @GenerateCommands(detailFetch = true, chapterFetch = true, contentFetch = true)
 @Extension
 abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps = deps) {
@@ -59,7 +61,6 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
-        Filter.Sort("Sort:", arrayOf("Latest", "Popular")),
     )
 
     override fun getCommands(): CommandList = listOf(
@@ -71,8 +72,8 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
-                "Latest",
-                endpoint = "/recent/page/{page}/",
+                "أضيف حديثا",
+                endpoint = "/recent/?recent_page={page}",
                 selector = "article.wor-novel-card",
                 nameSelector = "h3 > a",
                 nameAtt = "",
@@ -80,25 +81,35 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
                 coverAtt = "src",
                 linkSelector = "h3 > a",
                 linkAtt = "href",
-                maxPage = 100,
+                maxPage = 13,
                 addBaseUrlToLink = true,
                 addBaseurlToCoverLink = false,
             ),
             BaseExploreFetcher(
-                "Popular",
-                endpoint = "/novels/?sort=popular&period=all",
+                "الأكثر شهرة",
+                endpoint = "/novels/page/{page}/?sort=popular&period=month",
                 selector = "article.wor-novel-card",
                 nameSelector = "h3 > a",
                 nameAtt = "",
                 coverSelector = "a.wor-novel-card__cover > img",
-                coverAtt = "src",
+                coverAtt = "data-src",
                 linkSelector = "h3 > a",
                 linkAtt = "href",
-                maxPage = 1,
+                maxPage = 15,
                 addBaseUrlToLink = true,
                 addBaseurlToCoverLink = false,
             ),
         )
+
+    class PopularListing : Listing("الأكثر شهرة")
+    class NewListing : Listing("أضيف حديثا")
+    class LatestChaptersListing : Listing("أحدث الفصول")
+
+    override fun getListings(): List<Listing> = listOf(
+        PopularListing(),
+        NewListing(),
+        LatestChaptersListing(),
+    )
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
@@ -134,47 +145,75 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
             pageContentSelector = ".wor-chapter-content p, .entry-content p, .chapter-content p",
         )
 
-    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
-        val query = filters.findInstance<Filter.Title>()?.value
-        val sortIndex = filters.findInstance<Filter.Sort>()?.value?.index
-
-        if (!query.isNullOrBlank()) {
-            return search(query)
-        }
-
-        return when (sortIndex) {
-            1 -> getPopular()
-            else -> super.getMangaList(filters, page)
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return when (sort) {
+            is PopularListing -> getPopular(page)
+            is NewListing -> getRecent(page)
+            is LatestChaptersListing -> getLatestChapters()
+            else -> super.getMangaList(sort, page)
         }
     }
 
-    private suspend fun getPopular(): MangasPageInfo {
-        return try {
-            val response = client.get(requestBuilder("$baseUrl/novels/?sort=popular&period=all"))
-            val body = response.bodyAsText()
-            val doc = Ksoup.parse(body)
+    override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
+        val query = filters.findInstance<Filter.Title>()?.value
+        if (!query.isNullOrBlank()) {
+            return search(query)
+        }
+        return super.getMangaList(filters, page)
+    }
 
-            val mangaList = doc.select("article.wor-novel-card").mapNotNull { card ->
-                val titleEl = card.selectFirst("h3 > a") ?: return@mapNotNull null
+    private suspend fun getPopular(page: Int): MangasPageInfo {
+        val url = if (page <= 1) "/novels/?sort=popular&period=month" else "/novels/page/$page/?sort=popular&period=month"
+        return fetchNovelGrid(url, page)
+    }
+
+    private suspend fun getRecent(page: Int): MangasPageInfo {
+        val url = if (page <= 1) "/recent/" else "/recent/?recent_page=$page"
+        return fetchNovelGrid(url, page)
+    }
+
+    private suspend fun fetchNovelGrid(url: String, page: Int): MangasPageInfo {
+        return try {
+            val doc = client.get(requestBuilder("$baseUrl$url")).asJsoup()
+            val novels = doc.select("article.wor-novel-card").mapNotNull { card ->
+                parseNovelCard(card)
+            }
+            val hasNext = doc.selectFirst("a.next.page-numbers") != null
+            MangasPageInfo(novels, hasNext)
+        } catch (e: Exception) {
+            Log.error { "Error fetching novel grid: ${e.message}" }
+            MangasPageInfo(emptyList(), false)
+        }
+    }
+
+    private suspend fun getLatestChapters(): MangasPageInfo {
+        return try {
+            val doc = client.get(requestBuilder("$baseUrl/")).asJsoup()
+            val novels = doc.select("article.wor-latest-item").mapNotNull { item ->
+                val titleEl = item.selectFirst(".wor-latest-item__top h3 > a") ?: return@mapNotNull null
                 val title = titleEl.text().trim()
                 val href = titleEl.attr("href")
                 if (title.isBlank() || href.isBlank()) return@mapNotNull null
 
-                val coverImg = card.selectFirst("a.wor-novel-card__cover > img")
-                val cover = coverImg?.attr("src") ?: ""
-
-                MangaInfo(
-                    key = href,
-                    title = title,
-                    cover = cover
-                )
+                val cover = item.selectFirst("a.wor-latest-item__cover > img")?.attr("src") ?: ""
+                MangaInfo(key = href, title = title, cover = cover)
             }
-
-            MangasPageInfo(mangaList, mangaList.isNotEmpty())
+            MangasPageInfo(novels, false)
         } catch (e: Exception) {
-            Log.error { "Error fetching popular novels: ${e.message}" }
+            Log.error { "Error fetching latest chapters: ${e.message}" }
             MangasPageInfo(emptyList(), false)
         }
+    }
+
+    private fun parseNovelCard(card: Element): MangaInfo? {
+        val titleEl = card.selectFirst("h3 > a") ?: return null
+        val title = titleEl.text().trim()
+        val href = titleEl.attr("href")
+        if (title.isBlank() || href.isBlank()) return null
+
+        val cover = card.selectFirst("a.wor-novel-card__cover > img, img.wor-cover-img")
+            ?.let { img -> img.attr("data-src").ifBlank { img.attr("src") } } ?: ""
+        return MangaInfo(key = href, title = title, cover = cover)
     }
 
     private suspend fun search(query: String): MangasPageInfo {
@@ -239,7 +278,8 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
 
             chapters.map { ch ->
                 val obj = ch.jsonObject
-                val number = obj["number"]?.jsonPrimitive?.int ?: 0
+                val id = obj["id"]?.jsonPrimitive?.int ?: 0
+                val position = obj["position"]?.jsonPrimitive?.int ?: 0
                 val label = obj["label"]?.jsonPrimitive?.contentOrNull ?: ""
                 val title = obj["title"]?.jsonPrimitive?.contentOrNull ?: ""
                 val url = obj["url"]?.jsonPrimitive?.contentOrNull ?: ""
@@ -247,17 +287,16 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
                 val chapterName = if (title.isNotBlank()) {
                     "$label : $title"
                 } else {
-                    label.ifBlank { "الفصل $number" }
+                    label.ifBlank { "الفصل $position" }
                 }
 
                 ChapterInfo(
                     name = chapterName,
-                    key = url
+                    key = url,
+                    number = position.toFloat(),
+                    scanlator = if (id > 0) id.toString() else ""
                 )
-            }.sortedBy { chapter ->
-                val numStr = Regex("(\\d+)").find(chapter.name)?.groupValues?.get(1)
-                numStr?.toIntOrNull() ?: 0
-            }
+            }.sortedBy { it.number }
         } catch (e: Exception) {
             Log.error { "Error parsing chapters JSON: ${e.message}" }
             emptyList()
@@ -283,6 +322,11 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+        chapter.scanlator.toLongOrNull()?.let { chapterId ->
+            val pages = fetchContentViaApi(chapterId)
+            if (pages.isNotEmpty()) return pages
+        }
+
         commands.findInstance<Command.Content.Fetch>()?.let { cmd ->
             if (cmd.html.isNotBlank()) return parseContentFromHtml(cmd.html)
         }
@@ -303,6 +347,39 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         } catch (e: Exception) {
             Log.error { "Error fetching content: ${e.message}" }
             listOf(Text("حدث خطأ أثناء تحميل محتوى الفصل."))
+        }
+    }
+
+    private suspend fun fetchContentViaApi(chapterId: Long): List<Page> {
+        return try {
+            val url = "$baseUrl/wp-json/wor-reader-app/v1/chapters/$chapterId"
+            val response = client.get(requestBuilder(url))
+            val body = response.bodyAsText()
+            parseContentFromApi(body)
+        } catch (e: Exception) {
+            Log.error { "Error fetching content via API: ${e.message}" }
+            emptyList()
+        }
+    }
+
+    private fun parseContentFromApi(body: String): List<Page> {
+        return try {
+            val json = Json.parseToJsonElement(body).jsonObject
+            val data = json["data"]?.jsonObject ?: return emptyList()
+            val contentHtml = data["content_html"]?.jsonPrimitive?.contentOrNull
+                ?: data["content"]?.jsonPrimitive?.contentOrNull
+                ?: return emptyList()
+            if (contentHtml.isBlank()) return emptyList()
+
+            val doc = Ksoup.parse(contentHtml)
+            val paragraphs = doc.select("p").map { it.text() }.filter { it.isNotBlank() }
+            if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
+            val text = doc.text()
+            if (text.isNotBlank()) return text.split("\n").filter { it.isNotBlank() }.map { Text(it) }
+            emptyList()
+        } catch (e: Exception) {
+            Log.error { "Error parsing API content: ${e.message}" }
+            emptyList()
         }
     }
 
