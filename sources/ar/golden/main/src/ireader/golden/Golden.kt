@@ -83,6 +83,17 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
         return totalMangas
     }
 
+    /**
+     * The novel key is the web page URL (e.g. https://golden.rest/mangas/<id>)
+     * so the app can open it in the WebView. Extract the numeric id from it,
+     * falling back to the legacy numeric key for books saved before the fix.
+     */
+    private fun MangaInfo.mangaId(): String {
+        val key = this.key
+        val prefix = "$baseUrl/mangas/"
+        return if (key.startsWith(prefix)) key.removePrefix(prefix) else key
+    }
+
     private fun buildCoverUrl(id: Int, coverFile: String?): String {
         if (coverFile.isNullOrBlank()) return ""
         if (coverFile.startsWith("http")) return coverFile
@@ -117,7 +128,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                 val coverFile = obj["cover"]?.jsonPrimitive?.contentOrNull
                 val cover = buildCoverUrl(id, coverFile)
                 MangaInfo(
-                    key = id.toString(),
+                    key = "$baseUrl/mangas/$id",
                     title = title,
                     cover = cover,
                     description = "",
@@ -157,7 +168,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                     val cover = buildCoverUrl(id, coverFile)
                     mangaList.add(
                         MangaInfo(
-                            key = id.toString(),
+                            key = "$baseUrl/mangas/$id",
                             title = title,
                             cover = cover,
                             description = "",
@@ -202,7 +213,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                         val title = obj["title"]?.jsonPrimitive?.content ?: return@forEach
                         val coverFile = obj["cover"]?.jsonPrimitive?.contentOrNull
                         val cover = buildCoverUrl(id, coverFile)
-                        allResults.add(MangaInfo(key = id.toString(), title = title, cover = cover))
+                        allResults.add(MangaInfo(key = "$baseUrl/mangas/$id", title = title, cover = cover))
                     }
                     if (arr.size < chunk) break
                     offset += chunk
@@ -218,7 +229,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         return try {
-            val response = client.get(requestBuilder("$baseUrl/api/mangas/${manga.key}"))
+            val response = client.get(requestBuilder("$baseUrl/api/mangas/${manga.mangaId()}"))
             val body = response.bodyAsText()
             parseDetailsFromJson(body, manga)
         } catch (e: Exception) {
@@ -234,7 +245,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
             val title = data["title"]?.jsonPrimitive?.content ?: manga.title
             val summary = data["summary"]?.jsonPrimitive?.contentOrNull ?: ""
             val coverFile = data["cover"]?.jsonPrimitive?.contentOrNull
-            val cover = if (!coverFile.isNullOrBlank()) buildCoverUrl(manga.key.toIntOrNull() ?: 0, coverFile) else manga.cover
+            val cover = if (!coverFile.isNullOrBlank()) buildCoverUrl(manga.mangaId().toIntOrNull() ?: 0, coverFile) else manga.cover
             val storyStatus = data["story_status"]?.jsonPrimitive?.intOrNull
             val status = when (storyStatus) {
                 1 -> MangaInfo.ONGOING
@@ -270,7 +281,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
 
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         return try {
-            val response = client.get(requestBuilder("$baseUrl/api/mangas/${manga.key}/releases"))
+            val response = client.get(requestBuilder("$baseUrl/api/mangas/${manga.mangaId()}/releases"))
             val body = response.bodyAsText()
             parseChaptersFromJson(body, manga)
         } catch (e: Exception) {
