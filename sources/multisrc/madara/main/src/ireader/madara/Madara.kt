@@ -174,12 +174,14 @@ abstract class Madara(
             booksFromElement(element)
         }
 
-        val hasNextPage = "div.nav-previous>a".let { selector ->
+        val hasNextPage = novelsNextPageSelector().let { selector ->
             document.select(selector).first()
         } != null
 
         return MangasPageInfo(books, hasNextPage)
     }
+
+    protected open fun novelsNextPageSelector(): String = "div.nav-previous>a"
 
     private fun booksFromElement(element: Element): MangaInfo {
         val title = element.select(".post-title").text().trim()

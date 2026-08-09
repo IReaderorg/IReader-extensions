@@ -33,6 +33,8 @@ abstract class HizoManga(val deps: Dependencies) : Madara(
         else -> "new-manga"
     }
 
+    override fun novelsNextPageSelector(): String = "#navigation-ajax"
+
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>,
