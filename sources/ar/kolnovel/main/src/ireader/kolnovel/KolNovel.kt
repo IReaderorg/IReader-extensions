@@ -2,7 +2,6 @@ package ireader.kolnovel
 
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.findInstance
@@ -19,9 +18,30 @@ import ireader.core.source.model.Text
 import com.fleeksoft.ksoup.Ksoup
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
+import tachiyomix.annotations.GenerateTests
+import tachiyomix.annotations.TestFixture
+import tachiyomix.annotations.TestExpectations
 
 @Extension
 @AutoSourceId(seed = "KolNovel")
+@GenerateTests(
+    unitTests = true,
+    integrationTests = false,
+    searchQuery = "مانهوا",
+    minSearchResults = 1
+)
+@TestFixture(
+    novelUrl = "https://kolnovel.com/series/48hours-a-day/",
+    chapterUrl = "https://kolnovel.com/shaag2448hours-a-dayz435ggye-100093/",
+    expectedTitle = "48 ساعة باليوم",
+    expectedMinChapters = 100
+)
+@TestExpectations(
+    minLatestNovels = 5,
+    minChapters = 100,
+    supportsPagination = true,
+    requiresLogin = false
+)
 abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = deps) {
 
     override val lang: String get() = "ar"
@@ -41,27 +61,12 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
         Command.Chapter.Fetch(),
     )
 
-    private fun parseNovelList(doc: com.fleeksoft.ksoup.nodes.Document): MangasPageInfo {
-        val mangaList = doc.select("article.maindet .mdinfo h2 a").mapNotNull { el ->
-            val title = el.text().trim()
-            val href = el.attr("href")
-            if (href.isBlank() || title.isBlank()) return@mapNotNull null
-            val slug = href.substringAfter("/series/").substringBefore("/").substringBefore("?")
-            if (slug.isBlank()) return@mapNotNull null
-            val article = el.closest("article.maindet")
-            val cover = article?.selectFirst(".mdthumb img")?.attr("src") ?: ""
-            MangaInfo(key = "$baseUrl/series/$slug/", title = title, cover = cover)
-        }.distinctBy { it.key }
-        return MangasPageInfo(mangaList, mangaList.isNotEmpty())
-    }
-
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
         return try {
             val response = client.get(requestBuilder("$baseUrl/series/?order=update&page=$page"))
-            val doc = Ksoup.parse(response.bodyAsText())
-            parseNovelList(doc)
+            val body = response.bodyAsText()
+            parseMangaList(body)
         } catch (e: Exception) {
-            Log.error { "KolNovel: Error fetching manga list: ${e.message}" }
             MangasPageInfo(emptyList(), false)
         }
     }
@@ -74,134 +79,223 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
         if (searchQuery != null) {
             return try {
                 val response = client.get(requestBuilder("$baseUrl/?s=$searchQuery"))
-                val doc = Ksoup.parse(response.bodyAsText())
-                val mangaList = doc.select("article.maindet .mdinfo h2 a, .bsx a").mapNotNull { el ->
-                    val title = el.text().trim()
-                    val href = el.attr("href")
-                    if (href.isBlank() || title.isBlank()) return@mapNotNull null
-                    val slug = href.substringAfter("/series/").substringBefore("/").substringBefore("?")
-                    if (slug.isBlank()) return@mapNotNull null
-                    MangaInfo(key = "$baseUrl/series/$slug/", title = title, cover = "")
-                }.distinctBy { it.key }
-                MangasPageInfo(mangaList, mangaList.isNotEmpty())
+                val body = response.bodyAsText()
+                parseMangaList(body)
             } catch (e: Exception) { MangasPageInfo(emptyList(), false) }
         }
 
-        val sortPath = sortFilter?.value?.index?.let {
-            if (it == 1) "order=popular" else "order=update"
-        } ?: "order=update"
+        val sortParam = when (sortFilter?.value?.index) {
+            1 -> "order=popular"
+            else -> "order=update"
+        }
 
         return try {
-            val response = client.get(requestBuilder("$baseUrl/series/?$sortPath&page=$page"))
-            val doc = Ksoup.parse(response.bodyAsText())
-            parseNovelList(doc)
-        } catch (e: Exception) {
-            Log.error { "KolNovel: Error: ${e.message}" }
-            MangasPageInfo(emptyList(), false)
+            val response = client.get(requestBuilder("$baseUrl/series/?$sortParam&page=$page"))
+            val body = response.bodyAsText()
+            parseMangaList(body)
+        } catch (e: Exception) { MangasPageInfo(emptyList(), false) }
+    }
+
+    private fun parseMangaList(body: String): MangasPageInfo {
+        val doc = Ksoup.parse(body)
+        val mangaList = mutableListOf<MangaInfo>()
+
+        doc.select("article.maindet").forEach { article ->
+            val titleEl = article.selectFirst("h2[itemprop=headline] a, .mdinfo h2 a")
+            if (titleEl != null) {
+                val title = titleEl.text().trim()
+                val href = titleEl.attr("href")
+                if (href.isNotBlank() && title.isNotBlank()) {
+                    val slug = href.substringAfter("/series/").substringBefore("/").substringBefore("?")
+                    if (slug.isNotBlank()) {
+                        val cover = article.selectFirst(".mdthumb img")?.attr("src") ?: ""
+                        mangaList.add(MangaInfo(key = "$baseUrl/series/$slug/", title = title, cover = cover))
+                    }
+                }
+            }
         }
+
+        if (mangaList.isEmpty()) {
+            doc.select(".post-title a, .novel-title a, h3 a").mapNotNull { el ->
+                val title = el.text().trim()
+                val href = el.attr("href")
+                if (href.isBlank() || title.isBlank()) return@mapNotNull null
+                val slug = href.substringAfter("/series/").substringBefore("/").substringBefore("?")
+                if (slug.isBlank()) return@mapNotNull null
+                val cover = el.closest(".post, .novel-item, .card")?.selectFirst("img")?.attr("src") ?: ""
+                MangaInfo(key = "$baseUrl/series/$slug/", title = title, cover = cover)
+            }.distinctBy { it.key }.forEach { mangaList.add(it) }
+        }
+
+        return MangasPageInfo(mangaList.distinctBy { it.key }, mangaList.isNotEmpty())
     }
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         commands.findInstance<Command.Detail.Fetch>()?.let { cmd ->
             if (cmd.html.isNotBlank()) return parseDetailsFromHtml(cmd.html, manga)
         }
+
         val html = try {
-            val browserResult = deps.httpClients.browser.fetch(
-                url = manga.key,
-                selector = "h1.entry-title, .sersys",
-                timeout = 30000
-            )
-            if (browserResult.isSuccess && browserResult.responseBody.isNotBlank()) browserResult.responseBody
-            else client.get(requestBuilder(manga.key)).bodyAsText()
-        } catch (e: Exception) { client.get(requestBuilder(manga.key)).bodyAsText() }
+            val response = client.get(requestBuilder(manga.key))
+            response.bodyAsText()
+        } catch (e: Exception) { return manga }
+
         return parseDetailsFromHtml(html, manga)
     }
 
     private fun parseDetailsFromHtml(html: String, manga: MangaInfo): MangaInfo {
         val doc = Ksoup.parse(html)
-        val scrapedTitle = doc.selectFirst("h1.entry-title, .post-title h1")?.text()
-        val title = if (!scrapedTitle.isNullOrBlank() && !scrapedTitle.contains("Loading", true)) scrapedTitle else manga.title
-        val cover = doc.selectFirst(".sertothumb img, meta[property=og:image]")?.attr("src") ?: manga.cover
-        val description = doc.selectFirst(".sersys, .entry-content")?.text() ?: ""
-        val author = doc.selectFirst(".serl:nth-child(4) .serval")?.text() ?: ""
-        return manga.copy(title = title, cover = cover, description = description, author = author)
+        val scrapedTitle = doc.selectFirst(".post-title h1, h1")?.text()
+        val title = if (!scrapedTitle.isNullOrBlank() && !scrapedTitle.contains("Loading", ignoreCase = true)) scrapedTitle else manga.title
+        val cover = doc.selectFirst(".summary_image img, meta[property=og:image]")?.attr("src") ?: manga.cover
+        val description = doc.selectFirst(".summary__content, .description-summary")?.text() ?: ""
+        val author = doc.selectFirst(".author a, .summary-content .author")?.text() ?: ""
+        val genres = doc.select(".genres-content a, .wp-manga-genres a").map { it.text().trim() }
+        val status = doc.selectFirst(".post-status .summary-content")?.text()?.trim() ?: ""
+        return manga.copy(
+            title = title,
+            cover = cover,
+            description = description,
+            author = author,
+            genres = genres,
+            status = when {
+                status.contains("Completed", ignoreCase = true) || status.contains("مكتمل", ignoreCase = true) -> MangaInfo.COMPLETED
+                status.contains("Ongoing", ignoreCase = true) || status.contains("مستمر", ignoreCase = true) -> MangaInfo.ONGOING
+                status.contains("Hiatus", ignoreCase = true) || status.contains("متوقف", ignoreCase = true) -> MangaInfo.ON_HIATUS
+                else -> MangaInfo.UNKNOWN
+            }
+        )
     }
+
+    override fun getUserAgent(): String {
+        return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    override val chapterFetcher: Chapters
+        get() = Chapters(
+            selector = "li[data-ID] a[href*='/shaag'], li[data-ID] a[href*='/chapter/']",
+            nameSelector = "a",
+            linkSelector = "a",
+            linkAtt = "href",
+            reverseChapterList = true
+        )
 
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let { cmd ->
             if (cmd.html.isNotBlank()) return parseChaptersFromHtml(cmd.html)
         }
+
         return try {
             val response = client.get(requestBuilder(manga.key))
-            parseChaptersFromHtml(response.bodyAsText())
-        } catch (e: Exception) {
-            Log.error { "KolNovel: Error fetching chapters: ${e.message}" }
-            emptyList()
-        }
+            val body = response.bodyAsText()
+            parseChaptersFromHtml(body)
+        } catch (e: Exception) { emptyList() }
     }
 
     private fun parseChaptersFromHtml(html: String): List<ChapterInfo> {
-        val doc = Ksoup.parse(html)
+        val startIndex = html.indexOf("<div id=\"chapter_list\"")
+        val chapterListHtml = if (startIndex >= 0) html.substring(startIndex) else html
+        val doc = Ksoup.parse(chapterListHtml)
         val chapters = mutableListOf<ChapterInfo>()
-        // KolNovel uses .eplister (not .eplisterfull)
-        doc.select(".eplister ul li a").forEach { link ->
+
+        doc.select("li[data-ID] a[href*='/shaag'], li[data-ID] a[href*='/chapter/']").forEach { link ->
             val href = link.attr("href")
-            val title = link.selectFirst(".epl-title")?.text()?.trim()
-            val num = link.selectFirst(".epl-num")?.text()?.trim() ?: ""
-            val name = if (title.isNullOrBlank()) num else "$num - $title"
-            if (name.isBlank()) return@forEach
             val fullUrl = if (href.startsWith("http")) href else "$baseUrl$href"
-            chapters.add(ChapterInfo(name = name, key = fullUrl))
+            if (chapters.any { it.key == fullUrl }) return@forEach
+
+            val eplNum = link.selectFirst(".epl-num")?.text()?.trim() ?: ""
+            val eplTitle = link.selectFirst(".epl-title")?.text()?.trim() ?: ""
+            val name = if (eplNum.isNotBlank() && eplTitle.isNotBlank()) "$eplNum $eplTitle"
+                else if (eplTitle.isNotBlank()) eplTitle
+                else link.text().trim()
+
+            if (name.isBlank()) return@forEach
+            val number = parseChapterNumber("$eplNum $eplTitle")
+            chapters.add(ChapterInfo(name = name, key = fullUrl, number = number))
         }
-        // Fallback
+
         if (chapters.isEmpty()) {
             doc.select("a[href*='/shaag'], a[href*='/chapter/']").forEach { link ->
                 val href = link.attr("href")
-                val name = link.text().trim()
-                if (name.isBlank() || name.contains("Start Reading", true)) return@forEach
+                val linkText = link.text().trim()
+                if (linkText.isBlank() || linkText.contains("Start Reading", ignoreCase = true)) return@forEach
                 val fullUrl = if (href.startsWith("http")) href else "$baseUrl$href"
-                chapters.add(ChapterInfo(name = name, key = fullUrl))
+                if (chapters.any { it.key == fullUrl }) return@forEach
+                val number = parseChapterNumber(linkText)
+                chapters.add(ChapterInfo(name = linkText, key = fullUrl, number = number))
             }
         }
-        return chapters
+
+        return chapters.reversed()
     }
+
+    private fun parseChapterNumber(name: String): Float {
+        val patterns = listOf(
+            Regex("""الفصل\s+(\d+(?:\.\d+)?)"""),
+            Regex("""فصل\s+(\d+(?:\.\d+)?)"""),
+            Regex("""Chapter\s+(\d+(?:\.\d+)?)""", RegexOption.IGNORE_CASE),
+            Regex("""(\d+(?:\.\d+)?)"""),
+        )
+        for (pattern in patterns) {
+            val match = pattern.find(name)
+            if (match != null) {
+                return match.groupValues[1].toFloatOrNull() ?: -1f
+            }
+        }
+        return -1f
+    }
+
+    override val contentFetcher: Content
+        get() = Content(
+            pageContentSelector = "#kol_content p",
+        )
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
         commands.findInstance<Command.Content.Fetch>()?.let { cmd ->
             if (cmd.html.isNotBlank()) return parseContentFromHtml(cmd.html)
         }
+
         return try {
-            val html = try {
-                val browserResult = deps.httpClients.browser.fetch(
-                    url = chapter.key,
-                    selector = ".entry-content, .reading-content",
-                    timeout = 30000
-                )
-                if (browserResult.isSuccess && browserResult.responseBody.isNotBlank()) browserResult.responseBody
-                else client.get(requestBuilder(chapter.key)).bodyAsText()
-            } catch (e: Exception) { client.get(requestBuilder(chapter.key)).bodyAsText() }
-            parseContentFromHtml(html)
+            val response = client.get(requestBuilder(chapter.key))
+            val body = response.bodyAsText()
+            parseContentFromHtml(body)
         } catch (e: Exception) {
-            Log.error { "KolNovel: Error fetching content: ${e.message}" }
-            listOf(Text("المحتوى غير متوفر حالياً."))
+            listOf(Text("محتوى الفصل غير متاح."))
         }
     }
 
     private fun parseContentFromHtml(html: String): List<Page> {
         val doc = Ksoup.parse(html)
-        doc.select("script, style, noscript, iframe, nav, footer, header, .sidebar, .comments, .navigation, .ads, [class*=ad-], .announ").remove()
-        val contentDiv = doc.selectFirst(".entry-content, .reading-content, .chapter-content")
+
+        val contentDiv = doc.selectFirst(".reading-content, .text-left, .chapter-content, .entry-content")
         if (contentDiv != null) {
-            contentDiv.select("script, style, noscript, iframe, .code-block, .wp-block-spacer, .ads, [class*=ad-]").remove()
             val paragraphs = contentDiv.select("p")
                 .map { it.text().trim() }
-                .filter { it.isNotBlank() && it.length > 3 }
+                .filter { it.isNotBlank() && it.length > 1 }
+                .filter { !it.startsWith("PDF") && !it.startsWith("اخبار") }
+                .filter { !it.contains("&tsp;", ignoreCase = true) && !it.contains("ادعم الرواية", ignoreCase = true) }
+                .filter { it != "\u00a0" && it != "&nbsp;" }
             if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
-            val text = contentDiv.text().trim()
+
+            val text = contentDiv.text()
             if (text.isNotBlank()) {
-                return text.split("\n").map { it.trim() }.filter { it.isNotBlank() && it.length > 3 }.map { Text(it) }
+                return text.split("\n")
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() && it.length > 5 }
+                    .filter { it != "\u00a0" }
+                    .map { Text(it) }
             }
         }
-        return listOf(Text("المحتوى غير متوفر حالياً."))
+
+        val paragraphs = doc.select(".reading-content p, .chapter-content p, .entry-content p")
+            .map { it.text().trim() }
+            .filter { it.isNotBlank() && it.length > 5 && it != "\u00a0" }
+        if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
+
+        val bodyText = doc.body()?.text() ?: ""
+        return bodyText.split("\n")
+            .map { it.trim() }
+            .filter { it.isNotBlank() && it.length > 10 }
+            .map { Text(it) }
     }
 }
