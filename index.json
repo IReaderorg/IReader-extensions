@@ -215,6 +215,18 @@
     "sourceDir": "main"
   },
   {
+    "pkg": "ireader.riwyat.ar",
+    "apk": "ireader-ar-riwyat-v2.11.apk",
+    "name": "Riwyat",
+    "id": 3911602848528027929,
+    "lang": "ar",
+    "code": 11,
+    "version": "2.11",
+    "description": "",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
     "pkg": "ireader.royalroad.en",
     "apk": "ireader-en-royalroad-v2.2.apk",
     "name": "RoyalRoad",
