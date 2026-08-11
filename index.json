@@ -689,19 +689,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.kolnovel.ar",
-    "apk": "ireader-ar-kolnovel-v2.3.apk",
-    "name": "KolNovel",
-    "id": 1070515268391361388,
-    "lang": "ar",
-    "code": 3,
-    "version": "2.3",
-    "description": "Novels from KolNovel",
-    "nsfw": false,
-    "sourceDir": "main",
-    "assetsDir": "ar/kolnovel/main/assets"
-  },
-  {
     "pkg": "ireader.leafstudio.en",
     "apk": "ireader-en-leafstudio-v2.1.apk",
     "name": "LeafStudio",
