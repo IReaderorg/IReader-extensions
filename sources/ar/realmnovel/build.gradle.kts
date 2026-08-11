@@ -1,7 +1,7 @@
 listOf("ar").map { lang ->
   Extension(
     name = "Realmnovel",
-    versionCode = 6,
+    versionCode = 5,
     libVersion = "2",
     lang = lang,
     description = "RealmNovel: روايات عربية مترجمة ومؤلفة",
