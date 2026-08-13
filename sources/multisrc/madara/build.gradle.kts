@@ -23,7 +23,7 @@ listOf(
     ),
     Extension(
         name = "HizoManga",
-        versionCode = 4,
+        versionCode = 5,
         libVersion = "2",
         lang = "ar",
         description = "",

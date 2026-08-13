@@ -154,30 +154,34 @@ abstract class Madara(
     }
 
     private suspend fun getNovels(page: Int, sort: Filter.Sort.Selection?): MangasPageInfo {
-        val req = when (sort?.index) {
-            1 -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=alphabet"
-            2 -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=raing"
-            3 -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=trending"
-            4 -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=views"
-            else -> "$baseUrl/${paths.novels}/page/$page/?m_orderby=latest"
-        }
+        val pageSegment = if (page == 1) "" else "page/$page/"
+        val req = "$baseUrl/${paths.novels}/$pageSegment?m_orderby=${novelsOrderBy(sort)}"
         val request = client.get(requestBuilder(req)).asJsoup()
 
         return novelsParse(request, page)
     }
 
+    protected open fun novelsOrderBy(sort: Filter.Sort.Selection?): String = when (sort?.index) {
+        1 -> "alphabet"
+        2 -> "raing"
+        3 -> "trending"
+        4 -> "views"
+        else -> "latest"
+    }
+
     private fun novelsParse(document: Document, page: Int): MangasPageInfo {
-        print(document)
         val books = document.select(".page-item-detail").map { element ->
             booksFromElement(element)
         }
 
-        val hasNextPage = "div.nav-previous>a".let { selector ->
+        val hasNextPage = novelsNextPageSelector().let { selector ->
             document.select(selector).first()
         } != null
 
-        return MangasPageInfo(books, true)
+        return MangasPageInfo(books, hasNextPage)
     }
+
+    protected open fun novelsNextPageSelector(): String = "div.nav-previous>a"
 
     private fun booksFromElement(element: Element): MangaInfo {
         val title = element.select(".post-title").text().trim()
@@ -193,19 +197,22 @@ abstract class Madara(
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         commands.findInstance<Command.Detail.Fetch>()?.let {
-            return detailParse(Ksoup.parse(it.html)).copy(key = it.url)
+            return detailParse(Ksoup.parse(it.html), manga).copy(key = it.url)
         }
 
-        return detailParse(client.get(detailRequest(manga)).asJsoup())
+        return detailParse(client.get(detailRequest(manga)).asJsoup(), manga)
     }
 
-    private fun detailParse(document: Document): MangaInfo {
+    protected open fun detailParse(document: Document, manga: MangaInfo): MangaInfo {
         val title = document.select("div.post-title>h1").text()
         var cover = document.select("div.summary_image a img").attr("src")
         if (cover.isBlank() || cover.contains("data:image/svg+xml", ignoreCase = true)) {
             cover = document.select("div.summary_image a img").attr("data-src")
         }
-        val link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
+        var link = baseUrl + document.select("div.cur div.wp a:nth-child(5)").attr("href")
+        if (link == baseUrl) {
+            link = manga.key
+        }
         var authorBookSelector = document.select("div.author-content>a").attr("title")
         if (authorBookSelector.isBlank()) {
             authorBookSelector = document.select("div.author-content>a").text()
@@ -231,11 +238,12 @@ abstract class Madara(
         )
     }
 
-    private fun parseStatus(string: String): Long {
+    protected open fun parseStatus(string: String): Long {
         return when {
             "OnGoing" in string -> MangaInfo.ONGOING
             "مستمرة" in string -> MangaInfo.ONGOING
             "Completed" in string -> MangaInfo.COMPLETED
+            "مكتملة" in string -> MangaInfo.COMPLETED
             else -> MangaInfo.UNKNOWN
         }
     }
@@ -339,7 +347,7 @@ abstract class Madara(
         return pageContentParse(client.get(contentRequest(chapter)).asJsoup())
     }
 
-    private fun pageContentParse(document: Document): List<String> {
+    protected open fun pageContentParse(document: Document): List<String> {
         val par = document.select(".text-left p, .text-right p").eachText()
             .map { it.replace("Read latest Chapters at", "") }
         var head = document.select(".text-center").text()
