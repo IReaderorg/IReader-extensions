@@ -252,17 +252,6 @@ listOf(
         assetsDir = "multisrc/madara/mtlnovelclub/assets",
         sourceDir = "mtlnovelclub",
     ),
-Extension(
-        name = "Azora",
-        versionCode = 3,
-        libVersion = "1",
-        lang = "ar",
-        description = "",
-        nsfw = false,
-        icon = DEFAULT_ICON,
-        assetsDir = "multisrc/madara/azora/assets",
-        sourceDir = "azora",
-    ),
     // ═══════════════════════════════════════════════════════════════
     // New sources migrated from lightnovel-crawler
     // ═══════════════════════════════════════════════════════════════
