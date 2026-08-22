@@ -68,11 +68,39 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
     class LatestNovelsListing : Listing("Latest Novels")
     class LatestChaptersListing : Listing("Latest Chapters")
 
+    private var totalMangas: Int = -1
+
+    private suspend fun probeTotalMangas(): Int {
+        var lo = 0
+        var hi = 20000
+        while (lo < hi) {
+            val mid = (lo + hi) / 2
+            val body = client.get(requestBuilder("$baseUrl/api/mangas?limit=1&offset=$mid")).bodyAsText()
+            val ok = jsonParser.parseToJsonElement(body).jsonArray.isNotEmpty()
+            if (ok) lo = mid + 1 else hi = mid
+        }
+        totalMangas = lo
+        return totalMangas
+    }
+
+    /**
+     * The novel key is the web page URL (e.g. https://golden.rest/mangas/<id>)
+     * so the app can open it in the WebView. Extract the numeric id from it,
+     * falling back to the legacy numeric key for books saved before the fix.
+     */
+    private fun MangaInfo.mangaId(): String {
+        val key = this.key
+        val prefix = "$baseUrl/mangas/"
+        return if (key.startsWith(prefix)) key.removePrefix(prefix) else key
+    }
+
     private fun buildCoverUrl(id: Int, coverFile: String?): String {
         if (coverFile.isNullOrBlank()) return ""
         if (coverFile.startsWith("http")) return coverFile
         if (coverFile.startsWith("uploads/")) return "$baseUrl/$coverFile"
-        return "$baseUrl/uploads/mangas/$coverFile"
+        val isGif = coverFile.substringAfterLast('.', "").equals("gif", ignoreCase = true)
+        val ext = if (isGif) ".gif" else ".webp"
+        return "$baseUrl/uploads/manga/cover/$id/large_${coverFile.substringBeforeLast('.')}$ext"
     }
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
@@ -84,8 +112,11 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
 
     private suspend fun getLatestNovels(page: Int): MangasPageInfo {
         return try {
-            val limit = 100
-            val response = client.get(requestBuilder("$baseUrl/api/mangas?orderBy=created&orderDir=desc&page=$page&limit=$limit"))
+            if (totalMangas < 0) probeTotalMangas()
+            val blockSize = 250
+            val startOffset = totalMangas - page * blockSize
+            if (startOffset < 0) return MangasPageInfo(emptyList(), false)
+            val response = client.get(requestBuilder("$baseUrl/api/mangas?limit=$blockSize&offset=$startOffset"))
             val body = response.bodyAsText()
             val arr = jsonParser.parseToJsonElement(body).jsonArray
             val mangaList = arr.mapNotNull { el ->
@@ -97,14 +128,14 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                 val coverFile = obj["cover"]?.jsonPrimitive?.contentOrNull
                 val cover = buildCoverUrl(id, coverFile)
                 MangaInfo(
-                    key = id.toString(),
+                    key = "$baseUrl/mangas/$id",
                     title = title,
                     cover = cover,
                     description = "",
                     status = MangaInfo.UNKNOWN
                 )
             }.distinctBy { it.key }
-            MangasPageInfo(mangaList, mangaList.size >= limit)
+            MangasPageInfo(mangaList, startOffset > 0)
         } catch (e: Exception) {
             Log.error { "Error fetching novel list: ${e.message}" }
             MangasPageInfo(emptyList(), false)
@@ -113,31 +144,40 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
 
     private suspend fun getLatestChapters(page: Int): MangasPageInfo {
         return try {
-            val limit = 100
-            val response = client.get(requestBuilder("$baseUrl/api/releases?orderBy=created&orderDir=desc&page=$page&limit=$limit"))
-            val body = response.bodyAsText()
-            val obj = jsonParser.parseToJsonElement(body).jsonObject
-            val releases = obj["releases"]?.jsonArray ?: return MangasPageInfo(emptyList(), false)
+            val apiPagesPerAppPage = 5
             val seenMangaIds = mutableSetOf<Int>()
-            val mangaList = releases.mapNotNull { el ->
-                val release = el.jsonObject
-                val mangaObj = release["manga"]?.jsonObject ?: return@mapNotNull null
-                val isNovel = mangaObj["is_novel"]?.jsonPrimitive?.booleanOrNull ?: false
-                if (!isNovel) return@mapNotNull null
-                val id = mangaObj["id"]?.jsonPrimitive?.intOrNull ?: return@mapNotNull null
-                if (!seenMangaIds.add(id)) return@mapNotNull null
-                val title = mangaObj["title"]?.jsonPrimitive?.content ?: return@mapNotNull null
-                val coverFile = mangaObj["cover"]?.jsonPrimitive?.contentOrNull
-                val cover = buildCoverUrl(id, coverFile)
-                MangaInfo(
-                    key = id.toString(),
-                    title = title,
-                    cover = cover,
-                    description = "",
-                    status = MangaInfo.UNKNOWN
-                )
+            val mangaList = mutableListOf<MangaInfo>()
+            var hasNext = false
+            for (i in 0 until apiPagesPerAppPage) {
+                val apiPage = (page - 1) * apiPagesPerAppPage + i + 1
+                val response = client.get(requestBuilder("$baseUrl/api/releases?page=$apiPage"))
+                val body = response.bodyAsText()
+                val obj = jsonParser.parseToJsonElement(body).jsonObject
+                val releases = obj["releases"]?.jsonArray ?: break
+                if (releases.isEmpty()) break
+                hasNext = true
+                releases.forEach { el ->
+                    val release = el.jsonObject
+                    val mangaObj = release["manga"]?.jsonObject ?: return@forEach
+                    val isNovel = mangaObj["is_novel"]?.jsonPrimitive?.booleanOrNull ?: false
+                    if (!isNovel) return@forEach
+                    val id = mangaObj["id"]?.jsonPrimitive?.intOrNull ?: return@forEach
+                    if (!seenMangaIds.add(id)) return@forEach
+                    val title = mangaObj["title"]?.jsonPrimitive?.content ?: return@forEach
+                    val coverFile = mangaObj["cover"]?.jsonPrimitive?.contentOrNull
+                    val cover = buildCoverUrl(id, coverFile)
+                    mangaList.add(
+                        MangaInfo(
+                            key = "$baseUrl/mangas/$id",
+                            title = title,
+                            cover = cover,
+                            description = "",
+                            status = MangaInfo.UNKNOWN
+                        )
+                    )
+                }
             }
-            MangasPageInfo(mangaList, releases.size >= limit)
+            MangasPageInfo(mangaList, hasNext)
         } catch (e: Exception) {
             Log.error { "Error fetching latest chapters: ${e.message}" }
             MangasPageInfo(emptyList(), false)
@@ -150,9 +190,10 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
         if (query != null) {
             return try {
                 val allResults = mutableListOf<MangaInfo>()
-                val searchLimit = 500
-                for (p in 1..5) {
-                    val response = client.get(requestBuilder("$baseUrl/api/mangas?orderBy=created&orderDir=desc&page=$p&limit=$searchLimit"))
+                val chunk = 1000
+                var offset = 0
+                while (true) {
+                    val response = client.get(requestBuilder("$baseUrl/api/mangas?limit=$chunk&offset=$offset"))
                     val body = response.bodyAsText()
                     val arr = jsonParser.parseToJsonElement(body).jsonArray
                     if (arr.isEmpty()) break
@@ -172,9 +213,10 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
                         val title = obj["title"]?.jsonPrimitive?.content ?: return@forEach
                         val coverFile = obj["cover"]?.jsonPrimitive?.contentOrNull
                         val cover = buildCoverUrl(id, coverFile)
-                        allResults.add(MangaInfo(key = id.toString(), title = title, cover = cover))
+                        allResults.add(MangaInfo(key = "$baseUrl/mangas/$id", title = title, cover = cover))
                     }
-                    if (arr.size < searchLimit) break
+                    if (arr.size < chunk) break
+                    offset += chunk
                 }
                 MangasPageInfo(allResults.distinctBy { it.key }, false)
             } catch (e: Exception) {
@@ -187,7 +229,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
         return try {
-            val response = client.get(requestBuilder("$baseUrl/api/mangas/${manga.key}"))
+            val response = client.get(requestBuilder("$baseUrl/api/mangas/${manga.mangaId()}"))
             val body = response.bodyAsText()
             parseDetailsFromJson(body, manga)
         } catch (e: Exception) {
@@ -203,7 +245,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
             val title = data["title"]?.jsonPrimitive?.content ?: manga.title
             val summary = data["summary"]?.jsonPrimitive?.contentOrNull ?: ""
             val coverFile = data["cover"]?.jsonPrimitive?.contentOrNull
-            val cover = if (!coverFile.isNullOrBlank()) buildCoverUrl(manga.key.toIntOrNull() ?: 0, coverFile) else manga.cover
+            val cover = if (!coverFile.isNullOrBlank()) buildCoverUrl(manga.mangaId().toIntOrNull() ?: 0, coverFile) else manga.cover
             val storyStatus = data["story_status"]?.jsonPrimitive?.intOrNull
             val status = when (storyStatus) {
                 1 -> MangaInfo.ONGOING
@@ -239,7 +281,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
 
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         return try {
-            val response = client.get(requestBuilder("$baseUrl/api/mangas/${manga.key}/releases"))
+            val response = client.get(requestBuilder("$baseUrl/api/mangas/${manga.mangaId()}/releases"))
             val body = response.bodyAsText()
             parseChaptersFromJson(body, manga)
         } catch (e: Exception) {
@@ -339,7 +381,7 @@ abstract class Golden(private val deps: Dependencies) : SourceFactory(deps = dep
 
             if (imagePages.isNotEmpty() && storageKey.isNotBlank()) {
                 return imagePages.map { page ->
-                    ImageUrl("$baseUrl/uploads/releases/$storageKey/$page")
+                    ImageUrl("$baseUrl/uploads/releases/$storageKey/hq/$page")
                 }
             }
 
