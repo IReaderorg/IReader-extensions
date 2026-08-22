@@ -1,4 +1,4 @@
-package ireader.markazriwayat
+﻿package ireader.markazriwayat
 
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
@@ -11,11 +11,13 @@ import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
 import ireader.core.source.model.Filter
 import ireader.core.source.model.FilterList
-import ireader.core.source.model.Listing
+import ireader.core.source.model.ImageUrl
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangaInfo.Companion.COMPLETED
 import ireader.core.source.model.MangaInfo.Companion.ONGOING
 import ireader.core.source.model.MangasPageInfo
+import ireader.core.source.model.Page
+import ireader.core.source.model.Text
 import ireader.core.source.SourceFactory
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -23,11 +25,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.booleanOrNull
-import ireader.core.util.DefaultDispatcher
-import kotlinx.coroutines.async
-import kotlinx.coroutines.withContext
+import kotlin.time.Instant
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.GenerateTests
 import tachiyomix.annotations.TestExpectations
@@ -52,6 +51,7 @@ import tachiyomix.annotations.TestFixture
     supportsPagination = true,
     requiresLogin = false
 )
+@OptIn(kotlin.time.ExperimentalTime::class)
 abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     deps = deps,
 ) {
@@ -83,49 +83,11 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
         Command.Content.Fetch(),
     )
 
-    class PopularListing : Listing("الأكثر شهرة")
-    class NewListing : Listing("أضيف حديثاً")
-    class LatestChaptersListing : Listing("أحدث الفصول")
-
-    override fun getListings(): List<Listing> {
-        return listOf(
-            PopularListing(),
-            NewListing(),
-            LatestChaptersListing(),
-        )
-    }
-
-    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
-        return when (sort) {
-            is PopularListing -> getLists(exploreFetchers[0], page, "", emptyList())
-            is NewListing -> getLists(exploreFetchers[1], page, "", emptyList())
-            is LatestChaptersListing -> getLists(exploreFetchers[2], page, "", emptyList())
-            else -> getLists(
-                exploreFetchers.firstOrNull { it.type != Type.Search } ?: return emptyMangaPage(),
-                page,
-                "",
-                emptyList(),
-            )
-        }
-    }
-
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
                 "الأكثر شهرة",
                 endpoint = "/popular/",
-                selector = "a.lib-card",
-                nameSelector = ".lib-card__title",
-                coverSelector = ".lib-card__img img",
-                coverAtt = "data-src",
-                addBaseurlToCoverLink = true,
-                linkSelector = "a.lib-card",
-                linkAtt = "href",
-                addBaseUrlToLink = true,
-            ),
-            BaseExploreFetcher(
-                "أضيف حديثاً",
-                endpoint = "/new/",
                 selector = "a.lib-card",
                 nameSelector = ".lib-card__title",
                 coverSelector = ".lib-card__img img",
@@ -144,6 +106,18 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
                 coverAtt = "data-src",
                 addBaseurlToCoverLink = true,
                 linkSelector = "a.latest-title",
+                linkAtt = "href",
+                addBaseUrlToLink = true,
+            ),
+            BaseExploreFetcher(
+                "أضيف حديثاً",
+                endpoint = "/new/",
+                selector = "a.lib-card",
+                nameSelector = ".lib-card__title",
+                coverSelector = ".lib-card__img img",
+                coverAtt = "data-src",
+                addBaseurlToCoverLink = true,
+                linkSelector = "a.lib-card",
                 linkAtt = "href",
                 addBaseUrlToLink = true,
             ),
@@ -188,8 +162,7 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
             nameSelector = ".ch-title",
             linkSelector = "a",
             linkAtt = "href",
-            numberSelector = ".ch-num",
-            reverseChapterList = true,
+            reverseChapterList = false,
             addBaseUrlToLink = true,
         )
 
@@ -202,17 +175,44 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     // CUSTOM API-BASED SEARCH
     // ═══════════════════════════════════════════════════════════════
     
+    private var cachedNonce: String? = null
+
+    private suspend fun getNonce(): String {
+        cachedNonce?.let { return it }
+        try {
+            val html = client.get(requestBuilder(baseUrl)).bodyAsText()
+            val theamAppStart = html.indexOf("THEAM_APP")
+            if (theamAppStart != -1) {
+                val nonceKey = "\"nonce\":\""
+                val nonceStart = html.indexOf(nonceKey, theamAppStart)
+                if (nonceStart != -1) {
+                    val nonceEnd = html.indexOf("\"", nonceStart + nonceKey.length)
+                    if (nonceEnd != -1) {
+                        cachedNonce = html.substring(nonceStart + nonceKey.length, nonceEnd)
+                        return cachedNonce!!
+                    }
+                }
+            }
+        } catch (e: Exception) {
+        }
+        return ""
+    }
+
     /**
      * Custom search using MarkazRiwayat's JSON API
      * API endpoint: /wp-json/theam/v1/novel-search?term={query}&per_page=20
      */
     private suspend fun searchViaApi(query: String, perPage: Int = 20): MangasPageInfo {
-        // Encode the search query for URL
         val encodedQuery = query.encodeURLParameter()
         val apiUrl = "$baseUrl/wp-json/theam/v1/novel-search?term=$encodedQuery&per_page=$perPage"
         
-        // Fetch JSON response
-        val response = client.get(requestBuilder(apiUrl)).bodyAsText()
+        val request = requestBuilder(apiUrl)
+        val nonce = getNonce()
+        if (nonce.isNotBlank()) {
+            request.headers.append("X-WP-Nonce", nonce)
+        }
+        
+        val response = client.get(request).bodyAsText()
         val jsonObj = json.parseToJsonElement(response).jsonObject
         
         // Parse the items array
@@ -267,79 +267,58 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     }
     
     /**
-     * Fetch ALL chapters via API with fast parallel pagination.
-     * The server caps per_page at 100, so we fetch page 1 (which returns `total`)
-     * then download the remaining pages concurrently.
-     * API endpoint: /wp-json/theam/v1/manga-chapters?manga_id={id}&order=DESC&page={page}&per_page=100
-     */
-    private suspend fun fetchChaptersViaApi(mangaId: String): List<ChapterInfo> {
-        return withContext(DefaultDispatcher) {
-            val firstPage = fetchApiChapterPage(mangaId, 1)
-                ?: return@withContext emptyList()
-            val total = firstPage.second
-            val totalPages = ((total + 99) / 100).coerceAtLeast(1)
-
-            val allChapters = firstPage.first.toMutableList()
-            val remaining = (2..totalPages).map { page ->
-                async { fetchApiChapterPage(mangaId, page) }
+      * Fetch chapters via API with pagination
+      * API endpoint: /wp-json/theam/v1/manga-chapters?manga_id={id}&order=DESC&page={page}&per_page=100
+      */
+    private suspend fun fetchChaptersViaApi(
+        mangaId: String,
+        order: String = "DESC",
+        perPage: Int = 100
+    ): List<ChapterInfo> {
+        val allChapters = mutableListOf<ChapterInfo>()
+        var currentPage = 1
+        var hasMore = true
+        
+        while (hasMore) {
+            val apiUrl = "$baseUrl/wp-json/theam/v1/manga-chapters?manga_id=$mangaId&order=$order&page=$currentPage&per_page=$perPage"
+            
+            try {
+                val response = client.get(requestBuilder(apiUrl)).bodyAsText()
+                val jsonObj = json.parseToJsonElement(response).jsonObject
+                
+                val items = jsonObj["items"]?.jsonArray ?: emptyList()
+                
+                val pageChapters = items.mapNotNull { element ->
+                    val item = element.jsonObject
+                    
+                    val label = item["label"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                    val url = item["url"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                    val dateStr = item["date"]?.jsonPrimitive?.contentOrNull ?: ""
+                    
+                    val dateUpload = try {
+                        Instant.parse(dateStr).toEpochMilliseconds()
+                    } catch (e: Exception) {
+                        0L
+                    }
+                    
+                    ChapterInfo(
+                        name = label,
+                        key = url,
+                        dateUpload = dateUpload
+                    )
+                }
+                
+                allChapters.addAll(pageChapters)
+                
+                hasMore = jsonObj["has_more"]?.jsonPrimitive?.booleanOrNull == true
+                currentPage++
+                
+            } catch (e: Exception) {
+                hasMore = false
             }
-            remaining.forEach { deferred ->
-                deferred.await()?.first?.let(allChapters::addAll)
-            }
-            allChapters.sortedByDescending { it.number }
         }
-    }
-
-    /**
-     * Fetch a single page of chapters from the API.
-     * Returns the parsed chapters plus the reported `total` count.
-     */
-    private suspend fun fetchApiChapterPage(mangaId: String, page: Int): Pair<List<ChapterInfo>, Int>? {
-        return try {
-            val apiUrl = "$baseUrl/wp-json/theam/v1/manga-chapters?manga_id=$mangaId&order=DESC&page=$page&per_page=100"
-            val response = client.get(requestBuilder(apiUrl)).bodyAsText()
-            val jsonObj = json.parseToJsonElement(response).jsonObject
-            val total = jsonObj["total"]?.jsonPrimitive?.intOrNull ?: 0
-            val items = jsonObj["items"]?.jsonArray ?: return null
-
-            val chapters = items.mapNotNull { element ->
-                val item = element.jsonObject
-                val label = item["label"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val url = item["url"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val num = item["num"]?.jsonPrimitive?.contentOrNull ?: ""
-                val ts = item["ts"]?.jsonPrimitive?.longOrNull ?: 0L
-                ChapterInfo(
-                    name = label,
-                    key = url,
-                    number = num.toFloatOrNull() ?: 0f,
-                    dateUpload = ts
-                )
-            }
-            chapters to total
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private suspend fun fetchLatestChapters(page: Int): MangasPageInfo {
-        val perPage = 50
-        val apiUrl = "$baseUrl/wp-json/theam/v1/latest-chapters?per_page=$perPage&page=$page"
-        return try {
-            val response = client.get(requestBuilder(apiUrl)).bodyAsText()
-            val jsonObj = json.parseToJsonElement(response).jsonObject
-            val items = jsonObj["items"]?.jsonArray ?: emptyList()
-            val novels = items.mapNotNull { element ->
-                val item = element.jsonObject
-                val title = item["title"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val permalink = item["permalink"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
-                val cover = item["cover"]?.jsonPrimitive?.contentOrNull ?: ""
-                MangaInfo(key = permalink, title = title, cover = cover)
-            }
-            val hasNext = items.size >= perPage
-            MangasPageInfo(novels, hasNext)
-        } catch (e: Exception) {
-            MangasPageInfo(emptyList(), false)
-        }
+        
+        return allChapters
     }
 
     /**
@@ -359,41 +338,63 @@ abstract class MarkazRiwayat(deps: Dependencies) : SourceFactory(
     }
 
     /**
-     * Override getChapterList to use API-based fetching first (all chapters, fast parallel pagination)
+     * Override getChapterList to use API-based fetching
      * Priority:
-     * 1. API-based fetching (fetches every chapter, ~5s via parallel pages)
-     * 2. WebView HTML (if Command.Chapter.Fetch is present)
-     * 3. HTML-based fetching from novel page (single request, but only 30 chapters)
+     * 1. API-based fetching (extract manga_id and fetch via API with pagination)
+     * 2. HTML-based fallback (default behavior)
      */
     override suspend fun getChapterList(
         manga: MangaInfo,
         commands: List<Command<*>>
     ): List<ChapterInfo> {
-        // Priority 1: API - fetch ALL chapters
         try {
             val mangaId = extractMangaId(manga.key)
-            if (!mangaId.isNullOrBlank()) {
-                val apiChapters = fetchChaptersViaApi(mangaId)
-                if (apiChapters.isNotEmpty()) {
-                    return apiChapters
+            if (mangaId != null) {
+                val chapters = fetchChaptersViaApi(mangaId)
+                if (chapters.isNotEmpty()) {
+                    return chapters
                 }
             }
         } catch (e: Exception) {
-            // fall through to HTML if the API path fails
         }
 
-        // Priority 2: Check for WebView HTML
-        val chapterFetch = commands.findInstance<Command.Chapter.Fetch>()
-        if (chapterFetch != null && chapterFetch.html.isNotBlank()) {
-            return chaptersParse(chapterFetch.html.asJsoup()).reversed()
-        }
+        return super.getChapterList(manga, commands)
+    }
 
-        // Priority 3: HTML-based fetching (fast, but only first ~30 chapters)
-        return try {
-            super.getChapterList(manga, commands)
+    override suspend fun getContents(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+        try {
+            val document = client.get(requestBuilder(chapter.key)).asJsoup()
+            val readingContent = document.selectFirst(".reading-content") ?: return emptyList()
+
+            readingContent.select(".theam-chobf").remove()
+
+            val pages = mutableListOf<Page>()
+
+            val paragraphs = readingContent.select("p")
+            for (p in paragraphs) {
+                val text = p.text()?.trim() ?: continue
+                if (text.isNotBlank() && text.length > 1) {
+                    pages.add(Text(text))
+                }
+            }
+
+            val images = readingContent.select("img")
+            for (img in images) {
+                val src = img.attr("src").takeIf { it.isNotBlank() }
+                    ?: img.attr("data-src").takeIf { it.isNotBlank() }
+                    ?: continue
+                pages.add(ImageUrl(src))
+            }
+
+            if (pages.isEmpty()) {
+                pages.add(Text(""))
+            }
+
+            return pages
         } catch (e: Exception) {
-            // Priority 3: Fall back to API if HTML fails
-            emptyList()
+            return emptyList()
         }
     }
 }
+
+// force rebuild
