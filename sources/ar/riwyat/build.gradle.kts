@@ -7,6 +7,5 @@ listOf("ar").map { lang ->
     description = "",
     nsfw = false,
     icon = DEFAULT_ICON,
-    assetsDir = "ar/riwyat/main/assets",
   )
 }.also(::register)
