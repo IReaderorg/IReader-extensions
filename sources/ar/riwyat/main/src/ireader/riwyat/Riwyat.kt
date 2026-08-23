@@ -192,7 +192,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = "h3.chapter-name",
-            pageContentSelector = ".reading-content-wrap.chapter-type-text .text-left p",
+            pageContentSelector = ".reading-content-wrap.chapter-type-text p",
         )
 
     private val invisibleCharRegex = Regex(
