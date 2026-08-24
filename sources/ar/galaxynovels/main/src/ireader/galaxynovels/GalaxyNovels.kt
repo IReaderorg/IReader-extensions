@@ -14,6 +14,7 @@ import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
 import ireader.core.source.findInstance
+import ireader.core.source.helpers.DateParser
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
@@ -159,7 +160,7 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageContentSelector = ".wor-chapter-content p, .entry-content p, .chapter-content p",
+            pageContentSelector = ".wor-reading-page__content p",
         )
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
@@ -274,8 +275,11 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         }
 
         return try {
-            val chaptersUrl = "$baseUrl/wp-json/wor-reader-app/v1/novels/$novelId/chapters"
-            val response = client.get(requestBuilder(chaptersUrl))
+            // Use the static reader cache JSON. The /wp-json REST API is behind a
+            // Cloudflare managed challenge that cannot be bypassed from the app and
+            // would crash the source, so we avoid it entirely.
+            val chaptersUrl = "$baseUrl/wp-content/uploads/wor-reader-cache/chapters/novel-$novelId.json"
+            val response = deps.httpClients.default.get(requestBuilder(chaptersUrl))
             val body = response.bodyAsText()
             parseChaptersFromJson(body)
         } catch (e: Exception) {
@@ -293,11 +297,11 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         }
 
         try {
-            val manifestResponse = client.get(requestBuilder("$baseUrl/wp-content/uploads/wor-reader-cache/search/manifest.json"))
+            val manifestResponse = deps.httpClients.default.get(requestBuilder("$baseUrl/wp-content/uploads/wor-reader-cache/search/manifest.json"))
             val manifest = Json.parseToJsonElement(manifestResponse.bodyAsText()).jsonObject
             val indexUrl = manifest["index"]?.jsonPrimitive?.contentOrNull ?: return null
             val resolvedIndexUrl = if (indexUrl.startsWith("http")) indexUrl else "$baseUrl$indexUrl"
-            val indexResponse = client.get(requestBuilder(resolvedIndexUrl))
+            val indexResponse = deps.httpClients.default.get(requestBuilder(resolvedIndexUrl))
             val index = Json.parseToJsonElement(indexResponse.bodyAsText()).jsonObject
             val path = novelUrl.removePrefix(baseUrl).trimEnd('/')
             return index["items"]?.jsonArray?.firstOrNull { item ->
@@ -330,13 +334,15 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
             val json = Json.parseToJsonElement(jsonStr).jsonObject
             val chapters = json["chapters"]?.jsonArray ?: return emptyList()
 
-            chapters.map { ch ->
+            chapters.mapNotNull { ch ->
                 val obj = ch.jsonObject
-                val id = obj["id"]?.jsonPrimitive?.int ?: 0
                 val position = obj["position"]?.jsonPrimitive?.int ?: 0
                 val label = obj["label"]?.jsonPrimitive?.contentOrNull ?: ""
                 val title = obj["title"]?.jsonPrimitive?.contentOrNull ?: ""
                 val url = obj["url"]?.jsonPrimitive?.contentOrNull ?: ""
+                val dateIso = obj["date_iso"]?.jsonPrimitive?.contentOrNull ?: ""
+
+                if (url.isBlank()) return@mapNotNull null
 
                 val chapterName = if (title.isNotBlank()) {
                     "$label : $title"
@@ -348,7 +354,8 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
                     name = chapterName,
                     key = url,
                     number = position.toFloat(),
-                    scanlator = if (id > 0) id.toString() else ""
+                    dateUpload = if (dateIso.isNotBlank()) DateParser.parse(dateIso) else 0L,
+                    scanlator = ""
                 )
             }.sortedBy { it.number }
         } catch (e: Exception) {
@@ -366,9 +373,18 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
             val href = linkEl.attr("href")
             val titleEl = item.selectFirst("h3 > a")
             val title = titleEl?.text()?.trim() ?: ""
+            val timeEl = item.selectFirst("time[datetime]")
+            val dateUpload = timeEl?.attr("datetime")?.let { DateParser.parse(it) } ?: 0L
 
             if (href.isNotBlank()) {
-                chapters.add(ChapterInfo(name = title, key = href))
+                chapters.add(
+                    ChapterInfo(
+                        name = title,
+                        key = href,
+                        dateUpload = dateUpload,
+                        scanlator = ""
+                    )
+                )
             }
         }
 
@@ -376,84 +392,60 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
     }
 
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
-        chapter.scanlator.toLongOrNull()?.let { chapterId ->
-            val pages = fetchContentViaApi(chapterId)
-            if (pages.isNotEmpty()) return pages
-        }
-
         commands.findInstance<Command.Content.Fetch>()?.let { cmd ->
             if (cmd.html.isNotBlank()) return parseContentFromHtml(cmd.html)
         }
 
         return try {
+            val response = client.get(requestBuilder(chapter.key))
+            val body = response.bodyAsText()
+            val pages = parseContentFromHtml(body)
+            if (pages.isNotEmpty()) return pages
+
+            loadContentViaBrowser(chapter.key)
+        } catch (e: Exception) {
+            Log.error { "Error fetching content, trying browser: ${e.message}" }
+            loadContentViaBrowser(chapter.key)
+        }
+    }
+
+    private suspend fun loadContentViaBrowser(url: String): List<Page> {
+        return try {
             val browserResult = deps.httpClients.browser.fetch(
-                url = chapter.key,
-                selector = "#content > article > div > p:nth-child(2)",
+                url = url,
+                selector = ".wor-reading-page__content p",
                 timeout = 50000
             )
             if (browserResult.isSuccess && browserResult.responseBody.isNotBlank()) {
-                parseContentFromHtml(browserResult.responseBody)
-            } else {
-                val response = client.get(requestBuilder(chapter.key))
-                val body = response.bodyAsText()
-                parseContentFromHtml(body)
+                val pages = parseContentFromHtml(browserResult.responseBody)
+                if (pages.isNotEmpty()) return pages
             }
-        } catch (e: Exception) {
-            Log.error { "Error fetching content: ${e.message}" }
             listOf(Text("حدث خطأ أثناء تحميل محتوى الفصل."))
-        }
-    }
-
-    private suspend fun fetchContentViaApi(chapterId: Long): List<Page> {
-        return try {
-            val url = "$baseUrl/wp-json/wor-reader-app/v1/chapters/$chapterId"
-            val response = client.get(requestBuilder(url))
-            val body = response.bodyAsText()
-            parseContentFromApi(body)
         } catch (e: Exception) {
-            Log.error { "Error fetching content via API: ${e.message}" }
-            emptyList()
-        }
-    }
-
-    private fun parseContentFromApi(body: String): List<Page> {
-        return try {
-            val json = Json.parseToJsonElement(body).jsonObject
-            val data = json["data"]?.jsonObject ?: return emptyList()
-            val contentHtml = data["content_html"]?.jsonPrimitive?.contentOrNull
-                ?: data["content"]?.jsonPrimitive?.contentOrNull
-                ?: return emptyList()
-            if (contentHtml.isBlank()) return emptyList()
-
-            val doc = Ksoup.parse(contentHtml)
-            val paragraphs = doc.select("p").map { it.text() }.filter { it.isNotBlank() }
-            if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
-            val text = doc.text()
-            if (text.isNotBlank()) return text.split("\n").filter { it.isNotBlank() }.map { Text(it) }
-            emptyList()
-        } catch (e: Exception) {
-            Log.error { "Error parsing API content: ${e.message}" }
-            emptyList()
+            Log.error { "Error fetching content via browser: ${e.message}" }
+            listOf(Text("حدث خطأ أثناء تحميل محتوى الفصل."))
         }
     }
 
     private fun parseContentFromHtml(html: String): List<Page> {
         val doc = Ksoup.parse(html)
 
+        val content = doc.selectFirst(".wor-reading-page__content") ?: doc.selectFirst("#content")
+            ?: return emptyList()
 
-            val contentDiv = doc.select("#content p")
+        val paragraphs = content.select("p")
+            .map { it.text().trim() }
+            .filter { it.isNotBlank() && !it.contains("يرجى تفعيل JavaScript") }
 
-                val paragraphs = contentDiv.select("p").map { it.text() }.filter { it.isNotBlank() }
-                if (paragraphs.isNotEmpty()) {
-                    return paragraphs.map { Text(it) }
-                }
-                val text = contentDiv.text()
-                if (text.isNotBlank()) {
-                    return text.split("\n").filter { it.isNotBlank() }.map { Text(it) }
-                }
+        if (paragraphs.isNotEmpty()) {
+            return paragraphs.map { Text(it) }
+        }
 
+        val text = content.text().trim()
+        if (text.isNotBlank()) {
+            return text.split("\n").filter { it.isNotBlank() }.map { Text(it) }
+        }
 
-
-        return listOf(Text("لم يتم العثور على محتوى الفصل. قد تحتاج إلى تسجيل الدخول."))
+        return emptyList()
     }
 }
