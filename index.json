@@ -121,18 +121,6 @@
     "sourceDir": "main"
   },
   {
-    "pkg": "ireader.galaxynovels.ar",
-    "apk": "ireader-ar-galaxynovels-v2.4.apk",
-    "name": "GalaxyNovels",
-    "id": 5839019927924950627,
-    "lang": "ar",
-    "code": 4,
-    "version": "2.4",
-    "description": "\u0645\u062c\u0631\u0629 \u0627\u0644\u0631\u0648\u0627\u064a\u0627\u062a - \u0642\u0631\u0627\u0621\u0629 \u0627\u0644\u0631\u0648\u0627\u064a\u0627\u062a \u0627\u0644\u0645\u062a\u0631\u062c\u0645\u0629 \u0628\u062c\u0648\u062f\u0629 \u0639\u0627\u0644\u064a\u0629",
-    "nsfw": false,
-    "sourceDir": "main"
-  },
-  {
     "pkg": "ireader.genesisstudio.en",
     "apk": "ireader-en-genesisstudio-v2.1.apk",
     "name": "GenesisStudio",
@@ -560,6 +548,18 @@
     "code": 3,
     "version": "2.3",
     "description": "\u0631\u0648\u0627\u064a\u0627\u062a \u0641\u0627\u0646\u0632 - \u062a\u0631\u062c\u0645\u0629 \u0631\u0648\u0627\u064a\u0627\u062a \u0627\u0644\u0648\u064a\u0628",
+    "nsfw": false,
+    "sourceDir": "main"
+  },
+  {
+    "pkg": "ireader.riwyat.ar",
+    "apk": "ireader-ar-riwyat-v2.12.apk",
+    "name": "Riwyat",
+    "id": 3911602848528027929,
+    "lang": "ar",
+    "code": 12,
+    "version": "2.12",
+    "description": "",
     "nsfw": false,
     "sourceDir": "main"
   },
