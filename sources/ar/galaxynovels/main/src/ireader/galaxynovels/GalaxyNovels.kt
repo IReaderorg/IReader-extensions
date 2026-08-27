@@ -32,6 +32,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import tachiyomix.annotations.Extension
+import tachiyomix.annotations.AutoSourceId
 import tachiyomix.annotations.GenerateCommands
 import tachiyomix.annotations.GenerateFilters
 import tachiyomix.annotations.GenerateTests
@@ -59,10 +60,11 @@ import tachiyomix.annotations.TestFixture
 @GenerateFilters(title = true)
 @GenerateCommands(detailFetch = true, chapterFetch = true, contentFetch = true)
 @Extension
+@AutoSourceId(seed = "GalaxyNovels")
 abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps = deps) {
     override val lang: String get() = "ar"
     override val baseUrl: String get() = "https://galaxynovels.com"
-    override val id: Long get() = 5839019927924950627L
+    override val id: Long get() = GalaxyNovelsSourceId.ID
     override val name: String get() = "GalaxyNovels"
 
     override val client: HttpClient
