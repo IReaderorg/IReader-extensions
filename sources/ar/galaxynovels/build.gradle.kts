@@ -7,5 +7,6 @@ listOf("ar").map { lang ->
         description = "مجرة الروايات - قراءة الروايات المترجمة بجودة عالية",
         nsfw = false,
         icon = DEFAULT_ICON,
+        sourceId = 5839019927924950627L,
     )
 }.also(::register)
