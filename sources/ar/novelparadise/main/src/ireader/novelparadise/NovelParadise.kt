@@ -1,5 +1,6 @@
 package ireader.novelparadise
 
+import io.ktor.client.HttpClient
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import ireader.core.log.Log
@@ -26,11 +27,17 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     override val lang: String
         get() = "ar"
     override val baseUrl: String
-        get() = "https://novelsparadise.site"
+        get() = "https://www.novelsparadise.site"
     override val id: Long
         get() = 50
     override val name: String
         get() = "NovelParadise"
+
+    // The site is behind a Cloudflare managed challenge. Use the
+    // CF-aware client for all declarative fetchers (listings, search,
+    // details, chapters) — mirrors GalaxyNovels.
+    override val client: HttpClient
+        get() = deps.httpClients.cloudflareClient
 
     override fun getFilters(): FilterList = listOf(
         Filter.Title()
