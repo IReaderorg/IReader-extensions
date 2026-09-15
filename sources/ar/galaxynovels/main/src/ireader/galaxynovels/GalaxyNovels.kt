@@ -281,7 +281,11 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
             // Cloudflare managed challenge that cannot be bypassed from the app and
             // would crash the source, so we avoid it entirely.
             val chaptersUrl = "$baseUrl/wp-content/uploads/wor-reader-cache/chapters/novel-$novelId.json"
-            val response = deps.httpClients.default.get(requestBuilder(chaptersUrl))
+            // The chapter JSON lives on the same Cloudflare-protected origin as the rest of
+            // the site. Use the CF-aware client (WebView on device) so the managed challenge
+            // is actually solved — default.get() returns the 403 "Just a moment" page and the
+            // source appears to have no chapters.
+            val response = client.get(requestBuilder(chaptersUrl))
             val body = response.bodyAsText()
             parseChaptersFromJson(body)
         } catch (e: Exception) {
