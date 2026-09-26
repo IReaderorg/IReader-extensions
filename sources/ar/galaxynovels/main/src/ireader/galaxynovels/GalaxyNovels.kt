@@ -27,7 +27,7 @@ import ireader.core.source.model.Page
 import ireader.core.source.model.Text
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.int
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -91,6 +91,24 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
 
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
+            // Search must be registered as Type.Search so the app's search flow
+            // (getMangaList(filters)) routes through this fetcher instead of
+            // returning an empty page. Endpoint uses {query} placeholder.
+            BaseExploreFetcher(
+                "بحث",
+                endpoint = "/library/?q={query}",
+                selector = "article.wor-library-card",
+                nameSelector = "h2.wor-library-card__title > a",
+                nameAtt = "",
+                coverSelector = "a.wor-library-card__cover > img",
+                coverAtt = "data-src",
+                linkSelector = "h2.wor-library-card__title > a",
+                linkAtt = "href",
+                addBaseUrlToLink = true,
+                addBaseurlToCoverLink = false,
+                type = Type.Search,
+                onQuery = { query -> java.net.URLEncoder.encode(query.trim(), "UTF-8") },
+            ),
             BaseExploreFetcher(
                 "أضيف حديثا",
                 endpoint = "/recent/?recent_page={page}",
@@ -162,7 +180,9 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
 
     override val contentFetcher: Content
         get() = SourceFactory.Content(
-            pageContentSelector = ".wor-reading-page__content p",
+            // The theme renamed the text container to .wor-reader-text-surface; the old
+            // .wor-reading-page__content no longer exists, so chapter text came back empty.
+            pageContentSelector = ".wor-reader-text-surface p, .wor-reading-page__content p",
         )
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
@@ -206,18 +226,30 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         }
     }
 
+    // The homepage's "أحدث الفصول" showcase renders 50 `article.wor-latest-item` cards,
+    // each with up to 6 recent chapter links (a.wor-latest-chapter).
+    //
+    // The theme renamed the inner blocks: the title now sits in
+    // .wor-latest-item__body > h3.wor-latest-card__title (the old .wor-latest-item__top
+    // and .wor-latest-item__title no longer exist), which is why this listing came back
+    // empty. Both namings are accepted so a theme rollback keeps working.
     private suspend fun getLatestChapters(): MangasPageInfo {
         return try {
             val doc = client.get(requestBuilder("$baseUrl/")).asJsoup()
             val novels = doc.select("article.wor-latest-item").mapNotNull { item ->
-                val titleEl = item.selectFirst(".wor-latest-item__top h3 > a") ?: return@mapNotNull null
+                val titleEl = item.selectFirst(
+                    ".wor-latest-item__body h3 > a, .wor-latest-item__top h3 > a, h3 > a"
+                ) ?: return@mapNotNull null
                 val title = titleEl.text().trim()
                 val href = titleEl.attr("href")
                 if (title.isBlank() || href.isBlank()) return@mapNotNull null
 
-                val cover = item.selectFirst("a.wor-latest-item__cover > img")?.attr("src") ?: ""
+                val img = item.selectFirst("a.wor-latest-item__cover > img, a.wor-latest-card__cover > img")
+                // Covers are lazy-loaded: src is a base64 SVG placeholder, data-src is real.
+                val cover = img?.let { it.attr("data-src").ifBlank { it.attr("src") } }.orEmpty()
                 MangaInfo(key = href, title = title, cover = cover)
             }
+            Log.info { "GalaxyNovels: latest-chapters listing parsed ${novels.size} novels" }
             MangasPageInfo(novels, false)
         } catch (e: Exception) {
             Log.error { "Error fetching latest chapters: ${e.message}" }
@@ -238,24 +270,18 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
 
     private suspend fun search(query: String): MangasPageInfo {
         return try {
-            val response = client.get(requestBuilder("$baseUrl/library/?q=$query"))
+            // Arabic text in a raw query string breaks the server (HTTP 400).
+            // Encode so any character (Arabic, spaces, UTF-8) round-trips.
+            val encoded = java.net.URLEncoder.encode(query.trim(), "UTF-8")
+            // /library/?q= is NOT behind the Cloudflare managed challenge (curl
+            // reaches it: HTTP 200) — use the plain client so search stays fast and
+            // never spins up a WebView.
+            val response = deps.httpClients.default.get(requestBuilder("$baseUrl/library/?q=$encoded"))
             val body = response.bodyAsText()
             val doc = Ksoup.parse(body)
 
             val mangaList = doc.select("article.wor-library-card, article.wor-novel-card").mapNotNull { card ->
-                val titleEl = card.selectFirst("h2.wor-library-card__title > a, h3 > a") ?: return@mapNotNull null
-                val title = titleEl.text().trim()
-                val href = titleEl.attr("href")
-                if (title.isBlank() || href.isBlank()) return@mapNotNull null
-
-                val coverImg = card.selectFirst("a.wor-library-card__cover > img, a.wor-novel-card__cover > img")
-                val cover = coverImg?.attr("src") ?: ""
-
-                MangaInfo(
-                    key = href,
-                    title = title,
-                    cover = cover
-                )
+                parseSearchCard(card)
             }
 
             MangasPageInfo(mangaList, mangaList.isNotEmpty())
@@ -265,63 +291,118 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         }
     }
 
+    // wor-library-card: <article data-wor-library-novel-id="140126">
+    //   <h2 class="wor-library-card__title"><a href=..>title</a></h2>
+    //   <a class="wor-library-card__cover"><img data-src=..></a>
+    private fun parseSearchCard(card: Element): MangaInfo? {
+        val titleEl = card.selectFirst("h2.wor-library-card__title > a, h3 > a") ?: return null
+        val title = titleEl.text().trim()
+        val href = titleEl.attr("href").ifBlank { titleEl.absUrl("href") }
+        if (title.isBlank() || href.isBlank()) return null
+
+        val cover = card.selectFirst("a.wor-library-card__cover > img, a.wor-novel-card__cover > img")
+            ?.let { img -> img.attr("data-src").ifBlank { img.attr("src") } } ?: ""
+        return MangaInfo(key = href, title = title, cover = cover)
+    }
+
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let { cmd ->
             if (cmd.html.isNotBlank()) return parseChaptersFromHtml(cmd.html)
         }
 
-        val novelId = fetchNovelId(manga.key)
-        if (novelId.isNullOrBlank()) {
-            Log.error { "Unable to resolve novel id for ${manga.key}" }
+        // The Wor theme's REST route is the only chapter source that returns the
+        // *complete* list:
+        //   GET /wp-json/wor-reader/v1/offline/novels/{id}
+        //   → {"schema":4,"chapters_count":3188,"public_only":true,
+        //      "chapters":[{id,position,label,title,url,published_at,access},...]}
+        // Verified 2026-09: 140126 → 768, 111763 → 3188 chapters, all access:"public".
+        //
+        // The novel page itself only renders the first ~180 chapters, and the legacy
+        // /wp-json/wor/read/v1/... route 404s — so the offline REST pack is the
+        // authoritative list, not the page scrape.
+        //
+        // Note this route needs no Cloudflare solve (plain JSON, HTTP 200 for any UA),
+        // so the cheap default client is used and no WebView is ever spun up.
+        val novelId = fetchNovelId(manga.key) ?: run {
+            Log.error { "GalaxyNovels: unable to resolve novel id for ${manga.key}" }
             return emptyList()
         }
 
+        val chaptersUrl = "$baseUrl/wp-json/wor-reader/v1/offline/novels/$novelId"
         return try {
-            // Use the static reader cache JSON. The /wp-json REST API is behind a
-            // Cloudflare managed challenge that cannot be bypassed from the app and
-            // would crash the source, so we avoid it entirely.
-            val chaptersUrl = "$baseUrl/wp-content/uploads/wor-reader-cache/chapters/novel-$novelId.json"
-            val response = deps.httpClients.default.get(requestBuilder(chaptersUrl))
-            val body = response.bodyAsText()
-            parseChaptersFromJson(body)
+            Log.info { "GalaxyNovels: GET $chaptersUrl" }
+            val body = deps.httpClients.default.get(requestBuilder(chaptersUrl)).bodyAsText()
+            if (body.isBlank()) {
+                Log.error { "GalaxyNovels: empty body from $chaptersUrl" }
+                return emptyList()
+            }
+            val chapters = parseChaptersFromOfflineApi(body)
+            Log.info { "GalaxyNovels: parsed ${chapters.size} chapters for novel $novelId" }
+            chapters
         } catch (e: Exception) {
-            Log.error { "Error fetching chapters: ${e.message}" }
+            Log.error { "Error fetching chapters for $novelId: ${e.message}" }
             emptyList()
         }
     }
 
     private suspend fun fetchNovelId(novelUrl: String): String? {
+        // The slug is the last path segment of /novel/{slug}/; strip the query/fragment
+        // too so keys captured from listing links (which may carry ?sort=…) still match.
+        val slug = novelUrl.substringBefore('?').substringBefore('#')
+            .trimEnd('/').substringAfterLast('/')
+        if (slug.isBlank()) return null
+
+        // Fastest & most reliable: the /library/ search index is a plain JSON cache
+        // (no CF challenge) mapping slug → numeric id, covering every novel in the
+        // public library. The novel page itself is CF-challenged for plain requests.
         try {
-            val doc = Ksoup.parse(deps.httpClients.default.get(requestBuilder(novelUrl)).bodyAsText())
-            doc.selectFirst("article[data-novel-id]")?.attr("data-novel-id")?.let { return it }
+            val manifest = Json.parseToJsonElement(
+                deps.httpClients.default
+                    .get(requestBuilder("$baseUrl/wp-content/uploads/wor-reader-cache/search/manifest.json"))
+                    .bodyAsText()
+            ).jsonObject
+            val indexUrl = manifest["index"]?.jsonPrimitive?.contentOrNull
+            val resolved = if (indexUrl.isNullOrBlank()) null else {
+                if (indexUrl.startsWith("http")) indexUrl else "$baseUrl$indexUrl"
+            }
+            if (resolved != null) {
+                val index = Json.parseToJsonElement(
+                    deps.httpClients.default.get(requestBuilder(resolved)).bodyAsText()
+                ).jsonObject
+                val found = index["items"]?.jsonArray?.firstOrNull { item ->
+                    item.jsonObject["u"]?.jsonPrimitive?.contentOrNull
+                        ?.trimEnd('/')?.substringAfterLast('/') == slug
+                }?.jsonObject?.get("id")?.jsonPrimitive?.intOrNull
+                if (found != null) {
+                    Log.info { "GalaxyNovels: novel id $found resolved from search index for $slug" }
+                    return found.toString()
+                }
+            }
+        } catch (e: Exception) {
+            Log.error { "Error resolving novel id from search index: ${e.message}" }
+        }
+
+        // Second: the novel page carries data-novel-id, but a plain GET is answered with
+        // a Cloudflare 403, so this must go through the Cloudflare-aware client.
+        try {
+            val doc = Ksoup.parse(client.get(requestBuilder(novelUrl)).bodyAsText())
+            doc.selectFirst("[data-novel-id]")?.attr("data-novel-id")
+                ?.takeIf { it.isNotBlank() }
+                ?.let { return it }
         } catch (e: Exception) {
             Log.error { "Error fetching novel page: ${e.message}" }
         }
 
-        try {
-            val manifestResponse = deps.httpClients.default.get(requestBuilder("$baseUrl/wp-content/uploads/wor-reader-cache/search/manifest.json"))
-            val manifest = Json.parseToJsonElement(manifestResponse.bodyAsText()).jsonObject
-            val indexUrl = manifest["index"]?.jsonPrimitive?.contentOrNull ?: return null
-            val resolvedIndexUrl = if (indexUrl.startsWith("http")) indexUrl else "$baseUrl$indexUrl"
-            val indexResponse = deps.httpClients.default.get(requestBuilder(resolvedIndexUrl))
-            val index = Json.parseToJsonElement(indexResponse.bodyAsText()).jsonObject
-            val path = novelUrl.removePrefix(baseUrl).trimEnd('/')
-            return index["items"]?.jsonArray?.firstOrNull { item ->
-                item.jsonObject["u"]?.jsonPrimitive?.contentOrNull?.trimEnd('/') == path
-            }?.jsonObject?.get("id")?.jsonPrimitive?.int?.toString()
-        } catch (e: Exception) {
-            Log.error { "Error resolving novel id from search manifest: ${e.message}" }
-        }
-
+        // Last resort: a headless WebView that renders JS and solves the challenge.
         return try {
             val browserResult = deps.httpClients.browser.fetch(
                 url = novelUrl,
-                selector = "article[data-novel-id]",
-                timeout = 50000
+                selector = "[data-novel-id]",
+                timeout = 30000
             )
             if (browserResult.isSuccess && browserResult.responseBody.isNotBlank()) {
-                val doc = Ksoup.parse(browserResult.responseBody)
-                doc.selectFirst("article[data-novel-id]")?.attr("data-novel-id")
+                Ksoup.parse(browserResult.responseBody)
+                    .selectFirst("[data-novel-id]")?.attr("data-novel-id")
             } else {
                 null
             }
@@ -331,25 +412,45 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         }
     }
 
-    private fun parseChaptersFromJson(jsonStr: String): List<ChapterInfo> {
+    // GET /wp-json/wor-reader/v1/offline/novels/{id}
+    //   {"schema":4,"chapters_count":3184,"public_only":true,
+    //    "chapters":[{"id":114442,"position":1,"order":"1.000000","number":"1",
+    //                 "label":"الفصل 1","title":"يبدأ الكابوس",
+    //                 "url":"https://galaxynovels.com/novel/shadow-slave/chapter-1/.../",
+    //                 "published_at":"2026-06-14T17:35:58+00:00","access":"public"}, ...]}
+    // position/order are 1-based ascending in the raw array; the app sorts newest-first.
+    private fun parseChaptersFromOfflineApi(jsonStr: String): List<ChapterInfo> {
         return try {
             val json = Json.parseToJsonElement(jsonStr).jsonObject
             val chapters = json["chapters"]?.jsonArray ?: return emptyList()
 
-            chapters.mapNotNull { ch ->
+            chapters.mapIndexedNotNull { index, ch ->
                 val obj = ch.jsonObject
-                val position = obj["position"]?.jsonPrimitive?.int ?: 0
+                val url = obj["url"]?.jsonPrimitive?.contentOrNull ?: ""
+                if (url.isBlank()) return@mapIndexedNotNull null
+
+                // VIP/private chapters never render without a paid membership.
+                if (obj["access"]?.jsonPrimitive?.contentOrNull != "public") {
+                    return@mapIndexedNotNull null
+                }
+
+                // `position` is the reliable 1-based index. `order`/`number` are decimal
+                // *strings* in this payload, so they must be read as text, not JSON ints —
+                // reading them as ints throws and used to empty the whole chapter list.
+                val position = obj["position"]?.jsonPrimitive?.intOrNull
+                    ?: obj["order"]?.jsonPrimitive?.contentOrNull?.toFloatOrNull()?.toInt()
+                    ?: obj["number"]?.jsonPrimitive?.contentOrNull?.toFloatOrNull()?.toInt()
+                    ?: (index + 1)
+
                 val label = obj["label"]?.jsonPrimitive?.contentOrNull ?: ""
                 val title = obj["title"]?.jsonPrimitive?.contentOrNull ?: ""
-                val url = obj["url"]?.jsonPrimitive?.contentOrNull ?: ""
-                val dateIso = obj["date_iso"]?.jsonPrimitive?.contentOrNull ?: ""
+                val dateIso = obj["published_at"]?.jsonPrimitive?.contentOrNull ?: ""
 
-                if (url.isBlank()) return@mapNotNull null
-
-                val chapterName = if (title.isNotBlank()) {
-                    "$label : $title"
-                } else {
-                    label.ifBlank { "الفصل $position" }
+                val chapterName = when {
+                    label.isNotBlank() && title.isNotBlank() -> "$label : $title"
+                    title.isNotBlank() -> title
+                    label.isNotBlank() -> label
+                    else -> "الفصل $position"
                 }
 
                 ChapterInfo(
@@ -361,7 +462,7 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
                 )
             }.sortedBy { it.number }
         } catch (e: Exception) {
-            Log.error { "Error parsing chapters JSON: ${e.message}" }
+            Log.error { "Error parsing offline-api chapters: ${e.message}" }
             emptyList()
         }
     }
@@ -415,7 +516,7 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         return try {
             val browserResult = deps.httpClients.browser.fetch(
                 url = url,
-                selector = ".wor-reading-page__content p",
+                selector = ".wor-reader-text-surface p, .wor-reading-page__content p",
                 timeout = 50000
             )
             if (browserResult.isSuccess && browserResult.responseBody.isNotBlank()) {
@@ -432,7 +533,11 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
     private fun parseContentFromHtml(html: String): List<Page> {
         val doc = Ksoup.parse(html)
 
-        val content = doc.selectFirst(".wor-reading-page__content") ?: doc.selectFirst("#content")
+        // Keep both: the current Wor container and the pre-rename one, in case the
+        // theme is rolled back.
+        val content = doc.selectFirst(".wor-reader-text-surface")
+            ?: doc.selectFirst(".wor-reading-page__content")
+            ?: doc.selectFirst("[itemprop='text']")
             ?: return emptyList()
 
         val paragraphs = content.select("p")
