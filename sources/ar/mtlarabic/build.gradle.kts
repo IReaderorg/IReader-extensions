@@ -1,7 +1,7 @@
 listOf("ar").map { lang ->
     Extension(
         name = "MtlArabic",
-        versionCode = 2,
+        versionCode = 1,
         libVersion = "2",
         lang = lang,
         description = "مكتبة الخيال - روايات عربية مترجمة",
