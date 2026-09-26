@@ -226,18 +226,30 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
         }
     }
 
+    // The homepage's "أحدث الفصول" showcase renders 50 `article.wor-latest-item` cards,
+    // each with up to 6 recent chapter links (a.wor-latest-chapter).
+    //
+    // The theme renamed the inner blocks: the title now sits in
+    // .wor-latest-item__body > h3.wor-latest-card__title (the old .wor-latest-item__top
+    // and .wor-latest-item__title no longer exist), which is why this listing came back
+    // empty. Both namings are accepted so a theme rollback keeps working.
     private suspend fun getLatestChapters(): MangasPageInfo {
         return try {
             val doc = client.get(requestBuilder("$baseUrl/")).asJsoup()
             val novels = doc.select("article.wor-latest-item").mapNotNull { item ->
-                val titleEl = item.selectFirst(".wor-latest-item__top h3 > a") ?: return@mapNotNull null
+                val titleEl = item.selectFirst(
+                    ".wor-latest-item__body h3 > a, .wor-latest-item__top h3 > a, h3 > a"
+                ) ?: return@mapNotNull null
                 val title = titleEl.text().trim()
                 val href = titleEl.attr("href")
                 if (title.isBlank() || href.isBlank()) return@mapNotNull null
 
-                val cover = item.selectFirst("a.wor-latest-item__cover > img")?.attr("src") ?: ""
+                val img = item.selectFirst("a.wor-latest-item__cover > img, a.wor-latest-card__cover > img")
+                // Covers are lazy-loaded: src is a base64 SVG placeholder, data-src is real.
+                val cover = img?.let { it.attr("data-src").ifBlank { it.attr("src") } }.orEmpty()
                 MangaInfo(key = href, title = title, cover = cover)
             }
+            Log.info { "GalaxyNovels: latest-chapters listing parsed ${novels.size} novels" }
             MangasPageInfo(novels, false)
         } catch (e: Exception) {
             Log.error { "Error fetching latest chapters: ${e.message}" }

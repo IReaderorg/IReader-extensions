@@ -134,6 +134,10 @@ class SourceIndexProcessor(
         // Try to extract info from the class properties
         val className = extension.simpleName.asString()
         val packageName = extension.packageName.asString()
+        // KSP args carry the authoritative metadata (name/lang/id) for plain @Extension
+        // sources; the class-property extractors below cannot evaluate property
+        // initializers, so they would otherwise fall back to lang="en" and a generated id.
+        val variant = getVariantName()
 
         // Check if source is marked as skipped
         val skipInfo = isSkippedSource(extension)
@@ -168,9 +172,11 @@ class SourceIndexProcessor(
             it.simpleName.asString() to it
         }
 
-        val name = extractStringProperty(properties["name"]) ?: className
-        val id = extractLongProperty(properties["id"]) ?: generateId(className, packageName)
-        val lang = extractStringProperty(properties["lang"]) ?: "en"
+        val name = options["${variant}_name"] ?: extractStringProperty(properties["name"]) ?: className
+        val id = options["${variant}_id"]?.toLongOrNull()
+            ?: extractLongProperty(properties["id"])
+            ?: generateId(className, packageName)
+        val lang = options["${variant}_lang"] ?: extractStringProperty(properties["lang"]) ?: "en"
         val baseUrl = extractStringProperty(properties["baseUrl"]) ?: ""
 
         sources.add(SourceInfo(
@@ -330,6 +336,17 @@ class SourceIndexProcessor(
         } catch (e: Exception) {
             logger.warn("Could not generate skipped-sources.json: ${e.message}")
         }
+    }
+
+    // Mirrors SourceIdProcessor.getBuildDir/getVariant in intent: pick the per-flavor
+    // metadata args the build plugin passes (ar_name / ar_lang / ar_id). Each individual
+    // source module registers exactly one flavor's KSP args, so the single option key
+    // ending in "_lang" identifies that flavor's prefix. This avoids parsing the
+    // generated-file path, which varies by OS (backslashes on Windows break "/ksp/"
+    // extraction) and may be empty at collect time.
+    private fun getVariantName(): String {
+        val key = options.keys.firstOrNull { it.endsWith("_lang") } ?: return ""
+        return key.removeSuffix("_lang")
     }
 
     private fun extractStringProperty(property: com.google.devtools.ksp.symbol.KSPropertyDeclaration?): String? {
