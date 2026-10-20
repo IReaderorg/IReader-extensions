@@ -25,10 +25,10 @@ done < <(grep -rl "enableJs\s*=\s*true" sources/ 2>/dev/null)
 
 [ -z "$KSP_TASKS" ] && { echo "No JS-enabled sources found"; exit 1; }
 
-./gradlew $KSP_TASKS --parallel --console=plain || exit 1
+./gradlew $KSP_TASKS --parallel --no-configure-on-demand --console=plain || exit 1
 
 # 2. Bundle + index.
-./gradlew :js-sources:jsBrowserProductionWebpack :js-sources:createSourceIndex --parallel --console=plain || exit 1
+./gradlew :js-sources:jsBrowserProductionWebpack :js-sources:createSourceIndex --parallel --no-configure-on-demand --console=plain || exit 1
 
 echo "--- js-dist ---"
 ls -la js-sources/build/js-dist/
