@@ -13,6 +13,15 @@ config.output.publicPath = '';
 config.optimization = config.optimization || {};
 config.optimization.splitChunks = false;
 
+// Force all code into a single bundle (no 731.js or secondary chunks)
+const webpack = require('webpack');
+config.plugins = config.plugins || [];
+config.plugins.push(
+    new webpack.optimize.LimitChunkCountPlugin({
+        maxChunks: 1
+    })
+);
+
 // Global variable name when loaded in browser
 config.output.library = 'IReaderSources';
 

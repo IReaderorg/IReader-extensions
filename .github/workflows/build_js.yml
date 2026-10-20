@@ -100,10 +100,13 @@ jobs:
           # Create js directory in repo
           mkdir -p repo/js
           
-          # Copy JS bundle
+          # Clean up any obsolete split chunks
+          rm -f repo/js/731.js repo/js/731.js.map
+          
+          # Copy self-contained JS bundle
           if [ -d "js-sources/build/kotlin-webpack/js/productionExecutable" ]; then
-            cp js-sources/build/kotlin-webpack/js/productionExecutable/*.js repo/js/ 2>/dev/null || true
-            cp js-sources/build/kotlin-webpack/js/productionExecutable/*.js.map repo/js/ 2>/dev/null || true
+            cp js-sources/build/kotlin-webpack/js/productionExecutable/sources-bundle.js repo/js/ 2>/dev/null || true
+            cp js-sources/build/kotlin-webpack/js/productionExecutable/sources-bundle.js.map repo/js/ 2>/dev/null || true
           fi
           
           # Copy JS index files (js-index.json and js-index.min.json)
