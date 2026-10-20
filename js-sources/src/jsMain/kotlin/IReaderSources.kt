@@ -33,7 +33,6 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import com.fleeksoft.ksoup.Ksoup
-import com.fleeksoft.ksoup.nodes.Document
 import kotlin.js.ExperimentalJsExport
 import kotlin.js.JsExport
 import kotlin.js.JsName
@@ -130,21 +129,28 @@ fun getHttpClient(): HttpClient = sharedHttpClient
 
 /**
  * Parse HTML string using Ksoup.
- * Exported for use by iOS/Web runtime.
+ *
+ * Returns the parsed document as HTML text rather than a Ksoup [Document].
+ *
+ * Ksoup types cannot be returned across the JS boundary: the `io.github.ireaderorg`
+ * fork does not ship the platform-agnostic `@KmpJsExport` annotation that upstream
+ * added in fleeksoft/ksoup#124, so exporting a ksoup type here fails to compile /
+ * link on the JS target. Callers that need DOM access should parse the returned HTML
+ * themselves.
  */
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("parseHtml")
-fun parseHtml(html: String): Document = Ksoup.parse(html)
+fun parseHtml(html: String): String = Ksoup.parse(html).html()
 
 /**
- * Parse HTML from URL using Ksoup.
- * Exported for use by iOS/Web runtime.
+ * Parse HTML with a base URL, returning the normalized document HTML.
+ * See [parseHtml] for why a String crosses the JS boundary instead of a Document.
  */
 @OptIn(ExperimentalJsExport::class)
 @JsExport
 @JsName("parseHtmlFromUrl")
-fun parseHtmlFromUrl(html: String, baseUrl: String): Document = Ksoup.parse(html, baseUrl)
+fun parseHtmlFromUrl(html: String, baseUrl: String): String = Ksoup.parse(html, baseUrl).html()
 
 /**
  * Main entry point - called when bundle is loaded.

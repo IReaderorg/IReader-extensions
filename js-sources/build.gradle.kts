@@ -47,8 +47,15 @@ data class JsSourceConfig(
     val nsfw: Boolean = false,
     val sourceId: Long = 0,
     val pkg: String = "",
-    val assetsDir: String = ""
-)
+    val assetsDir: String = "",
+    // Capitalised flavour name used in Gradle task names: "en" -> "kspEnReleaseKotlin".
+    val flavorPrefix: String = ""
+) {
+    // Same rule the KSP task names use, for multisrc (sourceDir != main) it is
+    // "<sourceDir>-<lang>".
+    val flavorTaskName: String
+        get() = flavorPrefix.replaceFirstChar { it.uppercase() }
+}
 
 fun discoverJsSources(): List<JsSourceConfig> {
     if (isAndroidCiBuild) return emptyList()
@@ -105,6 +112,7 @@ fun parseExtensionConfig(buildFile: File, lang: String, sourceName: String, type
         projectPath = projectPath,
         sourceDir = "../$baseDir/$sourceSubDir/src",
         generatedDir = "../$baseDir/build/generated/ksp/${lang}Release/kotlin",
+        flavorPrefix = lang,
         versionCode = versionCode,
         versionName = "$libVersion.$versionCode",
         description = description,
@@ -144,6 +152,7 @@ fun parseMultisrcExtensionConfigs(buildFile: File, themeName: String): List<JsSo
             projectPath = ":extensions:multisrc:$themeName",
             sourceDir = "../sources/multisrc/$themeName/$sourceDir/src",
             generatedDir = "../sources/multisrc/$themeName/build/generated/ksp/${flavor}Release/kotlin",
+            flavorPrefix = flavor,
             versionCode = versionCode,
             versionName = "$libVersion.$versionCode",
             description = description,
@@ -258,14 +267,23 @@ kotlin {
     }
 }
 
+// These copy KSP output out of each source project's build dir. The producer is a
+// task in *another* project, so Gradle cannot infer the ordering: without an explicit
+// dependsOn it flags the path as an undeclared dependency and the copy can race the
+// KSP run. build_js.yml sidesteps this by invoking KSP in a separate Gradle call
+// first; a single `assembleRelease repo` hits it directly.
+val jsKspTaskPaths = jsSources.map { "${it.projectPath}:ksp${it.flavorTaskName}ReleaseKotlin" }
+
 val copyKspGeneratedFiles by tasks.registering(Copy::class) {
     group = "js"
+    dependsOn(jsKspTaskPaths)
     jsSources.forEach { from(it.generatedDir) { include("**/js/**/*.kt"); exclude("**/Extension.kt") } }
     into(layout.buildDirectory.dir("ksp-js-sources"))
 }
 
 val copyJsRegistrationFiles by tasks.registering(Copy::class) {
     group = "js"
+    dependsOn(jsKspTaskPaths)
     jsSources.forEach {
         from(file("${it.generatedDir}/../resources/js-only")) { include("**/*.kt.txt"); rename { n -> n.removeSuffix(".txt") } }
     }

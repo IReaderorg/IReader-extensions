@@ -1,11 +1,12 @@
 [versions]
-ireader = "1.5.1"
+ireader = "1.5.3"
 ktor = "3.3.2"
 ktlint = "0.45.1"
-kotlin = "2.2.21"
+kotlin = "2.4.20"
 serialization = "1.9.0"
-ksp = "2.3.2"
-serializationkotlinVersion = "1.7.10"
+ksp = "2.3.6"
+# kotlinx-serialization build compatible with the Kotlin embedded in Gradle 8.13 (2.0.21).
+serializationkotlinVersion = "1.7.3"
 junitAndroidExtVersion = "1.1.4-alpha03"
 dex2jar = "2.4.33"
 ksoup = "0.2.6"
@@ -32,10 +33,16 @@ kotlinpoet = "com.squareup:kotlinpoet-ksp:2.2.0"
 ireader-core = { module = "io.github.ireaderorg:source-api", version.ref = "ireader" }
 
 # Ksoup (KMP HTML parser - replaces Jsoup)
-# IMPORTANT: Must use ireaderorg fork to match the main IReader app
-# The original com.fleeksoft.ksoup has API incompatibilities (e.g., parent() return type)
-ksoup = { module = "io.github.ireaderorg:ksoup", version.ref = "ksoup" }
-ksoup-network = { module = "io.github.ireaderorg:ksoup-network", version.ref = "ksoup" }
+# Upstream, matching the main IReader app. See IReader's catalog comment for why the
+# io.github.ireaderorg fork was dropped (it is upstream 0.2.5 + @JsExport; upstream
+# 0.2.6 has KmpJsExport plus real parser fixes). Same package name either way.
+#
+# NOTE: io.github.ireaderorg:source-api still declares io.github.ireaderorg:ksoup
+# transitively (verified in source-api-1.5.1.module). Both artifacts use the
+# com.fleeksoft.ksoup package, so the fork must be redirected/excluded or the two
+# collide on the classpath -- see settings.gradle.kts.
+ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
+ksoup-network = { module = "com.fleeksoft.ksoup:ksoup-network", version.ref = "ksoup" }
 
 # KotlinX DateTime (KMP date/time)
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
@@ -51,6 +58,11 @@ ksp-gradle = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin
 # Serialization
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 serialization-gradle = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+# Same library, for buildSrc only. buildSrc is compiled by the `kotlin-dsl` plugin with
+# Gradle's embedded Kotlin, which is older than the project's Kotlin and rejects the
+# 2.2.0 metadata shipped by kotlinx-serialization 1.9.0. Keep this in step with the
+# embedded Kotlin bundled with the Gradle version in gradle/wrapper.
+serialization-json-buildsrc = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serializationkotlinVersion" }
 
 # Testing
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

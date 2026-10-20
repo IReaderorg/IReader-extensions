@@ -9,6 +9,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DuplicatesStrategy
@@ -57,6 +59,13 @@ open class RepoTask : DefaultTask() {
 
     @TaskAction
     fun generate() {
+        // Captured here rather than read from `project` below: Task.project is not
+        // allowed at execution time under the configuration cache, and RepoTask
+        // touches it in many helpers. Reading it once in the action is still a
+        // configuration-cache problem, but a single one instead of 700, and keeps
+        // the task usable until the properties are properly captured at
+        // configuration time.
+        val project = project
         val repoDir = File(project.buildDir, "repo")
         val apkDir = File(repoDir, "apk")
         val iconDir = File(repoDir, "icon")
@@ -107,18 +116,22 @@ open class RepoTask : DefaultTask() {
         if (webpackDir.exists()) {
             print("Copying JS sources from js-sources module (webpack bundle)...\n")
 
-            // Parse js-sources index.json to get source info
-            val indexFile = File(jsSourcesDistDir, "index.json")
-            if (indexFile.exists()) {
+            // Parse the js-sources index (written by :js-sources:createSourceIndex).
+            // The module emits js-index.json / js-index.min.json as a flat array; the
+            // older index.json shape is still accepted for backwards compatibility.
+            val indexFile = listOf("js-index.json", "js-index.min.json", "index.json")
+                .map { File(jsSourcesDistDir, it) }
+                .firstOrNull { it.exists() }
+            if (indexFile != null) {
                 try {
-                    val indexJson = Json.decodeFromString<JsIndex>(indexFile.readText())
+                    val indexJson = parseJsIndex(indexFile.readText())
 
                     // Copy the single webpack bundle (contains ALL sources)
                     val bundleFile = File(webpackDir, "sources-bundle.js")
                     if (bundleFile.exists()) {
                         val destFile = File(jsDir, "sources-bundle.js")
                         bundleFile.copyTo(destFile, overwrite = true)
-                        print("  - ${destFile.name} (${destFile.length() / 1024}KB) - contains ${indexJson.sources.size} source(s)\n")
+                        print("  - ${destFile.name} (${destFile.length() / 1024}KB) - contains ${indexJson.size} source(s)\n")
 
                         // Copy source map
                         val mapFile = File(webpackDir, "sources-bundle.js.map")
@@ -127,14 +140,8 @@ open class RepoTask : DefaultTask() {
                         }
 
                         // Add each source to the index (all use the same bundle file)
-                        indexJson.sources.forEach { source ->
-                            jsSources.add(JsSourceInfo(
-                                id = source.id,
-                                name = source.name,
-                                lang = source.lang,
-                                file = "sources-bundle.js",  // All sources share the same bundle
-                                initFunction = source.initFunction
-                            ))
+                        indexJson.forEach { source ->
+                            jsSources.add(source.copy(file = "sources-bundle.js"))
                             print("    - ${source.name} (${source.lang}) -> ${source.initFunction}()\n")
                         }
                     }
@@ -142,10 +149,12 @@ open class RepoTask : DefaultTask() {
                     print("Warning: Could not parse js-sources index.json: ${e.message}\n")
                 }
             } else {
-                // Fallback: just copy the bundle file
+                // Fallback: copy the bundle even when the index is missing, keeping the
+                // canonical name so the deployed js/ directory stays consistent.
+                print("Warning: js-sources index not found in ${jsSourcesDistDir.absolutePath}\n")
                 val bundleFile = File(webpackDir, "sources-bundle.js")
                 if (bundleFile.exists()) {
-                    val destFile = File(jsDir, "sources.js")
+                    val destFile = File(jsDir, "sources-bundle.js")
                     bundleFile.copyTo(destFile, overwrite = true)
                     print("  - ${destFile.name} (${destFile.length() / 1024}KB)\n")
                 }
@@ -348,6 +357,10 @@ open class RepoTask : DefaultTask() {
 
     private fun generateRepo(repoDir: File, badgings: List<Badging>, jsSources: List<JsSourceInfo>) {
         val sortedBadgings = badgings.sortedBy { it.pkg }
+        // The JS index lives under js/ (next to the bundle), not at the repo root.
+        // build_js.yml deploys js-dist/* into repov2/js/, and IReader's
+        // CatalogGithubApi rewrites .../index.min.json -> .../js/js-index.min.json.
+        val jsDir = File(repoDir, "js").apply { mkdirs() }
 
         // Generate index.min.json as a flat array for backward compatibility with merge script
         // The merge script expects: [{"pkg":...}, {"pkg":...}]
@@ -359,15 +372,29 @@ open class RepoTask : DefaultTask() {
             it.write(prettyJson.encodeToString(sortedBadgings))
         }
 
-        // Generate separate JS index if there are JS sources
+        // Generate separate JS index if there are JS sources.
+        // Shape matches what the iOS runtime consumes: a flat array of source entries.
         if (jsSources.isNotEmpty()) {
-            val jsIndex = JsIndex(
-                version = 1,
-                note = "JS sources require runtime.js from the main IReader app",
-                sources = jsSources.map { JsIndexSource(it.id, it.name, it.lang, it.file, it.initFunction) }
-            )
-            File(repoDir, "js-index.json").writer().use {
-                it.write(prettyJson.encodeToString(jsIndex))
+            val repoJsSources = jsSources.map { source ->
+                RepoJsSource(
+                    pkg = source.pkg ?: source.id,
+                    name = source.name,
+                    id = source.sourceId ?: 0L,
+                    lang = source.lang,
+                    code = source.code,
+                    version = source.version,
+                    description = source.description,
+                    nsfw = source.nsfw,
+                    file = source.file,
+                    initFunction = source.initFunction,
+                    iconUrl = source.iconUrl
+                )
+            }
+            File(jsDir, "js-index.json").writer().use {
+                it.write(prettyJson.encodeToString(repoJsSources))
+            }
+            File(jsDir, "js-index.min.json").writer().use {
+                it.write(Json.encodeToString(repoJsSources))
             }
         }
 
@@ -594,15 +621,88 @@ open class RepoTask : DefaultTask() {
         val assetsDir: String? = null,
     )
 
-    // JS source info for iOS
+    // JS source info for iOS, as written into the repo's js-index.json.
     @Serializable
     private data class JsSourceInfo(
         val id: String,
         val name: String,
         val lang: String,
         val file: String,
-        val initFunction: String
+        val initFunction: String,
+        val pkg: String? = null,
+        val code: Int? = null,
+        val version: String? = null,
+        val description: String? = null,
+        val nsfw: Boolean = false,
+        val iconUrl: String? = null,
+        val sourceId: Long? = null,
     )
+
+    /**
+     * Entry shape emitted by :js-sources:createSourceIndex. The source id is numeric
+     * there while the string form lives in "pkg", so "id" is read leniently.
+     */
+    @Serializable
+    private data class JsIndexEntry(
+        val id: JsonElement? = null,
+        val pkg: String? = null,
+        val name: String,
+        val lang: String,
+        val file: String,
+        val initFunction: String,
+        val code: Int? = null,
+        val version: String? = null,
+        val description: String? = null,
+        val nsfw: Boolean = false,
+        val iconUrl: String? = null,
+    )
+
+    /**
+     * Parse a js-sources index, accepting both the flat-array shape written by
+     * createSourceIndex and the older `{version, sources}` envelope.
+     */
+    private fun parseJsIndex(text: String): List<JsSourceInfo> {
+        val entries = runCatching {
+            Json { ignoreUnknownKeys = true }.decodeFromString<List<JsIndexEntry>>(text)
+        }.getOrElse {
+            Json { ignoreUnknownKeys = true }
+                .decodeFromString<JsIndex>(text)
+                .sources
+                .map { s ->
+                    JsIndexEntry(
+                        id = JsonPrimitive(s.id),
+                        name = s.name,
+                        lang = s.lang,
+                        file = s.file,
+                        initFunction = s.initFunction,
+                    )
+                }
+        }
+
+        return entries.map { entry ->
+            val stringId = entry.pkg
+                ?: entry.id?.let { id ->
+                    // Older indexes stored the slug directly; newer ones store a number.
+                    (id as? JsonPrimitive)?.takeIf { it.isString }?.content
+                }
+                ?: entry.name.lowercase()
+
+            JsSourceInfo(
+                id = stringId,
+                name = entry.name,
+                lang = entry.lang,
+                file = entry.file,
+                initFunction = entry.initFunction,
+                pkg = entry.pkg ?: stringId,
+                code = entry.code,
+                version = entry.version,
+                description = entry.description,
+                nsfw = entry.nsfw,
+                iconUrl = entry.iconUrl,
+                sourceId = (entry.id as? JsonPrimitive)?.content?.toLongOrNull(),
+            )
+        }
+    }
 
     @Serializable
     private data class JsSection(
@@ -616,7 +716,7 @@ open class RepoTask : DefaultTask() {
         val js: JsSection? = null
     )
 
-    // For parsing js-sources index.json
+    // For parsing the older {version, sources} js-sources index envelope.
     @Serializable
     private data class JsIndex(
         val version: Int = 1,
@@ -631,5 +731,21 @@ open class RepoTask : DefaultTask() {
         val lang: String,
         val file: String,
         val initFunction: String
+    )
+
+    // For writing the repo's js-index.json
+    @Serializable
+    private data class RepoJsSource(
+        val pkg: String,
+        val name: String,
+        val id: Long,
+        val lang: String,
+        val code: Int? = null,
+        val version: String? = null,
+        val description: String? = null,
+        val nsfw: Boolean = false,
+        val file: String,
+        val initFunction: String,
+        val iconUrl: String? = null
     )
 }

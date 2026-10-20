@@ -79,6 +79,11 @@ dependencyResolutionManagement {
         google()
         maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots/") }
         maven { setUrl("https://jitpack.io") }
+        // Sonatype-OSS staging/snapshots. Both are dead endpoints now (the staging
+        // deploy URL answers 402 Payment Required), and because Gradle probes
+        // repositories in order, listing them before google()/mavenCentral() made
+        // every detached resolution (e.g. AGP's lint-gradle) fail instead of
+        // falling through to Google's Maven. Kept last, after the working mirrors.
         maven { setUrl("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2") }
         maven { setUrl("https://s01.oss.sonatype.org/content/repositories/snapshots/") }
         // Node.js distribution for Kotlin/JS

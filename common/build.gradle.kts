@@ -19,6 +19,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // Use api for KMP dependencies that need to be available to consumers
+            api(kotlin("stdlib"))
             api(libs.ksoup)
             api(libs.ireader.core)
             api(libs.ktor.core)
@@ -31,6 +32,7 @@ kotlin {
         }
 
         jsMain.dependencies {
+            implementation("org.jetbrains.kotlin:kotlin-stdlib-js")
             api(libs.ktor.client.js)
         }
     }

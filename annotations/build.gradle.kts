@@ -12,7 +12,7 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
-            // No dependencies needed for annotations
+            implementation(kotlin("stdlib"))
         }
     }
 }

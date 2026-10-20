@@ -6,6 +6,9 @@ listOf("en").map { lang ->
     lang = lang,
     description = "",
     nsfw = false,
-    icon = DEFAULT_ICON
+    icon = DEFAULT_ICON,
+    // Opt this source into the JS bundle used by the iOS JavaScriptCore runtime.
+    // js-sources discovery and build_js.yml both scan for this literal.
+    enableJs = true
   )
 }.also(::register)
