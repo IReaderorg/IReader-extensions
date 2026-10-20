@@ -1590,13 +1590,13 @@
   },
   {
     "pkg": "ireader.novelparadise.ar",
-    "apk": "ireader-ar-novelparadise-v2.6.apk",
+    "apk": "ireader-ar-novelparadise-v2.7.apk",
     "name": "NovelParadise",
     "id": 7351326936191662005,
     "lang": "ar",
-    "code": 6,
-    "version": "2.6",
-    "description": "",
+    "code": 7,
+    "version": "2.7",
+    "description": "NovelParadise - \u062c\u0646\u0629 \u0627\u0644\u0631\u0648\u0627\u064a\u0627\u062a",
     "nsfw": false,
     "sourceDir": "main"
   },
