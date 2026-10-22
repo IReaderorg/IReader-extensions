@@ -108,8 +108,8 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     private suspend fun getPopular(): MangasPageInfo {
-        val resp = client.get(requestBuilder("$baseUrl/most-popular/"))
-        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", null) { latestFromElement(it) }
+        val resp = client.get(requestBuilder("$baseUrl/sort/most-popular/"))
+        return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", "div.ul-list1") { latestFromElement(it) }
     }
 
 
