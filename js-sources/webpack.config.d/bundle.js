@@ -25,8 +25,8 @@ config.plugins.push(
 // Global variable name when loaded in browser
 config.output.library = 'IReaderSources';
 
-// Ensure compatibility with both browser and Node.js
-config.output.globalObject = 'typeof self !== "undefined" ? self : this';
+// Ensure compatibility with both browser, Node.js, and headless JavaScriptCore
+config.output.globalObject = 'typeof globalThis !== "undefined" ? globalThis : (typeof self !== "undefined" ? self : this)';
 
 // Don't externalize any dependencies - bundle everything
 config.externals = [];
@@ -57,6 +57,68 @@ if (config.mode === 'production') {
         console.warn('terser-webpack-plugin not found, continuing with default minimizer');
     }
 }
+
+// Export bridge: promote SourceBridge, SourceRegistry, and init* functions to root and globalThis
+config.plugins.push(
+    new webpack.BannerPlugin({
+        raw: true,
+        footer: true,
+        banner: `
+(function() {
+    var globalObj = typeof globalThis !== 'undefined' ? globalThis : (typeof self !== 'undefined' ? self : this);
+    var root = typeof IReaderSources !== 'undefined' ? IReaderSources : (globalObj && globalObj.IReaderSources);
+    if (!root && typeof module !== 'undefined' && module.exports) {
+        root = module.exports;
+    }
+    if (!root) return;
+
+    function findExport(obj, targetName, depth) {
+        if (!obj || typeof obj !== 'object' || depth > 6) return null;
+        var kName = targetName;
+        if (obj[kName]) return obj[kName];
+        for (var k in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, k)) {
+                var found = findExport(obj[k], kName, depth + 1);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+
+    var bridge = findExport(root, 'SourceBridge', 0);
+    var registry = findExport(root, 'SourceRegistry', 0);
+
+    if (bridge) {
+        root.SourceBridge = bridge;
+        globalObj.SourceBridge = bridge;
+    }
+    if (registry) {
+        root.SourceRegistry = registry;
+        globalObj.SourceRegistry = registry;
+    }
+
+    function promoteInits(obj, depth) {
+        if (!obj || typeof obj !== 'object' || depth > 6) return;
+        for (var k in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, k)) {
+                if (typeof obj[k] === 'function' && k.indexOf('init') === 0) {
+                    root[k] = obj[k];
+                    globalObj[k] = obj[k];
+                } else if (typeof obj[k] === 'object') {
+                    promoteInits(obj[k], depth + 1);
+                }
+            }
+        }
+    }
+    promoteInits(root, 0);
+
+    if (root.initializeBundle && typeof root.initializeBundle === 'function') {
+        try { root.initializeBundle(); } catch(e) {}
+    }
+})();
+`
+    })
+);
 
 // Disable webpack devtool in bundle to prevent duplicate asset conflicts with Kotlin source maps
 config.devtool = false;

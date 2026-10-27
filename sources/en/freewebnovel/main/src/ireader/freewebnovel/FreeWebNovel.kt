@@ -85,10 +85,19 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         Command.Content.Fetch(),
     )
 
-    override fun getListings(): List<Listing> = listOf(LatestListing())
+    override fun getListings(): List<Listing> = listOf(PopularListing(), LatestListing(), NewNovelsListing())
+    class PopularListing : Listing("Popular")
     class LatestListing : Listing("Latest")
+    class NewNovelsListing : Listing("New Novels")
 
-    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo = getLatest(page)
+    override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
+        return when (sort?.name) {
+            "Popular" -> getPopular(page)
+            "Latest" -> getLatest(page)
+            "New Novels" -> getNewNovel(page)
+            else -> getLatest(page)
+        }
+    }
 
     override suspend fun getMangaList(filters: ireader.core.source.model.FilterList, page: Int): MangasPageInfo {
         val sorts = filters.findInstance<Filter.Sort>()?.value?.index
@@ -96,19 +105,24 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         if (!query.isNullOrBlank()) return getSearch(query)
         return when (sorts) {
             0 -> getLatest(page)
-            1 -> getPopular()
+            1 -> getPopular(page)
             2 -> getNewNovel(page)
             else -> getLatest(page)
         }
     }
 
+    private fun sortUrl(kind: String, page: Int): String {
+        val safePage = page.coerceAtLeast(1)
+        return if (safePage == 1) "$baseUrl/sort/$kind" else "$baseUrl/sort/$kind/$safePage"
+    }
+
     private suspend fun getLatest(page: Int): MangasPageInfo {
-        val resp = client.get(requestBuilder("$baseUrl/sort/latest-novel/$page/"))
+        val resp = client.get(requestBuilder(sortUrl("latest-release", page)))
         return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", "div.ul-list1") { latestFromElement(it) }
     }
 
-    private suspend fun getPopular(): MangasPageInfo {
-        val resp = client.get(requestBuilder("$baseUrl/sort/most-popular/"))
+    private suspend fun getPopular(page: Int): MangasPageInfo {
+        val resp = client.get(requestBuilder(sortUrl("most-popular", page)))
         return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", "div.ul-list1") { latestFromElement(it) }
     }
 
@@ -127,7 +141,7 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
     }
 
     private suspend fun getNewNovel(page: Int): MangasPageInfo {
-        val resp = client.get(requestBuilder("$baseUrl/sort/latest-release/$page/"))
+        val resp = client.get(requestBuilder(sortUrl("latest-novel", page)))
         return bookListParse(resp.asJsoup(), "div.ul-list1 div.li-row", "div.ul-list1") { latestFromElement(it) }
     }
 
