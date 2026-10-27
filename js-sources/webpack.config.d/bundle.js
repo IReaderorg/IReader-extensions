@@ -34,25 +34,25 @@ config.externals = [];
 // Optimization settings for production
 if (config.mode === 'production') {
     config.optimization = config.optimization || {};
-    
-    // Keep function names for debugging (sources use reflection)
     config.optimization.minimize = true;
     
     try {
         const TerserPlugin = require('terser-webpack-plugin');
-        config.optimization.minimizer = config.optimization.minimizer || [];
-        config.optimization.minimizer.push(
+        // Replace default minimizer with unmangled configuration
+        // Keeps dead-code removal and whitespace compression while leaving all function/class/variable names intact
+        config.optimization.minimizer = [
             new TerserPlugin({
+                extractComments: false,
                 terserOptions: {
+                    mangle: false, // Do not mangle any names (preserves stack traces & JSC introspection)
                     keep_classnames: true,
                     keep_fnames: true,
-                    mangle: {
-                        keep_classnames: true,
-                        keep_fnames: true
+                    format: {
+                        comments: false
                     }
                 }
             })
-        );
+        ];
     } catch (e) {
         console.warn('terser-webpack-plugin not found, continuing with default minimizer');
     }
