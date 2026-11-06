@@ -8,6 +8,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.headers
 import io.ktor.client.request.url
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
 import ireader.core.log.Log
 import ireader.core.source.Dependencies
@@ -69,6 +70,21 @@ abstract class GalaxyNovels(private val deps: Dependencies) : SourceFactory(deps
 
     override val client: HttpClient
         get() = deps.httpClients.cloudflareClient
+
+    override fun requestBuilder(url: String, block: HeadersBuilder.() -> Unit): HttpRequestBuilder {
+        return super.requestBuilder(url, block).apply {
+            headers {
+                // Cloudflare answers 403 to requests without a browser-like Accept
+                // header, which made the home/listing pages return no cards. The API
+                // and cache endpoints ignore this header, so it is safe everywhere.
+                append(
+                    HttpHeaders.Accept,
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+                )
+                append(HttpHeaders.AcceptLanguage, "ar,en;q=0.8")
+            }
+        }
+    }
 
     override fun getCoverRequest(url: String): Pair<HttpClient, HttpRequestBuilder> {
         return client to HttpRequestBuilder().apply {
