@@ -32,11 +32,12 @@ import tachiyomix.annotations.Extension
  * NovelParadise (جنة الروايات) — WordPress `lightnovel` theme behind Cloudflare.
  *
  * Cloudflare answers the app (and any plain OkHttp/Ktor client) with HTTP 403 +
- * `cf-mitigated: challenge` on EVERY page of the site, including `/wp-json`. To avoid both the
- * challenge AND the block page, all HTML is fetched through Google Translate's public fetch
- * proxy (see [proxied] / [fetchPage]) which returns the untouched origin HTML — real listings,
- * real chapter rows, real chapter paragraphs. `cloudflareClient` stays as an invisible fallback
- * (its WebView is hidden), and no visible browser is ever opened on this site.
+ * `cf-mitigated: challenge` on EVERY page of the site, including `/wp-json`. Two transports
+ * avoid it completely, in order: (1) the site's own origin server, reached by address with the
+ * site's `Host` header — Cloudflare only fronts DNS, so the instance serves the real page with
+ * no challenge ([originUrl]); (2) Google Translate's fetch proxy ([proxied]). The hidden
+ * `cloudflareClient` remains as a last resort. No visible browser is ever opened on this site,
+ * so Cloudflare's block page can never be shown.
  *
  * All diagnostics here go through [diag] which logs at `android.util.Log` (vis. logcat with
  * `adb logcat -s NovelParadise:*`) — the Kermit-backed ireader Log drops Info/Debug by default,
@@ -80,6 +81,10 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     // screen and the chapter list hit the same page; whichever coroutine survives the app's
     // navigation teardown fills this, so the other one still has a real document to parse.
     private val lastDetailHtml = HashMap<String, String>(4)
+
+    // Resolved "http://<ip>" of the real origin server (see originBase()).
+    @Volatile
+    private var originHost: String? = null
 
     // ── diagnostics ─────────────────────────────────────────────────────────────
     private fun diag(msg: String) = Log.w(TAG, msg)
@@ -131,6 +136,43 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
             .filter { it.isNotBlank() && !it.startsWith("_x_tr_") }
             .joinToString("&")
         return baseUrl + path + if (query.isEmpty()) "" else "?$query"
+    }
+
+    /**
+     * Direct-to-origin transport: Cloudflare only fronts DNS for the public hostnames, so the
+     * real web server still answers normally when reached by its address with the site's Host
+     * header. No challenge, no JS, no block page — this is the actual page the theme renders.
+     *
+     * The origin address is resolved at runtime from `mail.novelsparadise.site` (a DNS record
+     * that is NOT proxied by Cloudflare and points at the same server); [ORIGIN_IP] is only a
+     * last-resort constant. Requests stay on plain HTTP because the server's certificate only
+     * covers the apex domain, which Cloudflare intercepts.
+     */
+    private suspend fun originBase(): String {
+        val cached = originHost
+        if (cached != null) return cached
+        // DNS is blocking I/O: never run it on the caller's (possibly main) dispatcher.
+        val ip = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                java.net.InetAddress.getAllByName(ORIGIN_RESOLVER_HOST)
+                    .firstOrNull { it is java.net.Inet4Address }
+                    ?.hostAddress
+                    ?: ORIGIN_IP
+            } catch (e: Exception) {
+                ORIGIN_IP
+            }
+        }
+        val base = "http://$ip"
+        originHost = base
+        return base
+    }
+
+    private suspend fun originUrl(url: String): String {
+        val real = canonical(url)
+        val path = real.substringAfter("://", real)
+            .substringAfter('/', "")
+            .let { if (it.isEmpty()) "/" else "/$it" }
+        return originBase() + path
     }
 
     // ── listings ────────────────────────────────────────────────────────────────
@@ -798,7 +840,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
      *
      * There is deliberately NO visible WebView step any more: every WebView attempt on this site
      * landed on Cloudflare's "Just a moment…" / "Attention Required" page, which is exactly the
-     * block page the user must never see. If the proxy is unreachable we simply return no data.
+     * block page the user must never see. If every transport fails we simply return no data.
      */
     private suspend fun fetchPage(url: String, selector: String): String {
         // Defensive: always resolve to an absolute URL — stale/cached keys from a previous
@@ -811,11 +853,33 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
             return it
         }
 
-        // 1. Primary: the Cloudflare-free proxy. Every HTML page on the site answers the app
-        //    with a Turnstile challenge, but the proxy returns the real page (cards, chapter
-        //    rows, chapter paragraphs) without showing a challenge to the user.
-        //    Retried once: the proxy occasionally answers a cold request with a redirect/stub
-        //    before it has the origin response cached.
+        // 1. PRIMARY: the site's own server, reached directly (Cloudflare is only in front of
+        //    DNS, not of the origin). No challenge page can ever be returned here.
+        try {
+            val body = withTimeoutOrNull(ORIGIN_TIMEOUT_MS) {
+                val response = deps.httpClients.default.get(originUrl(abs)) {
+                    header(HttpHeaders.Host, ORIGIN_VHOST)
+                    header(HttpHeaders.UserAgent, BROWSER_USER_AGENT)
+                    header(
+                        HttpHeaders.Accept,
+                        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+                    )
+                    header(HttpHeaders.AcceptLanguage, "ar,en;q=0.8")
+                }
+                if (response.status.value in 200..299) response.bodyAsText() else ""
+            }
+            if (body != null && isRealContent(body)) {
+                diag("OK origin ($abs) ${body.length}B")
+                cacheBody(abs, body)
+                return body
+            }
+            diag("origin gave ${body?.length ?: 0}B non-real")
+        } catch (e: Exception) {
+            diag("origin GET failed: ${e.message}")
+        }
+
+        // 2. Cloudflare-free proxy (Google Translate's public fetcher). Retried once: the proxy
+        //    occasionally answers a cold request with a redirect/stub before it caches the page.
         repeat(2) { attempt ->
             try {
                 val body = withTimeoutOrNull(PROXY_TIMEOUT_MS) {
@@ -832,10 +896,8 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
             }
         }
 
-        // 2. Direct: cloudflareClient — the OkHttp CloudflareInterceptor solves the challenge
-        //    inside a HIDDEN WebView (running the Turnstile JS, which plants cf_clearance in the
-        //    shared Chrome cookie store) and then re-fetches. Invisible to the user: no browser
-        //    screen is opened, so Cloudflare's block page can never be shown.
+        // 3. Last resort: cloudflareClient — the OkHttp CloudflareInterceptor tries to solve the
+        //    challenge inside a HIDDEN WebView (no browser screen, so no block page is shown).
         try {
             val body = withTimeoutOrNull(DIRECT_TIMEOUT_MS) {
                 client.get(requestBuilder(abs)).bodyAsText()
@@ -1089,8 +1151,17 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                 "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 
+        // ── direct origin (bypasses Cloudflare entirely) ─────────────────────────
+        // Non-proxied DNS record that points at the same web server as the site.
+        const val ORIGIN_RESOLVER_HOST = "mail.novelsparadise.site"
+        // Fallback address of that server (used only if DNS resolution fails).
+        const val ORIGIN_IP = "178.18.251.147"
+        // Virtual host the origin expects (and whose content it serves).
+        const val ORIGIN_VHOST = "www.novelsparadise.site"
+
         // Mobile networks are slow; the proxy also has to fetch the origin itself, so give it
         // room before giving up (a too-short timeout was aborting every fetch).
+        const val ORIGIN_TIMEOUT_MS = 60_000L
         const val PROXY_TIMEOUT_MS = 90_000L
         const val DIRECT_TIMEOUT_MS = 60_000L
         const val BODY_CACHE_TTL_MS = 5 * 60_000L
