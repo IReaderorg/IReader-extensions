@@ -7,6 +7,8 @@ import com.fleeksoft.ksoup.nodes.Element
 import io.ktor.client.HttpClient
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import ireader.core.source.Dependencies
@@ -54,6 +56,18 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     // The interceptor-wrapped OkHttp client (solves CF via WebView on device).
     override val client: HttpClient get() = deps.httpClients.cloudflareClient
 
+    override fun requestBuilder(url: String, block: HeadersBuilder.() -> Unit): HttpRequestBuilder {
+        return super.requestBuilder(url, block).apply {
+            headers {
+                append(
+                    HttpHeaders.Accept,
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+                )
+                append(HttpHeaders.AcceptLanguage, "ar,en;q=0.8")
+            }
+        }
+    }
+
     // Real site root of the lightnovel theme:
     val root: String get() = "$baseUrl/np-light"
 
@@ -77,13 +91,51 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         return if (u.startsWith("/")) baseUrl + u else "$baseUrl/$u"
     }
 
+    // ── Cloudflare-free transport ───────────────────────────────────────────────
+    /**
+     * All HTML requests go through Google Translate's public fetch proxy.
+     *
+     * Cloudflare answers the app (and any plain OkHttp/Ktor client) with a Turnstile
+     * challenge (`403`, `cf-mitigated: challenge`) on EVERY page of the site, including
+     * `/wp-json`. Google's fetcher is not challenged, so the proxy returns the real page
+     * — same HTML, same chapter list, same chapter paragraphs — without a WebView and
+     * without the block page ever replacing the content. Links are rewritten to the
+     * proxy host and are converted back to site URLs by [canonical], so stored library
+     * keys never contain the proxy host.
+     */
+    private fun proxied(url: String): String {
+        val real = canonical(url)
+        // Accept keys that use www, the apex host, or any other alias and keep only the path.
+        val path = real.substringAfter("://", real)
+            .substringAfter('/', "")
+            .let { if (it.isEmpty()) "/" else "/$it" }
+        val sep = if (path.contains('?')) '&' else '?'
+        return "$PROXY_ROOT$path$sep$PROXY_PARAMS"
+    }
+
+    /** Convert a translate.goog URL (as found in proxied HTML) back to a site URL. */
+    private fun canonical(url: String): String {
+        val u = absolute(url)
+        val marker = ".translate.goog"
+        val idx = u.indexOf(marker)
+        if (idx < 0) return u
+        val tail = u.substring(idx + marker.length)
+        val path = tail.substringBefore('?').substringBefore('#')
+        val query = tail.substringAfter('?', "")
+            .split('&')
+            .filter { it.isNotBlank() && !it.startsWith("_x_tr_") }
+            .joinToString("&")
+        return baseUrl + path + if (query.isEmpty()) "" else "?$query"
+    }
+
     // ── listings ────────────────────────────────────────────────────────────────
     override fun getFilters(): FilterList = listOf(Filter.Title())
-    override fun getCommands(): CommandList = listOf(
-        Command.Detail.Fetch(),
-        Command.Chapter.Fetch(),
-        Command.Content.Fetch(),
-    )
+
+    // No WebView Fetch commands: they forced the app to open a hidden browser for every
+    // page (where Cloudflare could still end up showing a block page). The HTML is now
+    // fetched through the proxy in fetchPage(), and the cloudflareClient/WebView remains
+    // only as an automatic fallback.
+    override fun getCommands(): CommandList = emptyList()
 
     // Real home sections (verified on-device, v2.18): the lightnovel home page has 4 content
     // sections — "اخر التحديثات" (latest updated, 54 series), "اجدد الروايات" (newly added,
@@ -135,7 +187,8 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         val target = when {
             page <= 1 -> url
             query.isNotEmpty() -> "$base?${query}&page=$page"
-            else -> "$base/page/$page/"
+            // The live theme pages with a query parameter ("?page=2"), not "/page/2/".
+            else -> "$base?page=$page"
         }
         return try {
             val html = fetchPage(target, SERIES_ANCHOR_SELECTOR)
@@ -215,9 +268,10 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         }
 
         // Normalize key: resolve to an absolute URL (relative hrefs are Common in the
-        // theme's HTML), drop trailing slash and decode %XX so raw-Arabic and
-        // percent-encoded variants of the same URL dedupe to one novel.
-        val key = absolute(href).trimEnd('/')
+        // theme's HTML), convert proxy links back to the site, drop trailing slash and
+        // decode %XX so raw-Arabic and percent-encoded variants of the same URL dedupe
+        // to one novel.
+        val key = canonical(absolute(href)).trimEnd('/')
             .let { try { java.net.URLDecoder.decode(it, "UTF-8") } catch (e: Exception) { it } }
 
         // Covers are ROOT-RELATIVE ("/np-light/public/uploads/series/x.jpg") — logcat v2.25
@@ -232,6 +286,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
                 .map { firstSrcsetUrl(it) }   // "a.jpg 1x, b.jpg 2x" -> "b.jpg"
                 .firstOrNull { it.isNotBlank() && !isPlaceholder(it) }
                 ?.let { absolute(it.trim()) }
+                ?.let { canonical(it) }
                 ?.takeIf { it.isNotBlank() }
         } ?: ""
 
@@ -315,18 +370,16 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
 
     // ── details / chapters / content (theme selectors) ──────────────────────────
     override val detailFetcher: Detail = SourceFactory.Detail(
-        // The detail page carries a breadcrumb heading as well as the title heading, and
-        // `select("h1, h1.entry-title").text()` CONCATENATES every match — that is where the
-        // title "الرئيسية / كل الروايات / ديون لا نهاية لها" came from. detailParse() below
-        // takes the LAST h1, which is the real novel title; keep the selector as a fallback.
+        // The live theme (2026 redesign) renders the novel title as a single <h1>.
         nameSelector = "h1.entry-title, h1",
-        coverSelector = ".sertothumb img, .infseries .sertothumb img, .seriesthumb img",
+        coverSelector = "img.series-cover-poster, .sertothumb img, .infseries .sertothumb img, .seriesthumb img",
         coverAtt = "src",
         // The theme emits ROOT-RELATIVE covers; without this the detail page's image is a
         // bare path with no host and never loads (same root cause as the grid covers).
         addBaseurlToCoverLink = true,
-        authorBookSelector = ".serl .serval, .infseries .serl .serval, [class*=author] a",
-        categorySelector = ".sertogenre a, .infseries .sertogenre a, a[rel=category]",
+        // Metadata is a <dt>المؤلف</dt><dd><a href="/np-light/search/?q=…"> block.
+        authorBookSelector = "dd a[href*='/search/'], .serl .serval, .infseries .serl .serval, [class*=author] a",
+        categorySelector = "dd a[href*='/genre/'], a[href*='/np-light/genre/'], .sertogenre a, .infseries .sertogenre a, a[rel=category]",
         // The detail page carries the same badge as the grid card. Without this the status
         // column always read "unknown" even though the grid already knew it.
         statusSelector = ".series-status-badge, .seriestatus .is-ongoing, .seriestatus .is-completed",
@@ -338,7 +391,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
                 else -> MangaInfo.UNKNOWN
             }
         },
-        descriptionSelector = ".sersys, .sersysfull, .entry-content",
+        descriptionSelector = ".description-full, .description-short, .sersys, .sersysfull, .entry-content",
         onDescription = { list -> list.flatMap { it.split("\n") }.map { it.trim() }.filter { it.isNotBlank() } },
     )
 
@@ -389,10 +442,14 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     }
 
     override val chapterFetcher: Chapters = SourceFactory.Chapters(
-        selector = ".eplisterfull ul li, .eplister ul li, ul.list-chapters li",
-        nameSelector = ".epl-num, a.chapternum, a span",
-        linkSelector = "a",
+        // 2026 theme: <section class="chapter-list"><a class="chapter-row" href=…>
+        //            <span>102 - title</span><time>date</time></a>
+        selector = "section.chapter-list a.chapter-row, .eplisterfull ul li, .eplister ul li, ul.list-chapters li",
+        nameSelector = "span, .epl-num, a.chapternum",
+        linkSelector = null,
         linkAtt = "href",
+        uploadDateSelector = "time",
+        onLink = { url -> canonical(absolute(url)) },
     )
 
     /**
@@ -491,7 +548,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         doc.select("a[href*='$CHAPTER_KEY']").mapNotNull { a ->
             val raw = a.attr("href").trim().let { if (it.isBlank()) a.absUrl("href") else it }
             if (raw.isBlank() || !raw.contains(CHAPTER_KEY)) return@mapNotNull null
-            val href = absolute(raw)
+            val href = canonical(absolute(raw))
             val name = a.text().trim()
             val title = if (name.isBlank() || name.length < 2) {
                 href.substringAfterLast("/").replace('-', ' ').trim()
@@ -616,7 +673,6 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         pageTitleSelector = "h1, h1.chapter-heading",
         pageContentSelector = "$CPAGE_CLASS, .entry-content, .chapter-content",
     )
-
     // ── page list (content paragraphs) ──────────────────────────────────────────
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
         diag("PGL START key=${chapter.key.take(120)} name=${chapter.name.take(60)}")
@@ -714,14 +770,29 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     private suspend fun fetchPage(url: String, selector: String): String {
         // Defensive: always resolve to an absolute URL — stale/cached keys from a previous
         // version may still be bare paths (a relative URL hits localhost:80 / hangs the WebView).
-        val abs = absolute(url)
+        // canonical() also converts any stored translate.goog link back to a site URL.
+        val abs = canonical(absolute(url))
 
-        // 1. Primary: cloudflareClient — the OkHttp CloudflareInterceptor solves the challenge
+        // 1. Primary: the Cloudflare-free proxy. Every HTML page on the site answers the app
+        //    with a Turnstile challenge, but the proxy returns the real page (cards, chapter
+        //    rows, chapter paragraphs) without showing a challenge to the user.
+        try {
+            val body = deps.httpClients.default.get(requestBuilder(proxied(abs))).bodyAsText()
+            if (isRealContent(body)) {
+                diag("OK proxy ($abs) ${body.length}B")
+                return body
+            }
+            diag("proxy returned ${body.length}B non-real; falling back to direct client")
+        } catch (e: Exception) {
+            diag("proxy GET failed: ${e.message}")
+        }
+
+        // 2. Direct: cloudflareClient — the OkHttp CloudflareInterceptor solves the challenge
         //    inside a HIDDEN WebView (running the Turnstile JS, which plants cf_clearance in the
         //    shared Chrome cookie store) and then re-fetches. On a warm cookie this returns real
         //    content instantly, invisibly, with NO visible challenge. When the cookie is cold the
         //    interceptor reports "Failed to bypass" — but its hidden WebView just warmed the
-        //    session, which makes the browser (step 2) pass almost immediately.
+        //    session, which makes the browser (step 3) pass almost immediately.
         try {
             val body = client.get(requestBuilder(abs)).bodyAsText()
             if (isRealContent(body)) {
@@ -733,7 +804,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
             diag("client GET failed: ${e.message}")
         }
 
-        // 2. BrowserEngine WebView — solves the challenge visibly and, crucially, waits for the
+        // 3. BrowserEngine WebView — solves the challenge visibly and, crucially, waits for the
         //    *content* selector. A non-null selector means contentReady() only fires once real
         //    chapter/series links exist, so it usually returns the true page. Turnstile can take
         //    a few seconds, so retry up to 3× with a short pause when we get a challenge stub.
@@ -983,9 +1054,14 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         const val SERIES_ANCHOR_SELECTOR = "a[href*='/np-light/series/']"
 
         // Novel detail / chapter / content selectors (lightnovel theme).
-        const val CPAGE_CLASS = ".epcontent"
+        const val CPAGE_CLASS = ".chapter-content"
         const val SERIES_KEY = "/np-light/series/"
         const val CHAPTER_KEY = "/chapter-"
+
+        // Google Translate fetch proxy (see proxied()/canonical()). The host is the
+        // dash-encoded form of www.novelsparadise.site.
+        const val PROXY_ROOT = "https://www-novelsparadise-site.translate.goog"
+        const val PROXY_PARAMS = "_x_tr_sl=auto&_x_tr_tl=ar&_x_tr_hl=ar"
 
         // Marker for detail pages: a real novel detail always links to at least one chapter.
         const val CONTENT_MARKER_SELECTOR = "a[href*='$CHAPTER_KEY']"
