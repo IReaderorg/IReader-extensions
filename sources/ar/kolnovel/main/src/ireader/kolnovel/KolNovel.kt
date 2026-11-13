@@ -1,10 +1,16 @@
 package ireader.kolnovel
 
+import com.fleeksoft.ksoup.Ksoup
+import com.fleeksoft.ksoup.nodes.Document
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.HttpHeaders
+import io.ktor.http.encodeURLParameter
+import ireader.core.log.Log
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.findInstance
+import ireader.core.source.helpers.DateParser
 import ireader.core.source.model.ChapterInfo
 import ireader.core.source.model.Command
 import ireader.core.source.model.CommandList
@@ -15,7 +21,15 @@ import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
 import ireader.core.source.model.Text
-import com.fleeksoft.ksoup.Ksoup
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
 import tachiyomix.annotations.GenerateTests
@@ -49,6 +63,11 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
     override val id: Long get() = KolNovelSourceId.ID
     override val name: String get() = "KolNovel"
 
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
+
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
         Filter.Sort("Sort By:", arrayOf("Latest", "Popular")),
@@ -62,13 +81,7 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
     )
 
     override suspend fun getMangaList(sort: Listing?, page: Int): MangasPageInfo {
-        return try {
-            val response = client.get(requestBuilder("$baseUrl/series/?order=update&page=$page"))
-            val body = response.bodyAsText()
-            parseMangaList(body)
-        } catch (e: Exception) {
-            MangasPageInfo(emptyList(), false)
-        }
+        return fetchMangaList("$baseUrl/series/?order=update&paged=$page", page)
     }
 
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
@@ -77,11 +90,7 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
 
         val searchQuery = titleFilter?.value?.takeIf { it.isNotBlank() }
         if (searchQuery != null) {
-            return try {
-                val response = client.get(requestBuilder("$baseUrl/?s=$searchQuery"))
-                val body = response.bodyAsText()
-                parseMangaList(body)
-            } catch (e: Exception) { MangasPageInfo(emptyList(), false) }
+            return fetchMangaList("$baseUrl/?s=${searchQuery.encodeURLParameter()}&paged=$page", page)
         }
 
         val sortParam = when (sortFilter?.value?.index) {
@@ -89,45 +98,80 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
             else -> "order=update"
         }
 
-        return try {
-            val response = client.get(requestBuilder("$baseUrl/series/?$sortParam&page=$page"))
-            val body = response.bodyAsText()
-            parseMangaList(body)
-        } catch (e: Exception) { MangasPageInfo(emptyList(), false) }
+        return fetchMangaList("$baseUrl/series/?$sortParam&paged=$page", page)
     }
 
-    private fun parseMangaList(body: String): MangasPageInfo {
+    private suspend fun fetchMangaList(url: String, page: Int = 1): MangasPageInfo {
+        return try {
+            val response = client.get(requestBuilder(url))
+            val body = response.bodyAsText()
+            parseMangaList(body, page)
+        } catch (e: Exception) {
+            Log.error { "KolNovel list error: ${e.message}" }
+            MangasPageInfo(emptyList(), false)
+        }
+    }
+
+    private fun parseMangaList(body: String, page: Int): MangasPageInfo {
         val doc = Ksoup.parse(body)
         val mangaList = mutableListOf<MangaInfo>()
 
-        doc.select("article.maindet").forEach { article ->
-            val titleEl = article.selectFirst("h2[itemprop=headline] a, .mdinfo h2 a")
-            if (titleEl != null) {
+        // New "starless" theme: archive rows on /series/ and search results use a different card.
+        doc.select("article.kol-series-archive__item, article.kol-search__item, article.maindet, .kol-home-update-row")
+            .forEach { card ->
+                val titleEl = card.selectFirst(
+                    "h3[itemprop=headline] a, h2[itemprop=headline] a, .mdinfo h2 a, h3 a, .post-title a"
+                ) ?: return@forEach
+
                 val title = titleEl.text().trim()
-                val href = titleEl.attr("href")
-                if (href.isNotBlank() && title.isNotBlank()) {
-                    val slug = href.substringAfter("/series/").substringBefore("/").substringBefore("?")
-                    if (slug.isNotBlank()) {
-                        val cover = article.selectFirst(".mdthumb img")?.attr("src") ?: ""
-                        mangaList.add(MangaInfo(key = "$baseUrl/series/$slug/", title = title, cover = cover))
-                    }
-                }
+                val key = seriesKey(titleEl.attr("href")) ?: return@forEach
+                if (title.isBlank()) return@forEach
+
+                val cover = card.selectFirst(
+                    ".kol-series-archive__cover img, .kol-search__cover img, .mdthumb img, img"
+                )?.attr("src")?.trim().orEmpty()
+
+                mangaList.add(MangaInfo(key = key, title = title, cover = absoluteUrl(cover)))
             }
-        }
 
         if (mangaList.isEmpty()) {
-            doc.select(".post-title a, .novel-title a, h3 a").mapNotNull { el ->
+            doc.select("a[href*='/series/']").mapNotNull { el ->
                 val title = el.text().trim()
-                val href = el.attr("href")
-                if (href.isBlank() || title.isBlank()) return@mapNotNull null
-                val slug = href.substringAfter("/series/").substringBefore("/").substringBefore("?")
-                if (slug.isBlank()) return@mapNotNull null
-                val cover = el.closest(".post, .novel-item, .card")?.selectFirst("img")?.attr("src") ?: ""
-                MangaInfo(key = "$baseUrl/series/$slug/", title = title, cover = cover)
-            }.distinctBy { it.key }.forEach { mangaList.add(it) }
+                if (title.isBlank()) return@mapNotNull null
+                val key = seriesKey(el.attr("href")) ?: return@mapNotNull null
+                val cover = el.closest("article, .post, .novel-item, .card")?.selectFirst("img")
+                    ?.attr("src")?.trim().orEmpty()
+                MangaInfo(key = key, title = title, cover = absoluteUrl(cover))
+            }.forEach { mangaList.add(it) }
         }
 
-        return MangasPageInfo(mangaList.distinctBy { it.key }, mangaList.isNotEmpty())
+        val distinct = mangaList.distinctBy { it.key }
+        return MangasPageInfo(distinct, distinct.isNotEmpty() && hasNextPage(doc, page, distinct.size))
+    }
+
+    private fun hasNextPage(doc: Document, page: Int, itemCount: Int): Boolean {
+        val navText = doc.selectFirst(
+            "nav.kol-series-archive__pagination, nav.kol-search__pagination, nav[aria-label*=\"صفح\"]"
+        )?.text().orEmpty()
+        val totalPages = Regex("""من\s*(\d+)""").find(navText)
+            ?.groupValues?.getOrNull(1)?.toIntOrNull()
+        if (totalPages != null) {
+            val currentPage = Regex("""صفحة\s*(\d+)""").find(navText)
+                ?.groupValues?.getOrNull(1)?.toIntOrNull() ?: page
+            return currentPage < totalPages
+        }
+        return itemCount >= LIST_PAGE_SIZE
+    }
+
+    /** `https://kolnovel.com/series/<slug>/` — rejects archive/type/genre links. */
+    private fun seriesKey(href: String): String? {
+        val full = absoluteUrl(href).substringBefore('?').substringBefore('#')
+        val marker = "/series/"
+        val index = full.indexOf(marker)
+        if (index < 0) return null
+        val slug = full.substring(index + marker.length).trim('/')
+        if (slug.isBlank() || slug.contains('/')) return null
+        return "$baseUrl/series/$slug/"
     }
 
     override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
@@ -145,13 +189,36 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
 
     private fun parseDetailsFromHtml(html: String, manga: MangaInfo): MangaInfo {
         val doc = Ksoup.parse(html)
-        val scrapedTitle = doc.selectFirst(".post-title h1, h1")?.text()
-        val title = if (!scrapedTitle.isNullOrBlank() && !scrapedTitle.contains("Loading", ignoreCase = true)) scrapedTitle else manga.title
-        val cover = doc.selectFirst(".summary_image img, meta[property=og:image]")?.attr("src") ?: manga.cover
-        val description = doc.selectFirst(".summary__content, .description-summary")?.text() ?: ""
-        val author = doc.selectFirst(".author a, .summary-content .author")?.text() ?: ""
-        val genres = doc.select(".genres-content a, .wp-manga-genres a").map { it.text().trim() }
-        val status = doc.selectFirst(".post-status .summary-content")?.text()?.trim() ?: ""
+        val scrapedTitle = doc.selectFirst(
+            "h1.kol-series-editorial__title, .post-title h1, h1[itemprop=name], h1"
+        )?.text()?.trim()
+        val title = if (!scrapedTitle.isNullOrBlank() && !scrapedTitle.contains("Loading", ignoreCase = true)) {
+            scrapedTitle
+        } else {
+            manga.title
+        }
+        val cover = doc.selectFirst(
+            ".kol-series-editorial__cover img, .summary_image img, meta[property=og:image]"
+        )?.let { el ->
+            if (el.tagName().equals("meta", ignoreCase = true)) el.attr("content") else el.attr("src")
+        }?.trim()?.takeIf { it.isNotBlank() } ?: manga.cover
+
+        val description = doc.selectFirst(
+            ".kol-series-editorial__prose[itemprop=description], .kol-series-editorial__prose, .summary__content, .description-summary"
+        )?.text()?.trim().orEmpty()
+
+        val author = doc.selectFirst(
+            ".kol-series-editorial__byline a, .author a, .summary-content .author"
+        )?.text()?.trim().orEmpty()
+
+        val genres = doc.select(
+            ".kol-series-editorial__genres a, .genres-content a, .wp-manga-genres a"
+        ).map { it.text().trim() }.filter { it.isNotBlank() }
+
+        val status = doc.selectFirst(
+            ".kol-series-editorial__quick-fact--status dd, .post-status .summary-content"
+        )?.text()?.trim().orEmpty()
+
         return manga.copy(
             title = title,
             cover = cover,
@@ -173,60 +240,227 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
 
     override val chapterFetcher: Chapters
         get() = Chapters(
-            selector = "li[data-ID] a[href*='/shaag'], li[data-ID] a[href*='/chapter/']",
-            nameSelector = "a",
-            linkSelector = "a",
+            selector = "li.kol-series-chapter[data-kol-chapter-row], li[data-ID]",
+            nameSelector = ".kol-series-chapter__title-copy",
+            linkSelector = "a.kol-series-chapter__link, a",
             linkAtt = "href",
+            addBaseUrlToLink = true,
             reverseChapterList = true
         )
 
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         commands.findInstance<Command.Chapter.Fetch>()?.let { cmd ->
-            if (cmd.html.isNotBlank()) return parseChaptersFromHtml(cmd.html)
+            if (cmd.html.isNotBlank()) {
+                val chapters = loadChapters(cmd.html, manga.key)
+                if (chapters.isNotEmpty()) return chapters
+            }
         }
 
         return try {
             val response = client.get(requestBuilder(manga.key))
             val body = response.bodyAsText()
-            parseChaptersFromHtml(body)
-        } catch (e: Exception) { emptyList() }
+            loadChapters(body, manga.key)
+        } catch (e: Exception) {
+            Log.error { "KolNovel chapters error: ${e.message}" }
+            emptyList()
+        }
     }
 
-    private fun parseChaptersFromHtml(html: String): List<ChapterInfo> {
-        val startIndex = html.indexOf("<div id=\"chapter_list\"")
-        val chapterListHtml = if (startIndex >= 0) html.substring(startIndex) else html
-        val doc = Ksoup.parse(chapterListHtml)
-        val chapters = mutableListOf<ChapterInfo>()
+    /**
+     * The series page only renders 24 chapters (newest first). The complete list comes from
+     * the theme's AJAX endpoint, which is paginated 24 chapters at a time, so every page has
+     * to be requested and merged.
+     */
+    private suspend fun loadChapters(seriesHtml: String, mangaUrl: String): List<ChapterInfo> {
+        val doc = Ksoup.parse(seriesHtml)
 
-        doc.select("li[data-ID] a[href*='/shaag'], li[data-ID] a[href*='/chapter/']").forEach { link ->
-            val href = link.attr("href")
-            val fullUrl = if (href.startsWith("http")) href else "$baseUrl$href"
-            if (chapters.any { it.key == fullUrl }) return@forEach
-
-            val eplNum = link.selectFirst(".epl-num")?.text()?.trim() ?: ""
-            val eplTitle = link.selectFirst(".epl-title")?.text()?.trim() ?: ""
-            val name = if (eplNum.isNotBlank() && eplTitle.isNotBlank()) "$eplNum $eplTitle"
-                else if (eplTitle.isNotBlank()) eplTitle
-                else link.text().trim()
-
-            if (name.isBlank()) return@forEach
-            val number = parseChapterNumber("$eplNum $eplTitle")
-            chapters.add(ChapterInfo(name = name, key = fullUrl, number = number))
+        val ajaxChapters = try {
+            fetchChaptersViaAjax(doc, mangaUrl)
+        } catch (e: Exception) {
+            Log.error { "KolNovel ajax chapters error: ${e.message}" }
+            emptyList()
         }
+        if (ajaxChapters.isNotEmpty()) return sortChapters(ajaxChapters)
 
-        if (chapters.isEmpty()) {
-            doc.select("a[href*='/shaag'], a[href*='/chapter/']").forEach { link ->
-                val href = link.attr("href")
-                val linkText = link.text().trim()
-                if (linkText.isBlank() || linkText.contains("Start Reading", ignoreCase = true)) return@forEach
-                val fullUrl = if (href.startsWith("http")) href else "$baseUrl$href"
-                if (chapters.any { it.key == fullUrl }) return@forEach
-                val number = parseChapterNumber(linkText)
-                chapters.add(ChapterInfo(name = linkText, key = fullUrl, number = number))
+        // Fallback: server-rendered pages with order=oldest (heavier, but has no nonce).
+        val pagedChapters = try {
+            fetchChaptersViaPagedHtml(mangaUrl)
+        } catch (e: Exception) {
+            Log.error { "KolNovel paged chapters error: ${e.message}" }
+            emptyList()
+        }
+        if (pagedChapters.isNotEmpty()) return sortChapters(pagedChapters)
+
+        // Last resort: whatever the series page itself rendered.
+        return sortChapters(parseChapterRows(seriesHtml))
+    }
+
+    private fun sortChapters(chapters: List<ChapterInfo>): List<ChapterInfo> =
+        chapters.distinctBy { it.key }
+            .sortedBy { if (it.number >= 0f) it.number else Float.MAX_VALUE }
+
+    private suspend fun fetchChaptersViaAjax(doc: Document, mangaUrl: String): List<ChapterInfo> {
+        val nonce = doc.select("[data-kol-volume-nonce]").attr("data-kol-volume-nonce").trim()
+        val seriesId = doc.select("[data-kol-series-id]").attr("data-kol-series-id").trim()
+        if (nonce.isBlank() || seriesId.isBlank()) return emptyList()
+
+        val ajaxUrl = doc.select("[data-kol-volume-url]").attr("data-kol-volume-url").trim()
+            .ifBlank { "$baseUrl/wp-admin/admin-ajax.php" }
+
+        val firstPage = fetchAjaxChapterPage(ajaxUrl, nonce, seriesId, 1, mangaUrl)
+            ?: return emptyList()
+
+        val collected = LinkedHashMap<String, ChapterInfo>()
+        firstPage.chapters.forEach { collected[it.key] = it }
+
+        val totalPages = firstPage.pages.coerceIn(1, MAX_CHAPTER_PAGES)
+        var page = 2
+        while (page <= totalPages) {
+            val chunk = (page..minOf(page + FETCH_CONCURRENCY - 1, totalPages)).toList()
+            val results = coroutineScope {
+                chunk.map { p ->
+                    async { fetchAjaxChapterPage(ajaxUrl, nonce, seriesId, p, mangaUrl) }
+                }.awaitAll()
             }
+            results.forEachIndexed { index, result ->
+                val pageResult = result
+                    ?: fetchAjaxChapterPage(ajaxUrl, nonce, seriesId, chunk[index], mangaUrl)
+                pageResult?.chapters?.forEach { collected[it.key] = it }
+            }
+            page += FETCH_CONCURRENCY
         }
 
-        return chapters.reversed()
+        return collected.values.toList()
+    }
+
+    private suspend fun fetchAjaxChapterPage(
+        ajaxUrl: String,
+        nonce: String,
+        seriesId: String,
+        page: Int,
+        referer: String,
+    ): AjaxChapterPage? {
+        return try {
+            val url = "$ajaxUrl?action=kol_series_volume_chapters" +
+                "&nonce=$nonce&series_id=$seriesId&volume=__kol_all__" +
+                "&page=$page&anchor_id=0&search=&order=oldest"
+            val body = client.get(
+                requestBuilder(url) {
+                    append(HttpHeaders.UserAgent, getUserAgent())
+                    append(HttpHeaders.CacheControl, "max-age=0")
+                    append(HttpHeaders.Accept, "application/json, text/javascript, */*; q=0.01")
+                    append("X-Requested-With", "XMLHttpRequest")
+                    append("Referer", referer)
+                }
+            ).bodyAsText()
+
+            val root = runCatching { json.parseToJsonElement(body).jsonObject }.getOrNull()
+                ?: return null
+            if (root["success"]?.jsonPrimitive?.booleanOrNull == false) return null
+
+            val data = root["data"]?.let { runCatching { it.jsonObject }.getOrNull() }
+                ?: return null
+            val pages = data["pages"]?.jsonPrimitive?.intOrNull ?: 1
+            val html = data["html"]?.jsonPrimitive?.contentOrNull.orEmpty()
+
+            AjaxChapterPage(pages, parseChapterRows(html))
+        } catch (e: Exception) {
+            Log.error { "KolNovel ajax page $page error: ${e.message}" }
+            null
+        }
+    }
+
+    private suspend fun fetchChaptersViaPagedHtml(mangaUrl: String): List<ChapterInfo> {
+        val base = mangaUrl.substringBefore('?').substringBefore('#').trimEnd('/')
+        val collected = LinkedHashMap<String, ChapterInfo>()
+        var totalPages = 0
+
+        for (page in 1..MAX_CHAPTER_PAGES) {
+            val url = "$base/?chapter_volume=__kol_all__&chapter_search=&chapter_order=oldest" +
+                "&chapter_page=$page#chapters"
+            val html = try {
+                client.get(
+                    requestBuilder(url) {
+                        append(HttpHeaders.UserAgent, getUserAgent())
+                        append(HttpHeaders.CacheControl, "max-age=0")
+                    }
+                ).bodyAsText()
+            } catch (e: Exception) {
+                Log.error { "KolNovel chapter page $page error: ${e.message}" }
+                break
+            }
+
+            val rows = parseChapterRows(html)
+            if (rows.isEmpty()) break
+            rows.forEach { collected[it.key] = it }
+
+            if (totalPages == 0) {
+                totalPages = Ksoup.parse(html)
+                    .selectFirst("[data-kol-volume-pages]")
+                    ?.attr("data-kol-volume-pages")
+                    ?.toIntOrNull() ?: 0
+            }
+            if (totalPages > 0 && page >= totalPages) break
+            if (totalPages == 0 && rows.size < SERVER_PAGE_SIZE) break
+        }
+
+        return collected.values.toList()
+    }
+
+    private fun parseChapterRows(html: String): List<ChapterInfo> {
+        if (html.isBlank()) return emptyList()
+        val doc = Ksoup.parse(html)
+        val rows = doc.select("li.kol-series-chapter[data-kol-chapter-row]")
+            .ifEmpty { doc.select("li[data-ID]") }
+
+        val chapters = mutableListOf<ChapterInfo>()
+        rows.forEach { row ->
+            val link = row.selectFirst("a.kol-series-chapter__link")
+                ?: row.selectFirst("a[href*='/shaag'], a[href*='/chapter/']")
+                ?: return@forEach
+
+            val href = link.attr("href").trim()
+            if (href.isBlank()) return@forEach
+            val url = absoluteUrl(href)
+            if (url.isBlank()) return@forEach
+
+            // New markup: <span class="kol-series-chapter__number" data-kol-chapter-number="25">
+            val numberText = row.selectFirst(".kol-series-chapter__number")?.text()?.trim().orEmpty()
+            val numberAttr = row.selectFirst("[data-kol-chapter-number]")
+                ?.attr("data-kol-chapter-number")?.trim().orEmpty()
+            val number = numberAttr.toFloatOrNull()
+                ?: parseChapterNumber(numberText).takeIf { it >= 0f }
+                ?: parseChapterNumber(row.text()).takeIf { it >= 0f }
+                ?: -1f
+
+            val rawTitle = row.selectFirst(".kol-series-chapter__title-copy")?.text()?.trim().orEmpty()
+            val title = rawTitle.takeUnless {
+                it.isBlank() || it == "—" || it == "-" || it == "–" || it == "ـ"
+            }.orEmpty()
+
+            val numberLabel = when {
+                numberText.isNotBlank() -> numberText
+                numberAttr.isNotBlank() -> "فصل $numberAttr"
+                else -> ""
+            }
+
+            val name = when {
+                numberLabel.isNotBlank() && title.isNotBlank() -> "$numberLabel - $title"
+                numberLabel.isNotBlank() -> numberLabel
+                title.isNotBlank() -> title
+                else -> link.text().trim()
+            }
+            if (name.isBlank()) return@forEach
+
+            val dateUpload = row.selectFirst("time.kol-series-chapter__date")
+                ?.attr("datetime")
+                ?.takeIf { it.isNotBlank() }
+                ?.let { runCatching { DateParser.parse(it) }.getOrDefault(0L) }
+                ?: 0L
+
+            chapters.add(ChapterInfo(name = name, key = url, number = number, dateUpload = dateUpload))
+        }
+        return chapters
     }
 
     private fun parseChapterNumber(name: String): Float {
@@ -243,6 +477,18 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
             }
         }
         return -1f
+    }
+
+    private fun absoluteUrl(url: String): String {
+        val value = url.trim()
+        return when {
+            value.isBlank() -> ""
+            value.startsWith("http://", ignoreCase = true) ||
+                value.startsWith("https://", ignoreCase = true) -> value
+            value.startsWith("//") -> "https:$value"
+            value.startsWith("/") -> "$baseUrl$value"
+            else -> "$baseUrl/$value"
+        }
     }
 
     override val contentFetcher: Content
@@ -267,13 +513,17 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
     private fun parseContentFromHtml(html: String): List<Page> {
         val doc = Ksoup.parse(html)
 
-        val contentDiv = doc.selectFirst(".reading-content, .text-left, .chapter-content, .entry-content")
+        // The new reader keeps the chapter body in #kol_content.epcontent.entry-content.
+        val contentDiv = doc.selectFirst("#kol_content")
+            ?: doc.selectFirst(".epcontent")
+            ?: doc.selectFirst(".reading-content, .text-left, .chapter-content, .entry-content")
+
         if (contentDiv != null) {
             val paragraphs = contentDiv.select("p")
                 .map { it.text().trim() }
                 .filter { it.isNotBlank() && it.length > 1 }
                 .filter { !it.startsWith("PDF") && !it.startsWith("اخبار") }
-                .filter { !it.contains("&tsp;", ignoreCase = true) && !it.contains("ادعم الرواية", ignoreCase = true) }
+                .filter { !it.contains("ادعم الرواية", ignoreCase = true) }
                 .filter { it != "\u00a0" && it != "&nbsp;" }
             if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
 
@@ -287,7 +537,7 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
             }
         }
 
-        val paragraphs = doc.select(".reading-content p, .chapter-content p, .entry-content p")
+        val paragraphs = doc.select("#kol_content p, .epcontent p, .entry-content p")
             .map { it.text().trim() }
             .filter { it.isNotBlank() && it.length > 5 && it != "\u00a0" }
         if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
@@ -297,5 +547,17 @@ abstract class KolNovel(private val deps: Dependencies) : SourceFactory(deps = d
             .map { it.trim() }
             .filter { it.isNotBlank() && it.length > 10 }
             .map { Text(it) }
+    }
+
+    private data class AjaxChapterPage(
+        val pages: Int,
+        val chapters: List<ChapterInfo>,
+    )
+
+    private companion object {
+        const val LIST_PAGE_SIZE = 20
+        const val SERVER_PAGE_SIZE = 24
+        const val FETCH_CONCURRENCY = 6
+        const val MAX_CHAPTER_PAGES = 100
     }
 }
