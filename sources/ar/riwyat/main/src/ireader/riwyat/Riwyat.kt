@@ -20,6 +20,7 @@ import ireader.core.source.model.Listing
 import ireader.core.source.model.MangaInfo
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
+import ireader.core.source.model.Text
 import ireader.core.source.SourceFactory
 import ireader.core.source.findInstance
 import ireader.core.http.noCache
@@ -93,6 +94,9 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
     override fun requestBuilder(url: String, block: HeadersBuilder.() -> Unit): HttpRequestBuilder {
         return super.requestBuilder(url, block).apply {
             noCache()
+            headers {
+                append(HttpHeaders.AcceptLanguage, "ar,en;q=0.8")
+            }
         }
     }
 
@@ -143,18 +147,26 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
         return try {
             val response = client.get(requestBuilder(url)).bodyAsText()
             val document = response.asJsoup()
-            val items = document.select("article.nhv-library-card")
+            val items = document.select("article.nhv-library-card, .nhv-library-card")
             val novels = items.mapNotNull { element ->
-                val title = element.selectFirst("h2.nhv-library-card__title a")?.text()?.trim() ?: return@mapNotNull null
-                val link = element.selectFirst("h2.nhv-library-card__title a")?.attr("href")?.trim() ?: return@mapNotNull null
-                val cover = element.selectFirst("a.nhv-library-card__cover img")?.attr("src")?.trim() ?: ""
+                val titleEl = element.selectFirst(
+                    "h2.nhv-library-card__title a, .nhv-library-card__title a"
+                ) ?: return@mapNotNull null
+                val title = titleEl.text().trim()
+                val link = titleEl.attr("href").trim()
+                if (title.isBlank() || link.isBlank()) return@mapNotNull null
+                val cover = element.selectFirst(
+                    "a.nhv-library-card__cover img, .nhv-library-card__cover img"
+                )?.attr("src")?.trim() ?: ""
                 MangaInfo(
                     key = link,
                     title = title,
                     cover = cover,
                 )
-            }
-            val hasNext = document.selectFirst("nav.nhv-archive-pagination a.next.page-numbers") != null
+            }.distinctBy { it.key }
+            val hasNext = document.selectFirst(
+                "nav.nhv-archive-pagination a.next.page-numbers, a.next.page-numbers"
+            ) != null
             MangasPageInfo(novels, hasNext)
         } catch (e: Exception) {
             MangasPageInfo(emptyList(), false)
@@ -163,13 +175,13 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
 
     override val detailFetcher: Detail
         get() = SourceFactory.Detail(
-            nameSelector = "h1.nhv-novel-title",
-            coverSelector = "div.nhv-novel-cover img",
+            nameSelector = "h1.nhv-novel-title, h1.entry-title",
+            coverSelector = "div.nhv-novel-cover img, .nhv-novel-cover img",
             coverAtt = "src",
-            descriptionSelector = "div.nhv-novel-synopsis p",
-            authorBookSelector = "div.nhv-novel-meta a[href*='/cont-author/']",
-            categorySelector = "div.nhv-novel-genres a",
-            statusSelector = "div.nhv-novel-meta div.nhv-novel-status",
+            descriptionSelector = "div.nhv-novel-synopsis p, .nhv-novel-synopsis p",
+            authorBookSelector = "div.nhv-novel-meta a[href*='/cont-author/'], .nhv-novel-meta a[href*='/cont-author/']",
+            categorySelector = "div.nhv-novel-genres a, .nhv-novel-genres a",
+            statusSelector = "div.nhv-novel-meta div.nhv-novel-status, .nhv-novel-status",
             onStatus = { status ->
                 when {
                     status.contains("مكتملة") || status.contains("Completed", true) -> MangaInfo.COMPLETED
@@ -192,7 +204,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
     override val contentFetcher: Content
         get() = SourceFactory.Content(
             pageTitleSelector = "h3.chapter-name",
-            pageContentSelector = ".reading-content-wrap.chapter-type-text p",
+            pageContentSelector = ".reading-content.current p, .reading-content-wrap.chapter-type-text p",
         )
 
     private val invisibleCharRegex = Regex(
@@ -200,10 +212,7 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
     )
 
     private val watermarkIndicatorRegex = Regex(
-        "فضا⁣ء|فضاء|شاي|رواي.?ات|تطبي.?ق|سار.?ق|مسرو.?ق|ت.?مويه|محتو.?ى|بدون.?اذن|بدون.?إذن" +
-        "|حقوق.?الترجمة|حقوق.?النشر|جميع.?الحقوق|يقوم.?بنقل|ينقل.?المحتوى" +
-        "|ohnovel|novelfull|cenele|cenel|tale.?read|app|تحميل|تنزيل" +
-        "#\\w{4,}",
+        "هذا التطبيق يسرق|فضاء الروايات|عالم الروايات|حقوق النشر|جميع الحقوق محفوظة",
         RegexOption.IGNORE_CASE
     )
 
@@ -224,29 +233,74 @@ abstract class Riwyat(private val deps: Dependencies) : SourceFactory(
         element.select("span[id^=data-]").remove()
     }
 
+    override suspend fun getMangaDetails(manga: MangaInfo, commands: List<Command<*>>): MangaInfo {
+        // Do not let an empty pre-fetched WebView document wipe the details.
+        commands.findInstance<Command.Detail.Fetch>()?.let { cmd ->
+            if (cmd.html.isNotBlank()) {
+                val parsed = detailParse(cmd.html.asJsoup()).copy(key = manga.key)
+                if (parsed.title.isNotBlank()) return parsed
+            }
+        }
+        val document = getMangaDetailsRequest(manga, commands)
+        return detailParse(document).copy(key = manga.key)
+    }
+
+    override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
+        // SourceFactory returns immediately when a Content.Fetch command exists even
+        // if its HTML is empty. Guard it and fall back to the normal HTTP request.
+        commands.findInstance<Command.Content.Fetch>()?.let { cmd ->
+            if (cmd.html.isNotBlank()) {
+                val pages = pageContentParse(cmd.html.asJsoup())
+                if (pages.any { it is Text && it.text.isNotBlank() }) return pages
+            }
+        }
+        return getContents(chapter, commands)
+    }
+
     override fun pageContentParse(document: Document): List<Page> {
         val doc = document.clone()
 
-        val allParagraphs = doc.select(contentFetcher.pageContentSelector!!)
+        val head = selectorReturnerStringType(
+            doc,
+            selector = contentFetcher.pageTitleSelector,
+            contentFetcher.pageTitleAtt
+        ).let { invisibleCharRegex.replace(it, "").trim() }
+
+        // The reader markup is now .reading-content.current, while older pages use
+        // .reading-content-wrap.chapter-type-text. Remove page chrome/watermark blocks
+        // before collecting paragraphs so promotional text is not scraped as story text.
+        doc.select(
+            "script, style, .nhv-reader-promo, .nhv-reading-chapter-head, " +
+            ".nhv-reading-meta-strip, .nhv-reading-topbar, blockquote[data-nosnippet=true], " +
+            "blockquote[inert], .nhv-report-slot"
+        ).remove()
+
+        val container = doc.selectFirst(".reading-content.current")
+            ?: doc.selectFirst(".reading-content-wrap.chapter-type-text")
+
+        val paragraphElements = when {
+            container != null && container.select("p").isNotEmpty() -> container.select("p")
+            else -> doc.select(contentFetcher.pageContentSelector!!)
+        }
+
+        val allParagraphs = paragraphElements
             .mapNotNull { element ->
                 sanitizeElement(element)
                 var text = element.text()
                 text = invisibleCharRegex.replace(text, "")
                 text = text.replace(Regex("\\s{2,}"), " ").trim()
 
-                if (text.length < 4) return@mapNotNull null
+                if (text.length < 2) return@mapNotNull null
                 if (watermarkIndicatorRegex.containsMatchIn(text)) return@mapNotNull null
 
                 text
             }
+            .distinct()
 
-        val head = selectorReturnerStringType(
-            doc,
-            selector = contentFetcher.pageTitleSelector,
-            contentFetcher.pageTitleAtt
-        )
-
-        return listOf(head.toPage()) + allParagraphs.map { it.toPage() }
+        return buildList {
+            if (head.isNotBlank()) add(head.toPage())
+            addAll(allParagraphs.map { it.toPage() })
+        }
     }
 
     override suspend fun getChapterList(
