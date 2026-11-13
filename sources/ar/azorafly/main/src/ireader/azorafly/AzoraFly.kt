@@ -66,6 +66,8 @@ abstract class AzoraFly(private val deps: Dependencies) : SourceFactory(deps = d
     override fun requestBuilder(url: String, block: HeadersBuilder.() -> Unit): HttpRequestBuilder {
         return super.requestBuilder(url, block).apply {
             headers {
+                append(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                append(HttpHeaders.AcceptLanguage, "ar,en;q=0.8")
                 append(HttpHeaders.Origin, "https://azorafly.com")
                 append(HttpHeaders.Referrer, "https://azorafly.com/")
             }
@@ -252,6 +254,14 @@ abstract class AzoraFly(private val deps: Dependencies) : SourceFactory(deps = d
                 if (pages.isNotEmpty()) return pages
             }
         }
+
+        // Primary path: the public API returns the chapter HTML directly, without the
+        // Cloudflare-protected reader page. This is what the site itself uses and it
+        // also works when the web page is slow or blocked.
+        fetchContentFromApi(chapter)?.let { pages ->
+            if (pages.isNotEmpty()) return pages
+        }
+
         return try {
             val body = client.get(requestBuilder(chapter.key)).bodyAsText()
             val pages = parseContentFromHtml(body)
@@ -262,12 +272,117 @@ abstract class AzoraFly(private val deps: Dependencies) : SourceFactory(deps = d
         }
     }
 
+    private val chapterIdCache = mutableMapOf<String, Int>()
+
+    /**
+     * GET /api/chapter?chapterId=… → {"chapter":{"content":"<p>…</p>",…}}
+     *
+     * Chapter keys are website URLs, so the numeric chapter id is resolved from the
+     * chapter list once and then cached in memory.
+     */
+    private suspend fun fetchContentFromApi(chapter: ChapterInfo): List<Page>? {
+        val chapterId = resolveChapterId(chapter) ?: return null
+        return try {
+            val body = client
+                .get(requestBuilder("$apiBase/chapter?chapterId=$chapterId"))
+                .bodyAsText()
+            val chapterObj = jsonParser.parseToJsonElement(body).jsonObject["chapter"]?.jsonObject
+                ?: return null
+            val content = chapterObj["content"]?.jsonPrimitive?.contentOrNull.orEmpty()
+
+            if (content.isBlank()) {
+                val locked = chapterObj["isAccessible"]?.jsonPrimitive?.booleanOrNull == false
+                return if (locked) listOf(Text("هذا الفصل غير متاح للقراءة المجانية.")) else null
+            }
+
+            parseHtmlParagraphs(content).ifEmpty { null }
+        } catch (e: Exception) {
+            Log.error { "Error fetching AzoraFly content from API: ${e.message}" }
+            null
+        }
+    }
+
+    private suspend fun resolveChapterId(chapter: ChapterInfo): Int? {
+        val key = chapter.key.substringBefore('?').substringBefore('#').trimEnd('/')
+        chapterIdCache[key]?.let { return it }
+
+        // Newer keys can carry the id explicitly.
+        chapter.key.substringAfter("chapterId=", "")
+            .substringBefore('&')
+            .toIntOrNull()
+            ?.let { return it }
+
+        val segments = key.substringAfter("$baseUrl/series/", "")
+            .split('/')
+            .filter { it.isNotBlank() }
+        if (segments.isEmpty()) return null
+
+        val chapterSlug = decodeSlug(segments.last())
+        val mangaSlug = if (segments.size >= 2) decodeSlug(segments[segments.size - 2]) else null
+        val postId = mangaSlug?.let { resolvePostId(it) } ?: return null
+
+        var skip = 0
+        val take = 500
+        while (true) {
+            val body = client.get(
+                requestBuilder("$apiBase/chapters?postId=$postId&skip=$skip&take=$take&order=asc&view=archive")
+            ).bodyAsText()
+            val root = jsonParser.parseToJsonElement(body).jsonObject
+            val chapters = root["post"]?.jsonObject?.get("chapters")?.jsonArray ?: break
+            if (chapters.isEmpty()) break
+
+            chapters.forEach { el ->
+                val obj = el.jsonObject
+                val slug = obj["slug"]?.jsonPrimitive?.contentOrNull
+                if (slug != null && decodeSlug(slug).equals(chapterSlug, ignoreCase = true)) {
+                    val id = obj["id"]?.jsonPrimitive?.intOrNull
+                    if (id != null) {
+                        chapterIdCache[key] = id
+                        return id
+                    }
+                }
+            }
+
+            skip += take
+            val total = root["totalChapterCount"]?.jsonPrimitive?.intOrNull ?: break
+            if (skip >= total) break
+        }
+        return null
+    }
+
+    private fun decodeSlug(value: String): String {
+        return try {
+            if (value.contains('%')) java.net.URLDecoder.decode(value, "UTF-8") else value
+        } catch (_: Exception) {
+            value
+        }
+    }
+
+    private fun parseHtmlParagraphs(html: String): List<Page> {
+        val doc = com.fleeksoft.ksoup.Ksoup.parse(html)
+        val paragraphs = doc.select("p, h1, h2, h3, h4, li, blockquote")
+            .map { it.text().trim() }
+            .filter { it.isNotBlank() && it.length > 1 }
+            .distinct()
+
+        if (paragraphs.isNotEmpty()) return paragraphs.map { Text(it) }
+
+        val text = doc.text().trim()
+        return if (text.isNotBlank()) listOf(Text(text)) else emptyList()
+    }
+
     /**
      * Extract the novel chapter content from the chapter page HTML.
      * The content HTML is embedded in the Astro island props as a JSON string
      * under "content":[0,"..."].
      */
     private fun parseContentFromHtml(html: String): List<Page> {
+        // The site now renders the chapter directly in the HTML as
+        // .novel-reader-content (Tailwind "prose") instead of embedding it in
+        // the old Astro island props payload. Parse the visible reader block
+        // first, then keep the old Astro fallback for cached/older pages.
+        parseRenderedContent(html)?.let { return it }
+
         return try {
             val marker = "&quot;content&quot;:[0,&quot;"
             val start = html.indexOf(marker)
@@ -297,6 +412,27 @@ abstract class AzoraFly(private val deps: Dependencies) : SourceFactory(deps = d
         } catch (e: Exception) {
             Log.error { "Error parsing AzoraFly content: ${e.message}" }
             emptyList()
+        }
+    }
+
+    private fun parseRenderedContent(html: String): List<Page>? {
+        return try {
+            val doc = com.fleeksoft.ksoup.Ksoup.parse(html)
+            val content = doc.selectFirst(".novel-reader-content")
+                ?: doc.selectFirst("div.prose")
+                ?: doc.selectFirst("[itemprop='articleBody']")
+                ?: return null
+
+            val paragraphs = content.select("p, h1, h2, h3, h4, blockquote")
+                .map { it.text().trim() }
+                .filter { it.isNotBlank() && it.length > 1 }
+                .distinct()
+
+            if (paragraphs.isEmpty()) return null
+            paragraphs.map { Text(it) }
+        } catch (e: Exception) {
+            Log.error { "Error parsing AzoraFly rendered content: ${e.message}" }
+            null
         }
     }
 
