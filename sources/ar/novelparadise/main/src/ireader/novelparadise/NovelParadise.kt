@@ -7,8 +7,11 @@ import com.fleeksoft.ksoup.nodes.Element
 import io.ktor.client.HttpClient
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.findInstance
@@ -28,14 +31,13 @@ import tachiyomix.annotations.Extension
 /**
  * NovelParadise (جنة الروايات) — WordPress `lightnovel` theme behind Cloudflare.
  *
- * The whole site answers HTTP 403 + `Server: cloudflare` to OkHttp without a cf_clearance
- * cookie, so the app's [CloudflareInterceptor] is the real fix-path: on Android it spins a
- * WebView to run the Turnstile challenge, captures a fresh cf_clearance, retries, and caches
- * it in the shared jar. We therefore make `cloudflareClient` (the interceptor-wrapped OkHttp)
- * our ONLY primary channel. `deps.httpClients.browser.fetch` is a secondary rescue when the
- * interceptor can't trigger (e.g. desktop where there's no WebView) — and we always pass it a
- * non-null *content* selector so contentReady() waits for the real page instead of returning
- * the challenge stub.
+ * Cloudflare answers the app (and any plain OkHttp/Ktor client) with HTTP 403 +
+ * `cf-mitigated: challenge` on EVERY page of the site, including `/wp-json`. Two transports
+ * avoid it completely, in order: (1) the site's own origin server, reached by address with the
+ * site's `Host` header — Cloudflare only fronts DNS, so the instance serves the real page with
+ * no challenge ([originUrl]); (2) Google Translate's fetch proxy ([proxied]). The hidden
+ * `cloudflareClient` remains as a last resort. No visible browser is ever opened on this site,
+ * so Cloudflare's block page can never be shown.
  *
  * All diagnostics here go through [diag] which logs at `android.util.Log` (vis. logcat with
  * `adb logcat -s NovelParadise:*`) — the Kermit-backed ireader Log drops Info/Debug by default,
@@ -54,6 +56,24 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     // The interceptor-wrapped OkHttp client (solves CF via WebView on device).
     override val client: HttpClient get() = deps.httpClients.cloudflareClient
 
+    override fun requestBuilder(url: String, block: HeadersBuilder.() -> Unit): HttpRequestBuilder {
+        return super.requestBuilder(url, block).apply {
+            headers {
+                // super's default block already appended the app UA; drop it so exactly one
+                // browser UA is sent (the proxy rejects "IReader…"/"okhttp…").
+                remove(HttpHeaders.UserAgent)
+                // A plain OkHttp/Ktor UA is often rejected by the proxy (and always challenged
+                // by Cloudflare), so present a normal desktop browser to every hop.
+                append(HttpHeaders.UserAgent, BROWSER_USER_AGENT)
+                append(
+                    HttpHeaders.Accept,
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+                )
+                append(HttpHeaders.AcceptLanguage, "ar,en;q=0.8")
+            }
+        }
+    }
+
     // Real site root of the lightnovel theme:
     val root: String get() = "$baseUrl/np-light"
 
@@ -61,6 +81,10 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     // screen and the chapter list hit the same page; whichever coroutine survives the app's
     // navigation teardown fills this, so the other one still has a real document to parse.
     private val lastDetailHtml = HashMap<String, String>(4)
+
+    // Resolved "http://<ip>" of the real origin server (see originBase()).
+    @Volatile
+    private var originHost: String? = null
 
     // ── diagnostics ─────────────────────────────────────────────────────────────
     private fun diag(msg: String) = Log.w(TAG, msg)
@@ -77,13 +101,87 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         return if (u.startsWith("/")) baseUrl + u else "$baseUrl/$u"
     }
 
+    // ── Cloudflare-free transport ───────────────────────────────────────────────
+    /**
+     * All HTML requests go through Google Translate's public fetch proxy.
+     *
+     * Cloudflare answers the app (and any plain OkHttp/Ktor client) with a Turnstile
+     * challenge (`403`, `cf-mitigated: challenge`) on EVERY page of the site, including
+     * `/wp-json`. Google's fetcher is not challenged, so the proxy returns the real page
+     * — same HTML, same chapter list, same chapter paragraphs — without a WebView and
+     * without the block page ever replacing the content. Links are rewritten to the
+     * proxy host and are converted back to site URLs by [canonical], so stored library
+     * keys never contain the proxy host.
+     */
+    private fun proxied(url: String): String {
+        val real = canonical(url)
+        // Accept keys that use www, the apex host, or any other alias and keep only the path.
+        val path = real.substringAfter("://", real)
+            .substringAfter('/', "")
+            .let { if (it.isEmpty()) "/" else "/$it" }
+        val sep = if (path.contains('?')) '&' else '?'
+        return "$PROXY_ROOT$path$sep$PROXY_PARAMS"
+    }
+
+    /** Convert a translate.goog URL (as found in proxied HTML) back to a site URL. */
+    private fun canonical(url: String): String {
+        val u = absolute(url)
+        val marker = ".translate.goog"
+        val idx = u.indexOf(marker)
+        if (idx < 0) return u
+        val tail = u.substring(idx + marker.length)
+        val path = tail.substringBefore('?').substringBefore('#')
+        val query = tail.substringAfter('?', "")
+            .split('&')
+            .filter { it.isNotBlank() && !it.startsWith("_x_tr_") }
+            .joinToString("&")
+        return baseUrl + path + if (query.isEmpty()) "" else "?$query"
+    }
+
+    /**
+     * Direct-to-origin transport: Cloudflare only fronts DNS for the public hostnames, so the
+     * real web server still answers normally when reached by its address with the site's Host
+     * header. No challenge, no JS, no block page — this is the actual page the theme renders.
+     *
+     * The origin address is resolved at runtime from `mail.novelsparadise.site` (a DNS record
+     * that is NOT proxied by Cloudflare and points at the same server); [ORIGIN_IP] is only a
+     * last-resort constant. Requests stay on plain HTTP because the server's certificate only
+     * covers the apex domain, which Cloudflare intercepts.
+     */
+    private suspend fun originBase(): String {
+        val cached = originHost
+        if (cached != null) return cached
+        // DNS is blocking I/O: never run it on the caller's (possibly main) dispatcher.
+        val ip = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                java.net.InetAddress.getAllByName(ORIGIN_RESOLVER_HOST)
+                    .firstOrNull { it is java.net.Inet4Address }
+                    ?.hostAddress
+                    ?: ORIGIN_IP
+            } catch (e: Exception) {
+                ORIGIN_IP
+            }
+        }
+        val base = "http://$ip"
+        originHost = base
+        return base
+    }
+
+    private suspend fun originUrl(url: String): String {
+        val real = canonical(url)
+        val path = real.substringAfter("://", real)
+            .substringAfter('/', "")
+            .let { if (it.isEmpty()) "/" else "/$it" }
+        return originBase() + path
+    }
+
     // ── listings ────────────────────────────────────────────────────────────────
     override fun getFilters(): FilterList = listOf(Filter.Title())
-    override fun getCommands(): CommandList = listOf(
-        Command.Detail.Fetch(),
-        Command.Chapter.Fetch(),
-        Command.Content.Fetch(),
-    )
+
+    // No WebView Fetch commands: they forced the app to open a hidden browser for every
+    // page (where Cloudflare could still end up showing a block page). The HTML is now
+    // fetched through the proxy in fetchPage(), with the hidden cloudflareClient as fallback.
+    override fun getCommands(): CommandList = emptyList()
 
     // Real home sections (verified on-device, v2.18): the lightnovel home page has 4 content
     // sections — "اخر التحديثات" (latest updated, 54 series), "اجدد الروايات" (newly added,
@@ -135,7 +233,8 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         val target = when {
             page <= 1 -> url
             query.isNotEmpty() -> "$base?${query}&page=$page"
-            else -> "$base/page/$page/"
+            // The live theme pages with a query parameter ("?page=2"), not "/page/2/".
+            else -> "$base?page=$page"
         }
         return try {
             val html = fetchPage(target, SERIES_ANCHOR_SELECTOR)
@@ -215,9 +314,10 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         }
 
         // Normalize key: resolve to an absolute URL (relative hrefs are Common in the
-        // theme's HTML), drop trailing slash and decode %XX so raw-Arabic and
-        // percent-encoded variants of the same URL dedupe to one novel.
-        val key = absolute(href).trimEnd('/')
+        // theme's HTML), convert proxy links back to the site, drop trailing slash and
+        // decode %XX so raw-Arabic and percent-encoded variants of the same URL dedupe
+        // to one novel.
+        val key = canonical(absolute(href)).trimEnd('/')
             .let { try { java.net.URLDecoder.decode(it, "UTF-8") } catch (e: Exception) { it } }
 
         // Covers are ROOT-RELATIVE ("/np-light/public/uploads/series/x.jpg") — logcat v2.25
@@ -232,6 +332,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
                 .map { firstSrcsetUrl(it) }   // "a.jpg 1x, b.jpg 2x" -> "b.jpg"
                 .firstOrNull { it.isNotBlank() && !isPlaceholder(it) }
                 ?.let { absolute(it.trim()) }
+                ?.let { canonical(it) }
                 ?.takeIf { it.isNotBlank() }
         } ?: ""
 
@@ -315,18 +416,16 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
 
     // ── details / chapters / content (theme selectors) ──────────────────────────
     override val detailFetcher: Detail = SourceFactory.Detail(
-        // The detail page carries a breadcrumb heading as well as the title heading, and
-        // `select("h1, h1.entry-title").text()` CONCATENATES every match — that is where the
-        // title "الرئيسية / كل الروايات / ديون لا نهاية لها" came from. detailParse() below
-        // takes the LAST h1, which is the real novel title; keep the selector as a fallback.
+        // The live theme (2026 redesign) renders the novel title as a single <h1>.
         nameSelector = "h1.entry-title, h1",
-        coverSelector = ".sertothumb img, .infseries .sertothumb img, .seriesthumb img",
+        coverSelector = "img.series-cover-poster, .sertothumb img, .infseries .sertothumb img, .seriesthumb img",
         coverAtt = "src",
         // The theme emits ROOT-RELATIVE covers; without this the detail page's image is a
         // bare path with no host and never loads (same root cause as the grid covers).
         addBaseurlToCoverLink = true,
-        authorBookSelector = ".serl .serval, .infseries .serl .serval, [class*=author] a",
-        categorySelector = ".sertogenre a, .infseries .sertogenre a, a[rel=category]",
+        // Metadata is a <dt>المؤلف</dt><dd><a href="/np-light/search/?q=…"> block.
+        authorBookSelector = "dd a[href*='/search/'], .serl .serval, .infseries .serl .serval, [class*=author] a",
+        categorySelector = "dd a[href*='/genre/'], a[href*='/np-light/genre/'], .sertogenre a, .infseries .sertogenre a, a[rel=category]",
         // The detail page carries the same badge as the grid card. Without this the status
         // column always read "unknown" even though the grid already knew it.
         statusSelector = ".series-status-badge, .seriestatus .is-ongoing, .seriestatus .is-completed",
@@ -338,7 +437,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
                 else -> MangaInfo.UNKNOWN
             }
         },
-        descriptionSelector = ".sersys, .sersysfull, .entry-content",
+        descriptionSelector = ".description-full, .description-short, .sersys, .sersysfull, .entry-content",
         onDescription = { list -> list.flatMap { it.split("\n") }.map { it.trim() }.filter { it.isNotBlank() } },
     )
 
@@ -389,10 +488,14 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
     }
 
     override val chapterFetcher: Chapters = SourceFactory.Chapters(
-        selector = ".eplisterfull ul li, .eplister ul li, ul.list-chapters li",
-        nameSelector = ".epl-num, a.chapternum, a span",
-        linkSelector = "a",
+        // 2026 theme: <section class="chapter-list"><a class="chapter-row" href=…>
+        //            <span>102 - title</span><time>date</time></a>
+        selector = "section.chapter-list a.chapter-row, .eplisterfull ul li, .eplister ul li, ul.list-chapters li",
+        nameSelector = "span, .epl-num, a.chapternum",
+        linkSelector = null,
         linkAtt = "href",
+        uploadDateSelector = "time",
+        onLink = { url -> canonical(absolute(url)) },
     )
 
     /**
@@ -491,7 +594,7 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         doc.select("a[href*='$CHAPTER_KEY']").mapNotNull { a ->
             val raw = a.attr("href").trim().let { if (it.isBlank()) a.absUrl("href") else it }
             if (raw.isBlank() || !raw.contains(CHAPTER_KEY)) return@mapNotNull null
-            val href = absolute(raw)
+            val href = canonical(absolute(raw))
             val name = a.text().trim()
             val title = if (name.isBlank() || name.length < 2) {
                 href.substringAfterLast("/").replace('-', ' ').trim()
@@ -616,7 +719,6 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         pageTitleSelector = "h1, h1.chapter-heading",
         pageContentSelector = "$CPAGE_CLASS, .entry-content, .chapter-content",
     )
-
     // ── page list (content paragraphs) ──────────────────────────────────────────
     override suspend fun getPageList(chapter: ChapterInfo, commands: List<Command<*>>): List<Page> {
         diag("PGL START key=${chapter.key.take(120)} name=${chapter.name.take(60)}")
@@ -707,58 +809,109 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
 
     // ── CF-aware fetch ──────────────────────────────────────────────────────────
     /**
+     * Short-lived body cache. The details screen and the chapter list request the SAME detail
+     * page within a few hundred ms of each other; on a slow mobile connection the second fetch
+     * used to time out (or lose the race with the app's navigation teardown), which is what made
+     * the chapter count stay empty. Serving the first response to the second call fixes that and
+     * halves the traffic.
+     */
+    private class CachedBody(val html: String, val at: Long)
+    private val bodyCache = HashMap<String, CachedBody>()
+
+    private fun cachedBody(key: String): String? = synchronized(bodyCache) {
+        val hit = bodyCache[key] ?: return null
+        if (System.currentTimeMillis() - hit.at > BODY_CACHE_TTL_MS) {
+            bodyCache.remove(key)
+            null
+        } else {
+            hit.html
+        }
+    }
+
+    private fun cacheBody(key: String, html: String) = synchronized(bodyCache) {
+        if (bodyCache.size > 40) bodyCache.clear()
+        bodyCache[key] = CachedBody(html, System.currentTimeMillis())
+    }
+
+    /**
      * Fetch [url] and require the returned HTML to contain a real *content* marker:
      * [SERIES_ANCHOR_SELECTOR] (which matches only on pages that actually have a series link,
      * never on the Cloudflare challenge stub). Returns "" if no real content.
+     *
+     * There is deliberately NO visible WebView step any more: every WebView attempt on this site
+     * landed on Cloudflare's "Just a moment…" / "Attention Required" page, which is exactly the
+     * block page the user must never see. If every transport fails we simply return no data.
      */
     private suspend fun fetchPage(url: String, selector: String): String {
         // Defensive: always resolve to an absolute URL — stale/cached keys from a previous
         // version may still be bare paths (a relative URL hits localhost:80 / hangs the WebView).
-        val abs = absolute(url)
+        // canonical() also converts any stored translate.goog link back to a site URL.
+        val abs = canonical(absolute(url))
 
-        // 1. Primary: cloudflareClient — the OkHttp CloudflareInterceptor solves the challenge
-        //    inside a HIDDEN WebView (running the Turnstile JS, which plants cf_clearance in the
-        //    shared Chrome cookie store) and then re-fetches. On a warm cookie this returns real
-        //    content instantly, invisibly, with NO visible challenge. When the cookie is cold the
-        //    interceptor reports "Failed to bypass" — but its hidden WebView just warmed the
-        //    session, which makes the browser (step 2) pass almost immediately.
+        cachedBody(abs)?.let {
+            diag("OK cache ($abs) ${it.length}B")
+            return it
+        }
+
+        // 1. PRIMARY: the site's own server, reached directly (Cloudflare is only in front of
+        //    DNS, not of the origin). No challenge page can ever be returned here.
         try {
-            val body = client.get(requestBuilder(abs)).bodyAsText()
-            if (isRealContent(body)) {
-                diag("OK client ($abs) ${body.length}B")
+            val body = withTimeoutOrNull(ORIGIN_TIMEOUT_MS) {
+                val response = deps.httpClients.default.get(originUrl(abs)) {
+                    header(HttpHeaders.Host, ORIGIN_VHOST)
+                    header(HttpHeaders.UserAgent, BROWSER_USER_AGENT)
+                    header(
+                        HttpHeaders.Accept,
+                        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+                    )
+                    header(HttpHeaders.AcceptLanguage, "ar,en;q=0.8")
+                }
+                if (response.status.value in 200..299) response.bodyAsText() else ""
+            }
+            if (body != null && isRealContent(body)) {
+                diag("OK origin ($abs) ${body.length}B")
+                cacheBody(abs, body)
                 return body
             }
-            diag("client returned ${body.length}B non-real; falling back to browser")
+            diag("origin gave ${body?.length ?: 0}B non-real")
+        } catch (e: Exception) {
+            diag("origin GET failed: ${e.message}")
+        }
+
+        // 2. Cloudflare-free proxy (Google Translate's public fetcher). Retried once: the proxy
+        //    occasionally answers a cold request with a redirect/stub before it caches the page.
+        repeat(2) { attempt ->
+            try {
+                val body = withTimeoutOrNull(PROXY_TIMEOUT_MS) {
+                    deps.httpClients.default.get(requestBuilder(proxied(abs))).bodyAsText()
+                }
+                if (body != null && isRealContent(body)) {
+                    diag("OK proxy ($abs) ${body.length}B")
+                    cacheBody(abs, body)
+                    return body
+                }
+                diag("proxy try ${attempt + 1} gave ${body?.length ?: 0}B non-real")
+            } catch (e: Exception) {
+                diag("proxy try ${attempt + 1} failed: ${e.message}")
+            }
+        }
+
+        // 3. Last resort: cloudflareClient — the OkHttp CloudflareInterceptor tries to solve the
+        //    challenge inside a HIDDEN WebView (no browser screen, so no block page is shown).
+        try {
+            val body = withTimeoutOrNull(DIRECT_TIMEOUT_MS) {
+                client.get(requestBuilder(abs)).bodyAsText()
+            }
+            if (body != null && isRealContent(body)) {
+                diag("OK client ($abs) ${body.length}B")
+                cacheBody(abs, body)
+                return body
+            }
+            diag("client returned ${body?.length ?: 0}B non-real")
         } catch (e: Exception) {
             diag("client GET failed: ${e.message}")
         }
 
-        // 2. BrowserEngine WebView — solves the challenge visibly and, crucially, waits for the
-        //    *content* selector. A non-null selector means contentReady() only fires once real
-        //    chapter/series links exist, so it usually returns the true page. Turnstile can take
-        //    a few seconds, so retry up to 3× with a short pause when we get a challenge stub.
-        for (attempt in 1..3) {
-            try {
-                diag("browser.fetch($abs, selector=…, try $attempt)…")
-                val result = deps.httpClients.browser.fetch(
-                    url = abs,
-                    selector = selector,
-                    timeout = 60_000L,
-                )
-                val body = result.responseBody
-                if (result.isSuccess && isRealContent(body)) {
-                    diag("OK browser ($abs) ${body.length}B")
-                    return body
-                }
-                diag("browser gave no content (${result.statusCode} ${result.error ?: ""})")
-            } catch (e: Exception) {
-                diag("browser.fetch threw: ${e.message}")
-            }
-            if (attempt < 3) {
-                kotlinx.coroutines.delay(2_000L)
-                diag("  retrying browser (Turnstile may still be solving)…")
-            }
-        }
         return ""
     }
 
@@ -978,14 +1131,40 @@ abstract class NovelParadise(private val deps: Dependencies) : SourceFactory(
         const val ANY_CARD_SELECTOR = ".listupd .lexa, .maindet, .utao .uta"
 
         // Density match: every real listing/search page contains series <a>s whose hrefs are
-        // /np-light/series/{slug}/. Also serves as the browser.fetch content marker — the
-        // challenge stub has none, so contentReady() waits out Turnstile.
+        // /np-light/series/{slug}/. Also serves as the browser-independent content marker — the
+        // challenge stub has none.
         const val SERIES_ANCHOR_SELECTOR = "a[href*='/np-light/series/']"
 
         // Novel detail / chapter / content selectors (lightnovel theme).
-        const val CPAGE_CLASS = ".epcontent"
+        const val CPAGE_CLASS = ".chapter-content"
         const val SERIES_KEY = "/np-light/series/"
         const val CHAPTER_KEY = "/chapter-"
+
+        // Google Translate fetch proxy (see proxied()/canonical()). The host is the
+        // dash-encoded form of www.novelsparadise.site.
+        const val PROXY_ROOT = "https://www-novelsparadise-site.translate.goog"
+        const val PROXY_PARAMS = "_x_tr_sl=auto&_x_tr_tl=ar&_x_tr_hl=ar"
+
+        // A normal desktop browser UA: the proxy rejects "okhttp/x.y" with a 4xx/empty body,
+        // and Cloudflare always challenges a non-browser UA.
+        const val BROWSER_USER_AGENT =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+
+        // ── direct origin (bypasses Cloudflare entirely) ─────────────────────────
+        // Non-proxied DNS record that points at the same web server as the site.
+        const val ORIGIN_RESOLVER_HOST = "mail.novelsparadise.site"
+        // Fallback address of that server (used only if DNS resolution fails).
+        const val ORIGIN_IP = "178.18.251.147"
+        // Virtual host the origin expects (and whose content it serves).
+        const val ORIGIN_VHOST = "www.novelsparadise.site"
+
+        // Mobile networks are slow; the proxy also has to fetch the origin itself, so give it
+        // room before giving up (a too-short timeout was aborting every fetch).
+        const val ORIGIN_TIMEOUT_MS = 60_000L
+        const val PROXY_TIMEOUT_MS = 90_000L
+        const val DIRECT_TIMEOUT_MS = 60_000L
+        const val BODY_CACHE_TTL_MS = 5 * 60_000L
 
         // Marker for detail pages: a real novel detail always links to at least one chapter.
         const val CONTENT_MARKER_SELECTOR = "a[href*='$CHAPTER_KEY']"
