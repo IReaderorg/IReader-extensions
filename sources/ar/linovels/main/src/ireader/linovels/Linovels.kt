@@ -105,6 +105,35 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
         Command.Content.Fetch(),
     )
 
+    // Built-in fetchers: used by screens that bypass the custom commands.
+    override val detailFetcher: Detail
+        get() = SourceFactory.Detail(
+            nameSelector = "h1",
+            coverSelector = "img[data-src*='/uploads/']",
+            coverAtt = "data-src",
+            addBaseurlToCoverLink = true,
+            authorBookSelector = "a[href*='/search/label/']",
+            onAuthor = { it.trim() },
+            descriptionSelector = "p",
+            categorySelector = "a[href*='/search/label/']"
+        )
+
+    override val chapterFetcher: Chapters
+        get() = SourceFactory.Chapters(
+            selector = "a[href*='-chapter-']",
+            linkSelector = "a",
+            linkAtt = "href",
+            addBaseUrlToLink = true,
+            nameSelector = "span, div",
+            numberSelector = "span",
+            reverseChapterList = false
+        )
+
+    override val contentFetcher: Content
+        get() = SourceFactory.Content(
+            pageContentSelector = "p"
+        )
+
     override val exploreFetchers: List<BaseExploreFetcher>
         get() = listOf(
             BaseExploreFetcher(
@@ -285,8 +314,8 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
             val html = client.get(requestBuilder(manga.key)).bodyAsText()
             val doc: Document = Ksoup.parse(html)
 
-            val label = seriesLabel(doc) ?: manga.title
-            val encoded = encode(label).replace("+", "%20")
+            val label = seriesLabelEncoded(doc) ?: manga.title
+            val encoded = if (label.contains("%")) label else encode(label).replace("+", "%20")
 
             val chapters = mutableListOf<ChapterInfo>()
             var startIndex = 1
@@ -310,8 +339,9 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
                 entries.forEach { entry ->
                     val entryTitle = entry["title"]?.jsonObject
                         ?.get("\$t")?.jsonPrimitive?.contentOrNull.orEmpty()
-                    val number = chapterNumber(entryTitle) ?: return@forEach
                     val link = alternateLink(entry) ?: return@forEach
+                    val number = chapterNumber(entryTitle) ?: chapterNumberFromLink(link)
+                        ?: return@forEach
 
                     chapters.add(
                         ChapterInfo(
@@ -326,12 +356,46 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
                 if (startIndex > total) break
             }
 
+            // Fallback: search feed filtered by chapter URLs
+            if (chapters.isEmpty()) {
+                fetchChaptersBySearch(manga.title, chapters)
+            }
+
             chapters
                 .distinctBy { it.key }
                 .sortedWith(compareBy { chapterNumberOfName(it.name) })
         } catch (e: Exception) {
             Log.error { "Linovels chapters error: ${e.message}" }
             emptyList()
+        }
+    }
+    /** Secondary path: pull chapters from a title search feed. */
+    private suspend fun fetchChaptersBySearch(title: String, out: MutableList<ChapterInfo>) {
+        try {
+            var startIndex = 1
+            repeat(2) {
+                val url = "$baseUrl/feeds/posts/default?alt=json&max-results=150" +
+                    "&start-index=$startIndex&q=${encode(title)}"
+                val response = client.get(requestBuilder(url))
+                if (response.status.value >= 400) return
+
+                val root = json.parseToJsonElement(response.bodyAsText()).jsonObject
+                val feed = root["feed"]?.jsonObject ?: return
+
+                entriesOf(feed).forEach { entry ->
+                    val link = alternateLink(entry) ?: return@forEach
+                    if (!link.contains("-chapter-")) return@forEach
+                    val entryTitle = entry["title"]?.jsonObject
+                        ?.get("\$t")?.jsonPrimitive?.contentOrNull.orEmpty()
+                    val number = chapterNumber(entryTitle) ?: chapterNumberFromLink(link)
+                        ?: return@forEach
+                    out.add(ChapterInfo(name = "الفصل $number", key = link))
+                }
+
+                startIndex += 150
+            }
+        } catch (e: Exception) {
+            Log.error { "Linovels chapter fallback error: ${e.message}" }
         }
     }
 
@@ -499,6 +563,23 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
         return labelsOf(doc).lastOrNull { !isGenericLabel(it) }
     }
 
+    /**
+     * Returns the URL-encoded label straight from the site's own href, which
+     * avoids apostrophe/space encoding mismatches (e.g. `Reader%27s`).
+     */
+    private fun seriesLabelEncoded(doc: Document): String? {
+        return doc.select("a[href*='/search/label/']")
+            .filter { !isGenericLabel(it.text().trim()) }
+            .mapNotNull { anchor ->
+                val href = anchor.attr("href")
+                val raw = href.substringAfter("/search/label/", "")
+                    .substringBefore('?')
+                    .trimEnd('/')
+                raw.ifBlank { null }
+            }
+            .lastOrNull()
+    }
+
     private fun isGenericLabel(label: String): Boolean {
         return genericLabels.contains(label.lowercase())
     }
@@ -507,6 +588,12 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
         val match = Regex("(?i)chapter\\s*([0-9]+(?:\\.[0-9]+)?)").find(title)
             ?: Regex("الفصل\\s*([0-9]+(?:\\.[0-9]+)?)").find(title)
         return match?.groupValues?.getOrNull(1)
+    }
+
+    /** Extracts the chapter number from a URL like `...-chapter-544/`. */
+    private fun chapterNumberFromLink(link: String): String? {
+        return Regex("(?i)-chapter-([0-9]+(?:\\.[0-9]+)?)")
+            .find(link)?.groupValues?.getOrNull(1)
     }
 
     private fun chapterNumberOfName(name: String): Double {
