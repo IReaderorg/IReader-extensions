@@ -1,7 +1,7 @@
 listOf("ar").map { lang ->
   Extension(
     name = "Linovels",
-    versionCode = 1,
+    versionCode = 2,
     libVersion = "2",
     lang = lang,
     description = "مملكة الروايات - روايات عربية مترجمة (linovels.com)",

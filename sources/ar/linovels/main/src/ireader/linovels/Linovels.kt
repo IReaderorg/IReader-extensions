@@ -319,11 +319,10 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
             val encoded = if (label.contains("%")) label else encode(label).replace("+", "%20")
 
             val chapters = mutableListOf<ChapterInfo>()
-            var startIndex = 1
-            var total = Int.MAX_VALUE
-            var guard = 0
 
-            while (startIndex <= total && guard < 40) {
+            // 1) Blogger label feed — pages of 150 until a page is short/empty.
+            var startIndex = 1
+            while (startIndex < 10000) {
                 val url = "$baseUrl/feeds/posts/default/-/$encoded" +
                     "?alt=json&max-results=150&start-index=$startIndex"
                 val response = client.get(requestBuilder(url))
@@ -331,8 +330,6 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
 
                 val root = json.parseToJsonElement(response.bodyAsText()).jsonObject
                 val feed = root["feed"]?.jsonObject ?: break
-                total = feed["openSearch\$totalResults"]?.jsonObject
-                    ?.get("\$t")?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0
 
                 val entries = entriesOf(feed)
                 if (entries.isEmpty()) break
@@ -352,9 +349,22 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
                     )
                 }
 
+                if (entries.size < 150) break
                 startIndex += 150
-                guard++
-                if (startIndex > total) break
+            }
+
+            // 2) Chapter links the series page itself lists — covers chapters
+            //    tagged under a different label than the feed above.
+            doc.select("a[href*='-chapter-']").forEach { anchor ->
+                val href = anchor.attr("href").trim()
+                if (href.isBlank()) return@forEach
+                val link = when {
+                    href.startsWith("http") -> href
+                    href.startsWith("/") -> baseUrl + href
+                    else -> baseUrl + "/" + href
+                }
+                val number = chapterNumberFromLink(link) ?: return@forEach
+                chapters.add(ChapterInfo(name = "الفصل $number", key = link))
             }
 
             // Fallback: search feed filtered by chapter URLs
