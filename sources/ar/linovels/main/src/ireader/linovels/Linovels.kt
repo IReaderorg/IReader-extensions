@@ -409,62 +409,58 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
         commands: List<Command<*>>
     ): List<Page> {
         return try {
+            // 1) Preferred: WordPress REST API. The HTML page hides the body
+            //    behind an anti-scraping "wait a few minutes" wall, but the
+            //    public REST endpoint always returns the full rendered content.
+            val slug = slugOf(chapter.key)
+            if (slug != null) {
+                val apiUrl = "$baseUrl/wp-json/wp/v2/posts" +
+                    "?slug=$slug&_fields=slug,title,content"
+                val response = client.get(requestBuilder(apiUrl))
+                if (response.status.value < 400) {
+                    val body = response.bodyAsText()
+                    val pages = parseWpContent(body)
+                    if (pages.isNotEmpty()) return pages
+                } else {
+                    Log.error { "Linovels wp-api error ${response.status.value} for $slug" }
+                }
+            }
+
+            // 2) Fallback: the embedded textarea payload on the HTML page.
+            val html = client.get(requestBuilder(chapter.key)).bodyAsText()
+            val doc: Document = Ksoup.parse(html)
+
+            val raw = doc.selectFirst("textarea#nk-raw-data")
+                ?.let { it.text().ifBlank { it.html() } }
+                ?: doc.selectFirst("textarea")?.let { it.text().ifBlank { it.html() } }
+
             val pages = mutableListOf<Page>()
 
-            // The site rate-limits first-time readers ("انتظر دقائق"), so retry
-            // a few times with a short delay until real content shows up.
-            var attempt = 0
-            while (attempt < 5 && pages.isEmpty()) {
-                val html = client.get(requestBuilder(chapter.key)).bodyAsText()
-                val doc: Document = Ksoup.parse(html)
-
-                val raw = doc.selectFirst("textarea#nk-raw-data")
-                    ?.let { it.text().ifBlank { it.html() } }
-                    ?: doc.selectFirst("textarea")?.let { it.text().ifBlank { it.html() } }
-
-                if (raw.isNullOrBlank()) {
-                    attempt++
-                    delay(1500L * (attempt + 1))
-                    continue
-                }
-
+            if (!raw.isNullOrBlank()) {
                 // Entities are double-encoded (`&amp;#8220;`), so decode twice.
                 var decoded: String = raw
                 repeat(2) { decoded = decodeEntities(decoded) }
 
                 val inner = if (decoded.contains("<")) Ksoup.parse(decoded) else null
-
-                val extracted = mutableListOf<Page>()
                 if (inner != null) {
                     inner.select("p").forEach { p ->
                         val text = normalizeChapterText(p.text())
-                        if (isChapterText(text)) extracted.add(Text(text))
+                        if (isChapterText(text)) pages.add(Text(text))
                     }
                     inner.select("img[src]").forEach { img ->
                         val src = img.attr("src").trim()
-                        if (src.startsWith("http")) extracted.add(ImageUrl(src))
+                        if (src.startsWith("http")) pages.add(ImageUrl(src))
                     }
-                }
-
-                if (extracted.isEmpty()) {
+                } else {
                     decoded.split(Regex("\\n+")).forEach { line ->
                         val text = normalizeChapterText(line)
-                        if (isChapterText(text)) extracted.add(Text(text))
+                        if (isChapterText(text)) pages.add(Text(text))
                     }
-                }
-
-                if (extracted.size >= 2) {
-                    pages.addAll(extracted)
-                } else {
-                    attempt++
-                    delay(1500L * (attempt + 1))
                 }
             }
 
-            // Fallback: regular article paragraphs
+            // 3) Last resort: rendered article paragraphs.
             if (pages.isEmpty()) {
-                val html = client.get(requestBuilder(chapter.key)).bodyAsText()
-                val doc: Document = Ksoup.parse(html)
                 val container = sequenceOf("article", "main", "[class*=content]", "[class*=post]")
                     .mapNotNull { doc.selectFirst(it) }
                     .firstOrNull() ?: doc.body()
@@ -478,9 +474,8 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
             if (pages.isEmpty()) {
                 listOf(
                     Text(
-                        "لم يتمكن المصدر من جلب المحتوى الآن.\n" +
-                            "الموقع يطلب من الزوار الجدد الانتظار دقائق قبل عرض الفصل.\n" +
-                            "أعد فتح الفصل بعد قليل."
+                        "تعذّر جلب محتوى هذا الفصل.\n" +
+                            "قد يكون الرابط غير موجود أو أن السلسلة لا تحتوي هذا الرقم."
                     )
                 )
             } else {
@@ -490,6 +485,48 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
             Log.error { "Linovels content error: ${e.message}" }
             listOf(Text("خطأ في تحميل محتوى الفصل: ${e.message}"))
         }
+    }
+
+    /**
+     * Parses a `/wp-json/wp/v2/posts?slug=...` response into reading pages.
+     * The response is a JSON array whose single item holds `content.rendered`.
+     */
+    private fun parseWpContent(body: String): List<Page> {
+        return try {
+            val array = json.parseToJsonElement(body) as? JsonArray ?: return emptyList()
+            val item = array.firstOrNull() as? JsonObject ?: return emptyList()
+
+            val rendered = item["content"]?.jsonObject
+                ?.get("rendered")?.jsonPrimitive?.contentOrNull
+                ?: return emptyList()
+
+            // The REST payload carries one level of HTML entities.
+            val html = decodeEntities(rendered)
+            val doc: Document = Ksoup.parse(html)
+
+            val pages = mutableListOf<Page>()
+            doc.select("p").forEach { p ->
+                val text = normalizeChapterText(p.text())
+                if (isChapterText(text)) pages.add(Text(text))
+            }
+            doc.select("img[src]").forEach { img ->
+                val src = img.attr("src").trim()
+                if (src.startsWith("http")) pages.add(ImageUrl(src))
+            }
+
+            pages
+        } catch (e: Exception) {
+            Log.error { "Linovels wp parse error: ${e.message}" }
+            emptyList()
+        }
+    }
+
+    /** `/slug/` or `/slug-chapter-12/` → `slug` or `slug-chapter-12`. */
+    private fun slugOf(url: String): String? {
+        val path = url.substringAfter("://").substringAfter('/')
+            .substringBefore('?')
+            .trimEnd('/')
+        return path.ifBlank { null }
     }
 
     /** Removes zero-width/invisible characters used as an anti-scraping trick. */
