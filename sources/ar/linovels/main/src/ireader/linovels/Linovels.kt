@@ -20,6 +20,7 @@ import ireader.core.source.model.MangaInfo.Companion.ONGOING
 import ireader.core.source.model.MangasPageInfo
 import ireader.core.source.model.Page
 import ireader.core.source.model.Text
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -408,57 +409,80 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
         commands: List<Command<*>>
     ): List<Page> {
         return try {
-            val html = client.get(requestBuilder(chapter.key)).bodyAsText()
-            val doc: Document = Ksoup.parse(html)
-
-            val raw = doc.selectFirst("textarea#nk-raw-data")
-                ?.let { it.text().ifBlank { it.html() } }
-                ?: doc.selectFirst("textarea")?.let { it.text().ifBlank { it.html() } }
-
             val pages = mutableListOf<Page>()
 
-            val rawText = raw.orEmpty()
-            if (rawText.isNotBlank()) {
+            // The site rate-limits first-time readers ("انتظر دقائق"), so retry
+            // a few times with a short delay until real content shows up.
+            var attempt = 0
+            while (attempt < 5 && pages.isEmpty()) {
+                val html = client.get(requestBuilder(chapter.key)).bodyAsText()
+                val doc: Document = Ksoup.parse(html)
+
+                val raw = doc.selectFirst("textarea#nk-raw-data")
+                    ?.let { it.text().ifBlank { it.html() } }
+                    ?: doc.selectFirst("textarea")?.let { it.text().ifBlank { it.html() } }
+
+                if (raw.isNullOrBlank()) {
+                    attempt++
+                    delay(1500L * (attempt + 1))
+                    continue
+                }
+
                 // Entities are double-encoded (`&amp;#8220;`), so decode twice.
-                var decoded: String = rawText
+                var decoded: String = raw
                 repeat(2) { decoded = decodeEntities(decoded) }
 
                 val inner = if (decoded.contains("<")) Ksoup.parse(decoded) else null
+
+                val extracted = mutableListOf<Page>()
                 if (inner != null) {
                     inner.select("p").forEach { p ->
-                        val text = p.text().trim()
-                        if (text.isNotEmpty() && !isBoilerplate(text)) {
-                            pages.add(Text(text))
-                        }
+                        val text = normalizeChapterText(p.text())
+                        if (isChapterText(text)) extracted.add(Text(text))
                     }
                     inner.select("img[src]").forEach { img ->
                         val src = img.attr("src").trim()
-                        if (src.startsWith("http")) pages.add(ImageUrl(src))
+                        if (src.startsWith("http")) extracted.add(ImageUrl(src))
                     }
+                }
+
+                if (extracted.isEmpty()) {
+                    decoded.split(Regex("\\n+")).forEach { line ->
+                        val text = normalizeChapterText(line)
+                        if (isChapterText(text)) extracted.add(Text(text))
+                    }
+                }
+
+                if (extracted.size >= 2) {
+                    pages.addAll(extracted)
                 } else {
-                    decoded.split(Regex("\\n+"))
-                        .map { it.trim() }
-                        .filter { it.isNotEmpty() && !isBoilerplate(it) }
-                        .forEach { pages.add(Text(it)) }
+                    attempt++
+                    delay(1500L * (attempt + 1))
                 }
             }
 
             // Fallback: regular article paragraphs
             if (pages.isEmpty()) {
+                val html = client.get(requestBuilder(chapter.key)).bodyAsText()
+                val doc: Document = Ksoup.parse(html)
                 val container = sequenceOf("article", "main", "[class*=content]", "[class*=post]")
                     .mapNotNull { doc.selectFirst(it) }
                     .firstOrNull() ?: doc.body()
 
                 container?.select("p")?.forEach { p ->
-                    val text = p.text().trim()
-                    if (text.length > 30 && !isBoilerplate(text)) {
-                        pages.add(Text(text))
-                    }
+                    val text = normalizeChapterText(p.text())
+                    if (isChapterText(text)) pages.add(Text(text))
                 }
             }
 
             if (pages.isEmpty()) {
-                listOf(Text("لا يوجد محتوى متاح لهذا الفصل."))
+                listOf(
+                    Text(
+                        "لم يتمكن المصدر من جلب المحتوى الآن.\n" +
+                            "الموقع يطلب من الزوار الجدد الانتظار دقائق قبل عرض الفصل.\n" +
+                            "أعد فتح الفصل بعد قليل."
+                    )
+                )
             } else {
                 pages
             }
@@ -466,6 +490,31 @@ abstract class Linovels(deps: Dependencies) : SourceFactory(deps = deps) {
             Log.error { "Linovels content error: ${e.message}" }
             listOf(Text("خطأ في تحميل محتوى الفصل: ${e.message}"))
         }
+    }
+
+    /** Removes zero-width/invisible characters used as an anti-scraping trick. */
+    private fun normalizeChapterText(input: String): String {
+        val invisible = Regex("[\\u200B-\\u200F\\u2060\\uFEFF\\u00AD\\u202A-\\u202E]")
+        return input
+            .replace(invisible, "")
+            .replace(Regex("[ \\t]+"), " ")
+            .trim()
+    }
+
+    private fun isChapterText(text: String): Boolean {
+        if (text.length < 2) return false
+        if (isBoilerplate(text)) return false
+        if (isWaitMessage(text)) return false
+        return true
+    }
+
+    private fun isWaitMessage(text: String): Boolean {
+        return text.contains("قارئا عاديا") ||
+            text.contains("قارئاً عادياً") ||
+            text.contains("قارئ عادي") ||
+            text.contains("انتظر دقائق") ||
+            text.contains("أعد المحاولة") ||
+            text.contains("اعد المحاوله")
     }
 
     // ──────────────────────────────────────────────────────────────
