@@ -16,9 +16,9 @@ export KEY_STORE_PASSWORD=$3
 export KEY_PASSWORD=$4
 
 # Sign all of the APKs
-for APK in ${APKS[@]}; do
-    ${TOOLS}/zipalign -c -v -p 4 $APK
-    ${TOOLS}/apksigner sign --ks $STORE_PATH --ks-key-alias $STORE_ALIAS --ks-pass env:KEY_STORE_PASSWORD --key-pass env:KEY_PASSWORD $APK
+for APK in "${APKS[@]}"; do
+    "${TOOLS}/zipalign" -c -v -p 4 "$APK"
+    "${TOOLS}/apksigner" sign --ks "$STORE_PATH" --ks-key-alias "$STORE_ALIAS" --ks-pass env:KEY_STORE_PASSWORD --key-pass env:KEY_PASSWORD "$APK"
 done
 
 rm $STORE_PATH
