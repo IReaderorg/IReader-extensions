@@ -31,6 +31,21 @@ class NovelfireTest {
     }
 
     @Test
+    fun `growing chapter count moves newest page beyond page one`() {
+        val baseUrl = "https://novelfire.net"
+        val novelPath = "book/shadow-slave"
+
+        val beforeUrls = novelfireChapterPageUrls(baseUrl, novelPath, 3256)
+        val afterUrls = novelfireChapterPageUrls(baseUrl, novelPath, 3301)
+
+        assertEquals(33, novelfireChapterPages(3256))
+        assertEquals(34, novelfireChapterPages(3301))
+        assertEquals("$baseUrl/$novelPath/chapters?page=33", beforeUrls.first())
+        assertEquals("$baseUrl/$novelPath/chapters?page=34", afterUrls.first())
+        assertEquals("$baseUrl/$novelPath/chapters?page=1", afterUrls.last())
+    }
+
+    @Test
     fun `rate limit delay honors Retry-After and clamps invalid values`() {
         assertEquals(10_000L, novelfireRetryDelayMs("10", 10_000L, 30_000L))
         assertEquals(1_000L, novelfireRetryDelayMs("0", 10_000L, 30_000L))
