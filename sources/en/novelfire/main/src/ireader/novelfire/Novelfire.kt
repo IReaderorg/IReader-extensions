@@ -16,8 +16,46 @@ import ireader.core.source.model.Page
 import ireader.core.source.model.Text
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
+import kotlinx.coroutines.delay
 import tachiyomix.annotations.Extension
 import tachiyomix.annotations.AutoSourceId
+
+internal const val NOVELFIRE_POPULAR_ENDPOINT =
+    "/search-adv?ctgcon=and&totalchapter=0&ratcon=min&rating=0&status=-1&sort=rank-top&page={page}"
+internal const val NOVELFIRE_LATEST_ENDPOINT =
+    "/search-adv?ctgcon=and&totalchapter=0&ratcon=min&rating=0&status=-1&sort=date&tagcon=and&page={page}"
+internal const val NOVELFIRE_SEARCH_ENDPOINT = "/search?keyword={query}&page={page}"
+
+internal const val NOVELFIRE_CHAPTERS_PER_PAGE = 100
+internal const val NOVELFIRE_MAX_ATTEMPTS = 4
+internal const val NOVELFIRE_DEFAULT_RETRY_MS = 10_000L
+internal const val NOVELFIRE_MAX_RETRY_MS = 30_000L
+
+internal fun novelfireChapterPages(totalChapters: Int): Int =
+    (totalChapters + NOVELFIRE_CHAPTERS_PER_PAGE - 1) / NOVELFIRE_CHAPTERS_PER_PAGE
+
+internal fun novelfireChapterPageUrls(baseUrl: String, novelPath: String, totalChapters: Int): List<String> =
+    (novelfireChapterPages(totalChapters) downTo 1).map { page ->
+        "$baseUrl/${novelPath.trim('/')}/chapters?page=$page"
+    }
+
+internal fun novelfireRetryDelayMs(retryAfter: String?, defaultMs: Long, maxMs: Long): Long {
+    val seconds = retryAfter?.trim()?.toLongOrNull()
+    return (seconds?.times(1_000L) ?: defaultMs).coerceIn(1_000L, maxMs)
+}
+
+internal fun parseNovelfireChapters(html: String, baseUrl: String): List<ChapterInfo> =
+    Ksoup.parse(html).select(".chapter-list li").mapNotNull { element ->
+        val link = element.selectFirst("a") ?: return@mapNotNull null
+        val href = link.attr("href").takeIf { it.isNotBlank() && it != "#" } ?: return@mapNotNull null
+        val name = link.attr("title").takeIf { it.isNotBlank() } ?: "No Title Found"
+        val key = when {
+            href.startsWith("http", ignoreCase = true) -> href
+            href.startsWith("/") -> "$baseUrl$href"
+            else -> "$baseUrl/$href"
+        }
+        ChapterInfo(name = name, key = key)
+    }
 
 /**
  * 🔥 NovelFire Source - Declarative with SourceFactory
@@ -61,7 +99,7 @@ abstract class Novelfire(deps: Dependencies) : SourceFactory(deps = deps) {
         get() = listOf(
             BaseExploreFetcher(
                 "Popular",
-                endpoint = "/search-adv?ctgcon=and&totalchapter=0&ratcon=min&rating=0&status=-1&sort=rank-top&page={{page}}",
+                endpoint = NOVELFIRE_POPULAR_ENDPOINT,
                 selector = ".novel-item",
                 nameSelector = "h4.novel-title",
                 linkSelector = "a",
@@ -73,7 +111,7 @@ abstract class Novelfire(deps: Dependencies) : SourceFactory(deps = deps) {
             ),
             BaseExploreFetcher(
                 "Latest",
-                endpoint = "/search-adv?ctgcon=and&totalchapter=0&ratcon=min&rating=0&status=-1&sort=date&tagcon=and&page={{page}}",
+                endpoint = NOVELFIRE_LATEST_ENDPOINT,
                 selector = ".novel-item",
                 nameSelector = "h4.novel-title",
                 linkSelector = "a",
@@ -85,7 +123,7 @@ abstract class Novelfire(deps: Dependencies) : SourceFactory(deps = deps) {
             ),
             BaseExploreFetcher(
                 "Search",
-                endpoint = "/search?keyword={{query}}&page={{page}}",
+                endpoint = NOVELFIRE_SEARCH_ENDPOINT,
                 selector = ".novel-list.chapters .novel-item",
                 nameSelector = "a",
                 nameAtt = "title",
@@ -139,34 +177,66 @@ abstract class Novelfire(deps: Dependencies) : SourceFactory(deps = deps) {
     override suspend fun getChapterList(manga: MangaInfo, commands: List<Command<*>>): List<ChapterInfo> {
         val novelPath = manga.key.removePrefix(baseUrl).removePrefix("/")
 
-        // Get total chapters to calculate pages
-        val doc = client.get(requestBuilder(manga.key)).asJsoup()
-        val totalChaptersText = doc.selectFirst(".header-stats .icon-book-open")?.parent()?.text()?.trim() ?: "0"
-        val totalChapters = totalChaptersText.replace("[^\\d]".toRegex(), "").toIntOrNull() ?: 0
-        val pages = (totalChapters + 99) / 100
-
-        val allChapters = mutableListOf<ChapterInfo>()
-
-        for (page in 1..pages) {
-            val url = "$baseUrl/$novelPath/chapters?page=$page"
-            try {
-                val response = client.get(requestBuilder(url))
-                val body = response.bodyAsText()
-                if (body.contains("You are being rate limited")) throw Exception("Rate limited")
-                
-                Ksoup.parse(body).select(".chapter-list li").forEach { ele ->
-                    val chapterName = ele.select("a").attr("title").takeIf { it.isNotBlank() } ?: "No Title Found"
-                    val chapterPath = ele.select("a").attr("href")
-                    if (chapterPath.isBlank()) return@forEach
-
-                    val fullPath = if (chapterPath.startsWith("http")) chapterPath else "$baseUrl$chapterPath"
-                    allChapters.add(ChapterInfo(name = chapterName, key = fullPath))
-                }
-            } catch (e: Exception) {
-                Log.error { "Error fetching chapters for page $page: ${e.message}" }
-            }
+        val detailHtml = try {
+            fetchHtml(manga.key)
+        } catch (e: Exception) {
+            Log.error { "Error fetching novel details for ${manga.key}: ${e.message}" }
+            null
         }
-        return allChapters
+        if (detailHtml == null) {
+            Log.error { "Unable to load chapter count for ${manga.key}" }
+            return emptyList()
+        }
+        val totalChapters = Ksoup.parse(detailHtml)
+            .selectFirst(".header-stats .icon-book-open")
+            ?.parent()
+            ?.text()
+            ?.trim()
+            ?.replace("[^\\d]".toRegex(), "")
+            ?.toIntOrNull() ?: 0
+        val pages = novelfireChapterPages(totalChapters)
+
+        // Newest chapters live on the last page. Fetch backwards so a rate limit
+        // can never hide the chapters a refresh is actually looking for.
+        val chaptersByPage = mutableMapOf<Int, List<ChapterInfo>>()
+        novelfireChapterPageUrls(baseUrl, novelPath, totalChapters).forEachIndexed { index, url ->
+            val page = pages - index
+            val html = try {
+                fetchHtml(url)
+            } catch (e: Exception) {
+                Log.error { "Error fetching chapter page $page: ${e.message}" }
+                null
+            }
+            if (html == null) {
+                Log.error { "Skipping rate limited/unavailable chapter page $page" }
+                return@forEachIndexed
+            }
+            chaptersByPage[page] = parseNovelfireChapters(html, baseUrl)
+        }
+
+        val ascending = (1..pages).flatMap { chaptersByPage[it].orEmpty() }
+        return applyChapterSorting(ascending)
+    }
+
+    private suspend fun fetchHtml(url: String): String? {
+        repeat(NOVELFIRE_MAX_ATTEMPTS) { attempt ->
+            val response = client.get(requestBuilder(url))
+            val body = response.bodyAsText()
+            val rateLimited = response.status.value == 429 ||
+                body.contains("you are being rate limited", ignoreCase = true)
+            if (!rateLimited) return body
+
+            Log.error { "Rate limited by Novelfire for $url (attempt ${attempt + 1})" }
+            if (attempt == NOVELFIRE_MAX_ATTEMPTS - 1) return null
+            delay(
+                novelfireRetryDelayMs(
+                    response.headers["Retry-After"],
+                    NOVELFIRE_DEFAULT_RETRY_MS,
+                    NOVELFIRE_MAX_RETRY_MS,
+                )
+            )
+        }
+        return null
     }
 
     // ═══════════════════════════════════════════════════════════════
