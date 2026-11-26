@@ -147,7 +147,18 @@ abstract class Novelfire(deps: Dependencies) : SourceFactory(deps = deps) {
             coverAtt = "data-src",
             descriptionSelector = ".summary .content",
             authorBookSelector = ".author .property-item > span",
-            categorySelector = ".categories .property-item"
+            categorySelector = ".categories .property-item",
+            statusSelector = ".header-stats .ongoing, .header-stats .completed, .header-stats .hiatus, .header-stats span:last-child strong",
+            onStatus = { status ->
+                when {
+                    status.contains("ongoing", ignoreCase = true) -> MangaInfo.ONGOING
+                    status.contains("hiatus", ignoreCase = true) -> MangaInfo.ON_HIATUS
+                    status.contains("cancelled", ignoreCase = true) ||
+                        status.contains("canceled", ignoreCase = true) -> MangaInfo.CANCELLED
+                    status.contains("complete", ignoreCase = true) -> MangaInfo.COMPLETED
+                    else -> MangaInfo.UNKNOWN
+                }
+            }
         )
 
     // ═══════════════════════════════════════════════════════════════
