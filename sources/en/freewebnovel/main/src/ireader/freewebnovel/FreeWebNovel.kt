@@ -167,10 +167,12 @@ abstract class FreeWebNovel(deps: Dependencies) : ParsedHttpSource(deps) {
         status = next(document.select("[title=Status]")).text().handleStatus()
     )
 
-    private fun String.handleStatus(): Long = when (this) {
-        "OnGoing" -> MangaInfo.ONGOING
-        "Complete" -> MangaInfo.COMPLETED
-        else -> MangaInfo.ONGOING
+    private fun String.handleStatus(): Long = when {
+        equals("OnGoing", ignoreCase = true) || equals("Ongoing", ignoreCase = true) -> MangaInfo.ONGOING
+        equals("Complete", ignoreCase = true) || equals("Completed", ignoreCase = true) -> MangaInfo.COMPLETED
+        contains("Hiatus", ignoreCase = true) -> MangaInfo.ON_HIATUS
+        contains("Cancelled", ignoreCase = true) || contains("Canceled", ignoreCase = true) -> MangaInfo.CANCELLED
+        else -> MangaInfo.UNKNOWN
     }
 
     override fun chaptersRequest(book: MangaInfo) = HttpRequestBuilder().apply {
