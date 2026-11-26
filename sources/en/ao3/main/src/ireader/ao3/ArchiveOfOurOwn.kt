@@ -1,7 +1,12 @@
 package ireader.ao3
 
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
+import io.ktor.client.request.headers
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HeadersBuilder
+import io.ktor.http.HttpHeaders
+import io.ktor.http.takeFrom
 import ireader.core.source.Dependencies
 import ireader.core.source.SourceFactory
 import ireader.core.source.asJsoup
@@ -25,8 +30,29 @@ abstract class ArchiveOfOurOwn(private val deps: Dependencies) : SourceFactory(d
     override val id: Long get() = 81
     override val name: String get() = "Archive Of Our Own"
 
+    override fun getUserAgent(): String =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+    override fun requestBuilder(
+        url: String,
+        block: HeadersBuilder.() -> Unit
+    ): HttpRequestBuilder {
+        return HttpRequestBuilder().apply {
+            url { takeFrom(url) }
+            headers {
+                append(HttpHeaders.UserAgent, getUserAgent())
+                append(HttpHeaders.Accept, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                append(HttpHeaders.AcceptLanguage, "en-US,en;q=0.9")
+                append(HttpHeaders.CacheControl, "max-age=0")
+                append(HttpHeaders.Cookie, "view_adult=true")
+                block()
+            }
+        }
+    }
+
     override fun getFilters(): FilterList = listOf(
         Filter.Title(),
+        Filter.Author(),
         Filter.Sort(
             "Sort by",
             arrayOf("Hits", "Kudos", "Comments", "Bookmarks", "Word Count", "Date Updated", "Date Posted")
@@ -34,6 +60,50 @@ abstract class ArchiveOfOurOwn(private val deps: Dependencies) : SourceFactory(d
         Filter.Select(
             "Completion",
             arrayOf("All works", "Complete only", "In progress only")
+        ),
+        Filter.Select(
+            "Crossover",
+            arrayOf("All works", "Include crossovers", "Exclude crossovers")
+        ),
+        Filter.Select(
+            "Single Chapter",
+            arrayOf("All works", "Single chapter only", "Multi-chapter only")
+        ),
+        Filter.Group(
+            "Tags / Text Fields",
+            listOf(
+                Filter.Text("Fandoms"),
+                Filter.Text("Characters"),
+                Filter.Text("Relationships"),
+                Filter.Text("Additional Tags"),
+                Filter.Text("Word Count (e.g. 1000-50000, >1000, <5000)")
+            )
+        ),
+        Filter.Select(
+            "Rating",
+            arrayOf("Any", "Not Rated", "General Audiences", "Teen And Up Audiences", "Mature", "Explicit")
+        ),
+        Filter.Group(
+            "Warnings",
+            listOf(
+                Filter.Check("Creator Chose Not To Use Archive Warnings"),
+                Filter.Check("Graphic Depictions Of Violence"),
+                Filter.Check("Major Character Death"),
+                Filter.Check("No Archive Warnings Apply"),
+                Filter.Check("Rape/Non-Con"),
+                Filter.Check("Underage")
+            )
+        ),
+        Filter.Group(
+            "Categories",
+            listOf(
+                Filter.Check("F/F"),
+                Filter.Check("F/M"),
+                Filter.Check("Gen"),
+                Filter.Check("M/M"),
+                Filter.Check("Multi"),
+                Filter.Check("Other")
+            )
         ),
     )
 
@@ -45,28 +115,78 @@ abstract class ArchiveOfOurOwn(private val deps: Dependencies) : SourceFactory(d
 
     private val sortValues = arrayOf("hits", "kudos", "comments", "bookmarks", "word_count", "revised_at", "created_at")
     private val completionValues = arrayOf("", "T", "F")
+    private val crossoverValues = arrayOf("", "T", "F")
+    private val singleChapterValues = arrayOf("", "1", "0")
+    private val ratingIds = arrayOf("", "9", "10", "11", "12", "13")
+    private val warningIds = arrayOf("14", "17", "18", "16", "19", "20")
+    private val categoryIds = arrayOf("116", "22", "21", "23", "2246", "24")
 
     override suspend fun getMangaList(filters: FilterList, page: Int): MangasPageInfo {
-        val query = filters.findInstance<Filter.Title>()?.value
+        val query = filters.findInstance<Filter.Title>()?.value?.trim().orEmpty()
+        val author = filters.findInstance<Filter.Author>()?.value?.trim().orEmpty()
         val sortIndex = filters.findInstance<Filter.Sort>()?.value?.index ?: 0
-        val completionIndex = filters.filterIsInstance<Filter.Select>().firstOrNull()?.value ?: 0
-        
-        val sortBy = sortValues.getOrElse(sortIndex) { "hits" }
+
+        val selects = filters.filterIsInstance<Filter.Select>()
+        val completionIndex = selects.getOrNull(1)?.value ?: 0
+        val crossoverIndex = selects.getOrNull(2)?.value ?: 0
+        val singleChapterIndex = selects.getOrNull(3)?.value ?: 0
+        val ratingIndex = selects.getOrNull(4)?.value ?: 0
+
+        val groups = filters.filterIsInstance<Filter.Group>()
+        val tagGroup = groups.getOrNull(0)?.filters.orEmpty()
+        val fandoms = (tagGroup.getOrNull(0) as? Filter.Text)?.value?.trim().orEmpty()
+        val characters = (tagGroup.getOrNull(1) as? Filter.Text)?.value?.trim().orEmpty()
+        val relationships = (tagGroup.getOrNull(2) as? Filter.Text)?.value?.trim().orEmpty()
+        val otherTags = (tagGroup.getOrNull(3) as? Filter.Text)?.value?.trim().orEmpty()
+        val wordCount = (tagGroup.getOrNull(4) as? Filter.Text)?.value?.trim().orEmpty()
+
+        val warningChecks = groups.getOrNull(1)?.filters?.filterIsInstance<Filter.Check>().orEmpty()
+        val categoryChecks = groups.getOrNull(2)?.filters?.filterIsInstance<Filter.Check>().orEmpty()
+
+        val sortBy = if (query.isNotBlank() && sortIndex == 0) "_score" else sortValues.getOrElse(sortIndex) { "hits" }
         val completion = completionValues.getOrElse(completionIndex) { "" }
-        
+        val crossover = crossoverValues.getOrElse(crossoverIndex) { "" }
+        val singleChapter = singleChapterValues.getOrElse(singleChapterIndex) { "" }
+        val ratingId = ratingIds.getOrElse(ratingIndex) { "" }
+
+        fun StringBuilder.param(name: String, value: String) {
+            if (value.isNotBlank()) {
+                append("&").append(name).append("=")
+                append(java.net.URLEncoder.encode(value, "UTF-8"))
+            }
+        }
+
         val url = buildString {
             append("$baseUrl/works/search?page=$page")
             append("&work_search%5Blanguage_id%5D=en")
             append("&work_search%5Bsort_column%5D=$sortBy")
             append("&work_search%5Bsort_direction%5D=desc")
-            if (completion.isNotEmpty()) {
-                append("&work_search%5Bcomplete%5D=$completion")
+            param("work_search%5Bquery%5D", query)
+            param("work_search%5Bcreators%5D", author)
+            param("work_search%5Bcomplete%5D", completion)
+            param("work_search%5Bcrossover%5D", crossover)
+            param("work_search%5Bsingle_chapter%5D", singleChapter)
+            param("work_search%5Bword_count%5D", wordCount)
+            param("work_search%5Bfandom_names%5D", fandoms)
+            param("work_search%5Bcharacter_names%5D", characters)
+            param("work_search%5Brelationship_names%5D", relationships)
+            param("work_search%5Bfreeform_names%5D", otherTags)
+            param("work_search%5Brating_ids%5D", ratingId)
+
+            warningChecks.forEachIndexed { i, check ->
+                if (check.value == true) {
+                    append("&work_search%5Barchive_warning_ids%5D%5B%5D=")
+                    append(warningIds.getOrElse(i) { "" })
+                }
             }
-            if (!query.isNullOrBlank()) {
-                append("&work_search%5Bquery%5D=${query.trim().replace(" ", "+")}")
+            categoryChecks.forEachIndexed { i, check ->
+                if (check.value == true) {
+                    append("&work_search%5Bcategory_ids%5D%5B%5D=")
+                    append(categoryIds.getOrElse(i) { "" })
+                }
             }
         }
-        
+
         val document = client.get(requestBuilder(url)).asJsoup()
         return parseNovelList(document)
     }
@@ -96,7 +216,11 @@ abstract class ArchiveOfOurOwn(private val deps: Dependencies) : SourceFactory(d
             return detailParse(manga, detailFetch.html.asJsoup())
         }
         
-        val url = "$baseUrl/${manga.key}"
+        val url = when {
+            manga.key.startsWith("http") -> manga.key
+            manga.key.startsWith("/") -> "$baseUrl${manga.key}"
+            else -> "$baseUrl/${manga.key}"
+        }
         val document = client.get(requestBuilder(url)).asJsoup()
         return detailParse(manga, document)
     }
@@ -140,11 +264,15 @@ abstract class ArchiveOfOurOwn(private val deps: Dependencies) : SourceFactory(d
             return chaptersParse(manga, chapterFetch.html.asJsoup())
         }
         
-        val url = "$baseUrl/${manga.key}"
+        val url = when {
+            manga.key.startsWith("http") -> manga.key
+            manga.key.startsWith("/") -> "$baseUrl${manga.key}"
+            else -> "$baseUrl/${manga.key}"
+        }
         val document = client.get(requestBuilder(url)).asJsoup()
         
         // Try to get chapters from navigate page
-        val navigateUrl = "$baseUrl/${manga.key}/navigate"
+        val navigateUrl = "$url/navigate"
         val navigateDoc = try {
             client.get(requestBuilder(navigateUrl)).asJsoup()
         } catch (e: Exception) {
@@ -224,20 +352,49 @@ abstract class ArchiveOfOurOwn(private val deps: Dependencies) : SourceFactory(d
         val document = if (contentFetch != null && contentFetch.html.isNotBlank()) {
             contentFetch.html.asJsoup()
         } else {
-            val url = "$baseUrl/${chapter.key}"
-            client.get(requestBuilder(url)).asJsoup()
+            val url = when {
+                chapter.key.startsWith("http") -> chapter.key
+                chapter.key.startsWith("/") -> "$baseUrl${chapter.key}"
+                else -> "$baseUrl/${chapter.key}"
+            }
+            val separator = if (url.contains("?")) "&" else "?"
+            client.get(requestBuilder(url + separator + "view_adult=true&view_full_work=true")).asJsoup()
         }
-        
-        // Remove landmark heading
-        document.select("h3.landmark.heading#work").remove()
-        
-        // Clean up chapter title links
-        document.select("h3.title").forEach { h3 ->
-            h3.select("a").removeAttr("href")
+
+        document.select(
+            "h3.landmark.heading#work, #workskin .notes.module, #feedback, .kudos, .meta, " +
+            "div.chapter.preface.group, div.preface.group, #work .meta, .secondary, #notes"
+        ).remove()
+        document.select("a[rel=author]").forEach { it.removeAttr("href") }
+
+        val chapterDiv = document.select("div#chapters div.userstuff.module").first()
+            ?: document.select("div.userstuff.module").first()
+            ?: document.select("div#chapters > div").first()
+            ?: document.select("div#chapters").first()
+
+        chapterDiv?.select(
+            "h3.title, h3.heading, .landmark.heading, div.preface, div.chapter.preface.group, .meta, .notes, .end.notes.module"
+        )?.remove()
+        chapterDiv?.select("a")?.forEach { it.unwrap() }
+
+        val paragraphs = chapterDiv?.select("p")?.mapNotNull { p ->
+            val t = p.text().replace(Regex("\\s+"), " ").trim()
+            t.takeIf { it.isNotBlank() }
+        }?.filterNot { it.startsWith("See the end of the chapter for more notes") }.orEmpty()
+
+        val content = if (paragraphs.isNotEmpty()) {
+            paragraphs.joinToString("\n\n")
+        } else {
+            chapterDiv?.wholeText()
+                ?.lines()
+                ?.map { it.trim() }
+                ?.filter { it.isNotBlank() }
+                ?.joinToString("\n\n")
+                .orEmpty()
         }
-        
-        val content = document.select("div#chapters > div").html()
-        return listOf(content).map { ireader.core.source.model.Text(it) }
+
+        if (content.isBlank()) return emptyList()
+        return listOf(ireader.core.source.model.Text(content))
     }
 
     override val exploreFetchers: List<BaseExploreFetcher>
